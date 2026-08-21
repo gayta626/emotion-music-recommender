@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Test nhanh - Nhận diện cảm xúc</title>
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background: #111;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: #888; margin-bottom: 20px; font-size: 14px; }
+  video {
+    border-radius: 12px;
+    border: 2px solid #333;
+    width: 480px;
+    max-width: 90vw;
+    transform: scaleX(-1); /* hiệu ứng gương cho tự nhiên */
+  }
+  #result {
+    margin-top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  #confidence { color: #888; font-size: 14px; margin-top: 4px; }
+  #status { color: #f88; font-size: 13px; margin-top: 10px; }
+  .bars { margin-top: 20px; width: 480px; max-width: 90vw; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  .bar-label { width: 80px; }
+  .bar-track { flex: 1; background: #222; border-radius: 4px; height: 14px; overflow: hidden; }
+  .bar-fill { height: 100%; background: #4ade80; transition: width 0.3s; }
+  .bar-value { width: 50px; text-align: right; color: #999; }
+</style>
+</head>
+<body>
+  <h1>🎭 Test nhận diện cảm xúc</h1>
+  <div class="sub">Trang test nhanh - gọi API backend mỗi 1 giây</div>
+  <video id="video" autoplay muted playsinline></video>
+  <div id="result">Đang khởi động camera...</div>
+  <div id="confidence"></div>
+  <div id="status"></div>
+  <div class="bars" id="bars"></div>
+
+  <script>
+    const API_URL = "http://localhost:5000/predict";
+    const EMOTION_LABEL_VI = {
+      neutral: "😐 Trung tính",
+      happy: "😄 Vui vẻ",
+      sad: "😢 Buồn",
+      angry: "😠 Giận dữ",
+      surprise: "😲 Ngạc nhiên",
+    };
+
+    const video = document.getElementById("video");
+    const resultEl = document.getElementById("result");
+    const confidenceEl = document.getElementById("confidence");
+    const statusEl = document.getElementById("status");
+    const barsEl = document.getElementById("bars");
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 224;
+    canvas.height = 224;
+    const ctx = canvas.getContext("2d");
+
+    // Mở webcam
+    navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 480 } })
+      .then((stream) => {
+        video.srcObject = stream;
+        statusEl.textContent = "";
+        resultEl.textContent = "Đang phân tích...";
+        setInterval(captureAndPredict, 1000); // chụp + gửi API mỗi 1 giây
+      })
+      .catch((err) => {
+        statusEl.textContent = "Lỗi camera: " + err.message + " (kiểm tra đã cho phép quyền webcam chưa)";
+      });
+
+    function captureAndPredict() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64Image = canvas.toDataURL("image/jpeg", 0.8);
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Image }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Server trả lỗi " + res.status);
+          return res.json();
+        })
+        .then((data) => {
+          if (data.error === "no_face_detected") {
+            statusEl.textContent = "";
+            resultEl.textContent = "🔍 Không thấy khuôn mặt...";
+            confidenceEl.textContent = "";
+            return;
+          }
+          if (data.error) {
+            statusEl.textContent = "Lỗi: " + data.error;
+            return;
+          }
+          statusEl.textContent = "";
+          const label = EMOTION_LABEL_VI[data.emotion] || data.emotion;
+          resultEl.textContent = label;
+          confidenceEl.textContent = `Độ tin cậy: ${(data.confidence * 100).toFixed(1)}%`;
+          renderBars(data.all_scores);
+        })
+        .catch((err) => {
+          statusEl.textContent = "Không kết nối được backend: " + err.message +
+            " (kiểm tra 3_backend_server.py đang chạy chưa, và có mở đúng http://localhost:5000 không)";
+        });
+    }
+
+    function renderBars(scores) {
+      barsEl.innerHTML = "";
+      const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+      for (const [emotion, score] of sorted) {
+        const pct = (score * 100).toFixed(1);
+        const row = document.createElement("div");
+        row.className = "bar-row";
+        row.innerHTML = `
+          <div class="bar-label">${EMOTION_LABEL_VI[emotion] || emotion}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="bar-value">${pct}%</div>
+        `;
+        barsEl.appendChild(row);
+      }
+    }
+  </script>
+</body>
+</html>

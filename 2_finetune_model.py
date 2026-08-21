@@ -43,7 +43,7 @@ DATA_DIR = "data"
 OUTPUT_DIR = "my_emotion_model"
 BASE_MODEL = "google/vit-base-patch16-224-in21k"  # model tổng quát, CHƯA biết cảm xúc
 
-EMOTIONS = ["neutral", "happy", "sad", "angry", "fear", "disgust", "surprise"]
+EMOTIONS = ["neutral", "happy", "sad", "angry", "surprise"]
 
 SEED = 42
 random.seed(SEED)

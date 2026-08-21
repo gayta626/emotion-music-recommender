@@ -32,14 +32,12 @@ import time
 import unicodedata
 
 # Danh sách cảm xúc cần thu thập - PHẢI khớp với EMOTION_VI ở các bước sau
-EMOTIONS = ["neutral", "happy", "sad", "angry", "fear", "disgust", "surprise"]
+EMOTIONS = ["neutral", "happy", "sad", "angry", "surprise"]
 EMOTION_VI = {
     "neutral": "trung tính (mặt bình thường)",
     "happy": "vui vẻ (cười)",
     "sad": "buồn",
     "angry": "giận dữ",
-    "fear": "sợ hãi",
-    "disgust": "ghê tởm / khó chịu",
     "surprise": "ngạc nhiên",
 }
 
