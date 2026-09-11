@@ -16,5 +16,3 @@ train_checkpoints/
 
 # VS Code
 .vscode/
-
-my_emotion_model/model.safetensors
