@@ -3,16 +3,18 @@ BƯỚC 2/4: Fine-tune model bằng Transfer Learning (đóng băng backbone)
 Đề tài: Hệ thống gợi ý nhạc theo cảm xúc (phiên bản Web)
 
 KỸ THUẬT SỬ DỤNG - TRANSFER LEARNING CHUẨN:
-  1. Lấy model Vision Transformer (ViT) đã huấn luyện sẵn trên tập ảnh
-     tổng quát ImageNet-21k (google/vit-base-patch16-224-in21k). Model này
-     CHƯA từng biết phân biệt cảm xúc, chỉ biết trích xuất đặc trưng hình ảnh.
-  2. ĐÓNG BĂNG (freeze) toàn bộ phần backbone - các trọng số trích xuất
-     đặc trưng KHÔNG thay đổi trong lúc huấn luyện.
-  3. Thay lớp phân loại cuối (classifier head) bằng lớp mới có số lớp ra
-     = số cảm xúc của bạn, rồi CHỈ huấn luyện lớp này bằng ảnh khuôn mặt
-     bạn đã thu thập ở bước 1.
-  => Đây chính là "AI học" thật sự: model học cách ánh xạ đặc trưng khuôn
-     mặt của RIÊNG BẠN sang các nhãn cảm xúc, không phải so sánh ngưỡng cố định.
+  1. Lấy model Vision Transformer (ViT) ĐÃ ĐƯỢC huấn luyện sẵn để nhận diện
+     cảm xúc trên tập FER2013 (trpakov/vit-face-expression, ~35.000 ảnh,
+     7 cảm xúc). Model này đã có "kiến thức nền" về cảm xúc nói chung, giúp
+     việc học tiếp theo dễ dàng và ổn định hơn so với dùng model tổng quát.
+  2. ĐÓNG BĂNG (freeze) phần lớn backbone - các trọng số trích xuất đặc
+     trưng đã học từ FER2013 gần như giữ nguyên, chỉ mở khóa 2 lớp cuối.
+  3. Thay/tinh chỉnh lớp phân loại cuối (classifier head) theo đúng 5 cảm
+     xúc của bạn, rồi huấn luyện tiếp bằng ảnh khuôn mặt bạn (+ bạn bè) đã
+     thu thập ở bước 1 - CÁ NHÂN HÓA model từ nền tảng cảm xúc tổng quát.
+  => Đây vẫn là "AI học" thật sự: model không chỉ so sánh ngưỡng cố định,
+     mà học cách tinh chỉnh kiến thức cảm xúc có sẵn theo RIÊNG khuôn mặt
+     và biểu cảm của bạn - transfer learning ở 2 tầng (FER2013 -> cá nhân).
 
 Cách cài đặt:
     pip install transformers torch torchvision pillow scikit-learn accelerate
@@ -38,10 +40,15 @@ from transformers import (
     TrainingArguments,
     Trainer,
 )
+import torch.nn as nn
 
 DATA_DIR = "data"
 OUTPUT_DIR = "my_emotion_model"
-BASE_MODEL = "google/vit-base-patch16-224-in21k"  # model tổng quát, CHƯA biết cảm xúc
+# Đổi từ model tổng quát (ImageNet, không biết cảm xúc) sang model ĐÃ được
+# huấn luyện sẵn trên FER2013 (~35.000 ảnh, 7 cảm xúc) - giúp model có sẵn
+# "kiến thức nền" về cảm xúc trước khi fine-tune tiếp bằng ảnh cá nhân của
+# bạn, đặc biệt hữu ích khi data cá nhân còn hạn chế (~150-200 ảnh/lớp).
+BASE_MODEL = "trpakov/vit-face-expression"
 
 EMOTIONS = ["neutral", "happy", "sad", "angry", "surprise"]
 
@@ -106,6 +113,27 @@ def compute_metrics(eval_pred):
     return {"accuracy": accuracy}
 
 
+class WeightedTrainer(Trainer):
+    """
+    Trainer tùy chỉnh: phạt nặng hơn khi model đoán sai các lớp CÓ ÍT ảnh.
+    Giúp chống hiện tượng "model collapse" - model học cách chỉ đoán 1 nhãn
+    duy nhất (thường là nhãn có nhiều ảnh nhất) để tối thiểu hóa sai số trung
+    bình, thay vì thực sự học phân biệt từng cảm xúc.
+    """
+
+    def __init__(self, *args, class_weights=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.class_weights = class_weights
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        loss_fct = nn.CrossEntropyLoss(weight=self.class_weights.to(logits.device))
+        loss = loss_fct(logits, labels)
+        return (loss, outputs) if return_outputs else loss
+
+
 def main():
     print("=== BƯỚC 2: FINE-TUNE MODEL (TRANSFER LEARNING) ===\n")
 
@@ -126,7 +154,7 @@ def main():
     )
     print(f"Tập train: {len(train_paths)} ảnh | Tập validation: {len(val_paths)} ảnh\n")
 
-    print(f"Đang tải model gốc '{BASE_MODEL}' (chưa biết phân loại cảm xúc)...")
+    print(f"Đang tải model gốc '{BASE_MODEL}' (đã biết cảm xúc từ FER2013, sẽ fine-tune tiếp theo bạn)...")
     processor = AutoImageProcessor.from_pretrained(BASE_MODEL)
     model = AutoModelForImageClassification.from_pretrained(
         BASE_MODEL,
@@ -136,30 +164,55 @@ def main():
         ignore_mismatched_sizes=True,  # cho phép thay lớp phân loại cuối
     )
 
-    # ====== ĐÓNG BĂNG BACKBONE - chỉ giữ classifier head có thể huấn luyện ======
+    # ====== ĐÓNG BĂNG BACKBONE - chỉ giữ classifier head + 2 lớp cuối có thể huấn luyện ======
+    # Lưu ý: ban đầu đóng băng TOÀN BỘ backbone, chỉ train classifier head (3.845 tham số)
+    # nhưng thực nghiệm cho thấy accuracy bị "chững" ở mức thấp (~25-29%) không cải thiện
+    # thêm dù train nhiều epoch - dấu hiệu classifier head quá đơn giản, không đủ khả năng
+    # biểu diễn để phân biệt cảm xúc từ đặc trưng backbone tổng quát (huấn luyện trên
+    # ImageNet, không chuyên biệt cho khuôn mặt/cảm xúc).
+    # => Mở khóa thêm 2 lớp Transformer CUỐI CÙNG (gần đầu ra nhất) để model có thể tinh
+    # chỉnh đặc trưng theo hướng phù hợp hơn với bài toán cảm xúc, trong khi VẪN đóng băng
+    # phần lớn backbone (10/12 lớp + phần embedding đầu vào) - vẫn đúng tinh thần transfer learning.
+    UNFROZEN_LAYER_INDICES = {"10", "11"}  # 2 lớp cuối trong tổng số 12 lớp (đánh số 0-11)
+
     trainable_params = 0
     frozen_params = 0
     for name, param in model.named_parameters():
-        if name.startswith("classifier"):
+        # Nhận diện lớp cuối bằng cách tìm pattern ".10." hoặc ".11." trong tên tham số
+        # (khớp cả 2 kiểu đặt tên: "encoder.layer.11.xxx" và "vit.layers.11.xxx")
+        is_last_layers = any(f".{idx}." in name for idx in UNFROZEN_LAYER_INDICES)
+        if name.startswith("classifier") or is_last_layers:
             param.requires_grad = True
             trainable_params += param.numel()
         else:
             param.requires_grad = False
             frozen_params += param.numel()
 
-    print(f"\nĐã đóng băng backbone: {frozen_params:,} tham số KHÔNG huấn luyện.")
-    print(f"Chỉ huấn luyện classifier head: {trainable_params:,} tham số.")
+    print(f"\nĐã đóng băng phần lớn backbone: {frozen_params:,} tham số KHÔNG huấn luyện.")
+    print(f"Huấn luyện classifier head + 2 lớp cuối: {trainable_params:,} tham số.")
     print(f"(Tỉ lệ tham số học được: {100 * trainable_params / (trainable_params + frozen_params):.3f}%)\n")
 
     train_dataset = FaceEmotionDataset(train_paths, train_labels, label2id, processor, augment=True)
     val_dataset = FaceEmotionDataset(val_paths, val_labels, label2id, processor, augment=False)
 
+    # ====== TÍNH CLASS WEIGHTS - chống mất cân bằng dữ liệu ======
+    # Lớp nào có ÍT ảnh hơn sẽ được gán trọng số CAO hơn trong hàm loss,
+    # buộc model phải chú ý học nó thay vì bỏ qua để tối ưu lớp đông ảnh.
+    class_counts = np.array([train_labels.count(present_emotions[i]) for i in range(len(present_emotions))])
+    class_weights = class_counts.sum() / (len(class_counts) * class_counts)
+    class_weights = torch.tensor(class_weights, dtype=torch.float32)
+
+    print("Phân bố dữ liệu theo lớp (tập train):")
+    for i, emo in enumerate(present_emotions):
+        print(f"  {emo:<10}: {class_counts[i]:4d} ảnh  -> trọng số loss: {class_weights[i]:.2f}")
+    print()
+
     training_args = TrainingArguments(
         output_dir="./train_checkpoints",
-        num_train_epochs=15,
+        num_train_epochs=25,
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
-        learning_rate=1e-3,  # lr cao hơn bình thường vì chỉ train 1 lớp nhỏ (head)
+        learning_rate=2e-4,  # giảm thêm vì giờ train cả lớp Transformer, không chỉ classifier tuyến tính
         eval_strategy="epoch",
         save_strategy="epoch",
         save_total_limit=1,
@@ -170,12 +223,13 @@ def main():
         seed=SEED,
     )
 
-    trainer = Trainer(
+    trainer = WeightedTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         compute_metrics=compute_metrics,
+        class_weights=class_weights,
     )
 
     print("Bắt đầu huấn luyện classifier head...\n")

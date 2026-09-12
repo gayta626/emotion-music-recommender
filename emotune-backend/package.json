@@ -1,0 +1,22 @@
+{
+  "name": "emotion-system",
+  "version": "1.0.0",
+  "description": "hệ thông gợi ý phát nhạc qua nhận diện cảm xúc",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "nodejs",
+    "backend"
+  ],
+  "author": "Nguyen Duc Vinh",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  }
+}

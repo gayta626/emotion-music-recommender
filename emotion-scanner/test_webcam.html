@@ -35,6 +35,20 @@
   .bar-track { flex: 1; background: #222; border-radius: 4px; height: 14px; overflow: hidden; }
   .bar-fill { height: 100%; background: #4ade80; transition: width 0.3s; }
   .bar-value { width: 50px; text-align: right; color: #999; }
+  .debug-box {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .debug-box img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #4ade80;
+  }
+  .debug-label { font-size: 12px; color: #888; max-width: 260px; }
 </style>
 </head>
 <body>
@@ -44,6 +58,14 @@
   <div id="result">Đang khởi động camera...</div>
   <div id="confidence"></div>
   <div id="status"></div>
+  <div class="debug-box">
+    <img id="debugCrop" src="" alt="Ảnh model đang dùng" style="display:none;">
+    <div class="debug-label">
+      👈 Đây là ảnh THỰC SỰ được đưa vào model để dự đoán (sau khi crop mặt).
+      So sánh xem có giống ảnh trong thư mục data/ lúc train không - nếu khác
+      biệt rõ về màu sắc/độ sáng/góc chụp, đó là nguyên nhân gây nhầm lẫn.
+    </div>
+  </div>
   <div class="bars" id="bars"></div>
 
   <script>
@@ -108,6 +130,12 @@
           resultEl.textContent = label;
           confidenceEl.textContent = `Độ tin cậy: ${(data.confidence * 100).toFixed(1)}%`;
           renderBars(data.all_scores);
+
+          if (data.debug_crop) {
+            const debugImg = document.getElementById("debugCrop");
+            debugImg.src = data.debug_crop;
+            debugImg.style.display = "block";
+          }
         })
         .catch((err) => {
           statusEl.textContent = "Không kết nối được backend: " + err.message +
