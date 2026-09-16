@@ -4,8 +4,8 @@ const feedBackService = require('../services/feedBackService');
 let submitFeedBack = async (req, res) => {
     const { emotion, songId, action } = req.body;
 
-    if (action !== "accepted" && action !== "declined") {
-        return res.status(400).json({ error: "action phải là 'accept' hoặc 'decline'" })
+    if (action !== "accepted" && action !== "declined" && action !== "auto_played") {
+        return res.status(400).json({ error: "action phải là 'accept' hoặc 'decline' hoac 'auto_played'" })
     }
     try {
         const result = await feedBackService.processFeedBack(emotion, songId, action);
