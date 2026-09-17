@@ -1,6 +1,7 @@
 const express = require("express");
 const moodHistoryController = require("../controllers/moodHistoryController")
-const feedBackControlller = require("../controllers/feedBackController")
+const feedBackController = require("../controllers/feedBackController")
+const suggestController = require("../controllers/suggestController")
 
 let router = express.Router()
 
@@ -11,7 +12,8 @@ let initWebRoutes = (app) => {
 
     router.get('/mood-history', moodHistoryController.getMoodHistory);
 
-    router.post('/feed-back', feedBackControlller.submitFeedBack)
+    router.post('/feed-back', feedBackController.submitFeedBack);
+    router.post('/suggest', suggestController.getSuggest)
     return app.use("/", router);
 }
 
