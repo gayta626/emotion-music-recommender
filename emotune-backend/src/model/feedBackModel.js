@@ -25,15 +25,7 @@ let updateFeedBack = async (emotion, songId, delta, historyAction) => {
             `,
             [emotion, songId, historyAction]
         )
-        //cap nhat them dong vao bang recently_played
-        if (historyAction === "accepted" || historyAction === "auto_played") {
-            await client.query(
-                `
-            INSERT INTO recently_played(song_id) VALUES($1)
-            `,
-                [songId]
-            )
-        }
+
 
         await client.query('COMMIT');
         return { status: "ok", delta }
