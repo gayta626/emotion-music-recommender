@@ -14,6 +14,7 @@ let initWebRoutes = (app) => {
 
     router.post('/feed-back', feedBackController.submitFeedBack);
     router.post('/suggest', suggestController.getSuggest)
+    router.post('/request-song' ,)
     return app.use("/", router);
 }
 
