@@ -28,8 +28,14 @@ GHI CHÚ - THU THẬP TỪ NHIỀU NGƯỜI:
 
 import cv2
 import os
+import sys
 import time
 import unicodedata
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 # Danh sách cảm xúc cần thu thập - PHẢI khớp với EMOTION_VI ở các bước sau
 EMOTIONS = ["neutral", "happy", "sad", "angry", "surprise"]
@@ -82,6 +88,13 @@ def remove_vietnamese_accents(text):
 
 
 def ask_person_name():
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1].strip():
+        name = remove_vietnamese_accents(sys.argv[1].strip()).lower()
+        name = "".join(c for c in name if c.isalnum())
+        if name:
+            return name
+
     print("=" * 60)
     print("THU THẬP DỮ LIỆU CHO NHIỀU NGƯỜI")
     print("Nhập tên (có dấu cũng được, chương trình sẽ tự bỏ dấu) để phân")
@@ -89,7 +102,10 @@ def ask_person_name():
     print("Ví dụ: An, Bình, Chi")
     print("=" * 60)
     while True:
-        raw_name = input("Tên của bạn: ").strip()
+        try:
+            raw_name = input("Tên của bạn: ").strip()
+        except EOFError:
+            raw_name = "user"
         name = remove_vietnamese_accents(raw_name).lower()
         name = "".join(c for c in name if c.isalnum())  # chỉ giữ chữ/số thuần ASCII
         if name:

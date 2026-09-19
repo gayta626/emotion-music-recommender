@@ -22,6 +22,12 @@ Yêu cầu: đã chạy xong 2_finetune_model.py và có thư mục my_emotion_m
 import base64
 import io
 import os
+import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 import cv2
 import numpy as np

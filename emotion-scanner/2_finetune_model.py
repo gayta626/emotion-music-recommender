@@ -27,8 +27,14 @@ Kết quả: thư mục my_emotion_model/ (dùng cho bước 3 và web app).
 """
 
 import os
+import sys
 import random
 import torch
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
