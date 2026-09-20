@@ -1,59 +1,121 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<title>Test nhanh - Nhận diện cảm xúc</title>
-<style>
-  body {
-    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
-    background: #111;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 30px;
-  }
-  h1 { font-size: 20px; margin-bottom: 4px; }
-  .sub { color: #888; margin-bottom: 20px; font-size: 14px; }
-  video {
-    border-radius: 12px;
-    border: 2px solid #333;
-    width: 480px;
-    max-width: 90vw;
-    transform: scaleX(-1); /* hiệu ứng gương cho tự nhiên */
-  }
-  #result {
-    margin-top: 20px;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  #confidence { color: #888; font-size: 14px; margin-top: 4px; }
-  #status { color: #f88; font-size: 13px; margin-top: 10px; }
-  .bars { margin-top: 20px; width: 480px; max-width: 90vw; }
-  .bar-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 13px; }
-  .bar-label { width: 80px; }
-  .bar-track { flex: 1; background: #222; border-radius: 4px; height: 14px; overflow: hidden; }
-  .bar-fill { height: 100%; background: #4ade80; transition: width 0.3s; }
-  .bar-value { width: 50px; text-align: right; color: #999; }
-  .debug-box {
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .debug-box img {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 2px solid #4ade80;
-  }
-  .debug-label { font-size: 12px; color: #888; max-width: 260px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Test nhanh - Nhận diện cảm xúc</title>
+  <style>
+    body {
+      font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .sub {
+      color: #888;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    video {
+      border-radius: 12px;
+      border: 2px solid #333;
+      width: 480px;
+      max-width: 90vw;
+      transform: scaleX(-1);
+      /* hiệu ứng gương cho tự nhiên */
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    #confidence {
+      color: #888;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    #status {
+      color: #f88;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .bars {
+      margin-top: 20px;
+      width: 480px;
+      max-width: 90vw;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .bar-label {
+      width: 80px;
+    }
+
+    .bar-track {
+      flex: 1;
+      background: #222;
+      border-radius: 4px;
+      height: 14px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: #4ade80;
+      transition: width 0.3s;
+    }
+
+    .bar-value {
+      width: 50px;
+      text-align: right;
+      color: #999;
+    }
+
+    .debug-box {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .debug-box img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #4ade80;
+    }
+
+    .debug-label {
+      font-size: 12px;
+      color: #888;
+      max-width: 260px;
+    }
+  </style>
 </head>
+
 <body>
   <h1>🎭 Test nhận diện cảm xúc</h1>
-  <div class="sub">Trang test nhanh - gọi API backend mỗi 1 giây</div>
+  <div class="sub">Trang test nhanh - gọi API backend mỗi 3 giây</div>
   <video id="video" autoplay muted playsinline></video>
   <div id="result">Đang khởi động camera...</div>
   <div id="confidence"></div>
@@ -69,7 +131,7 @@
   <div class="bars" id="bars"></div>
 
   <script>
-    const API_URL = "http://localhost:5000/predict";
+    const API_URL = "http://localhost:8080/scan-and-suggest";
     const EMOTION_LABEL_VI = {
       neutral: "😐 Trung tính",
       happy: "😄 Vui vẻ",
@@ -95,7 +157,7 @@
         video.srcObject = stream;
         statusEl.textContent = "";
         resultEl.textContent = "Đang phân tích...";
-        setInterval(captureAndPredict, 1000); // chụp + gửi API mỗi 1 giây
+        setInterval(captureAndPredict, 3000); // chụp + gửi API mỗi 3 giây
       })
       .catch((err) => {
         statusEl.textContent = "Lỗi camera: " + err.message + " (kiểm tra đã cho phép quyền webcam chưa)";
@@ -160,4 +222,5 @@
     }
   </script>
 </body>
+
 </html>

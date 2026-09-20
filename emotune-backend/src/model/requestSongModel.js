@@ -7,7 +7,7 @@ let getRequestSong = async (songName) => {
         SELECT s.id , s.title ,s.artist , s.file_path, s.emotion , s.energy
         FROM songs s
         WHERE s.title ILIKE '%' || $1 || '%' 
-        LIMIT 1,
+        LIMIT 1
         `,
             [songName]
         )

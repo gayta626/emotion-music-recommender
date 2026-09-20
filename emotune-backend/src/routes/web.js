@@ -3,6 +3,8 @@ const moodHistoryController = require("../controllers/moodHistoryController")
 const feedBackController = require("../controllers/feedBackController")
 const suggestController = require("../controllers/suggestController")
 const listenReportController = require("../controllers/listenReportController")
+const requestSongController = require("../controllers/requestSongController")
+const ScanController = require("../controllers/scanController")
 
 let router = express.Router()
 
@@ -16,7 +18,8 @@ let initWebRoutes = (app) => {
     router.post('/feed-back', feedBackController.submitFeedBack);
     router.post('/suggest', suggestController.getSuggest)
     router.post('/listen-report', listenReportController.submitListenReport)
-    router.post('/request-song',)
+    router.post('/request-song', requestSongController.postRequestSong)
+    router.post('/scan-and-suggest', ScanController.scanAndSuggest)
     return app.use("/", router);
 }
 

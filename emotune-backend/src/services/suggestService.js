@@ -2,6 +2,7 @@ const suggestModel = require("../model/suggestModel")
 const { getRandomMessage } = require("../messages")
 
 let checkMoodTrend = async (emotion) => {
+    const NEGATIVE_EMOTIONS = ["sad", "angry"];
     let trend1Day = await suggestModel.getMoodTrend(1);
     let totalCount1Day = trend1Day.reduce((sum, row) => {
         return sum + parseInt(row.cnt);
@@ -24,7 +25,9 @@ let checkMoodTrend = async (emotion) => {
 
     let targetEmotion = emotion;
     let isEncourage = false;
-    if (sadRatio > 0.5) {
+
+
+    if (sadRatio > 0.5 && totalCount >= 4 && NEGATIVE_EMOTIONS.includes(emotion)) {
         targetEmotion = "happy";
         isEncourage = true;
     }

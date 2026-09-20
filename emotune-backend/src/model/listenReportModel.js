@@ -1,8 +1,11 @@
 const db = require("../config/db")
 
-let feedBackSongListened = async (emotion, songId, score, action) => {
+let feedBackSongListened = async (emotion, songId, delta, action) => {
     const client = await db.pool.connect();
     try {
+
+        await client.query('BEGIN')
+
         await client.query(
             `
             INSERT INTO preferences (emotion ,song_id, score)
@@ -10,14 +13,15 @@ let feedBackSongListened = async (emotion, songId, score, action) => {
             ON CONFLICT (emotion , song_id)
             DO UPDATE SET score = preferences.score + $3 , updated_at =NOW()
             `
-            [emotion, songId, score]
+            ,
+            [emotion, songId, delta]
         )
 
         // cap nhat mood history
         await client.query(
             `
             INSERT INTO mood_history(emotion ,song_id , action)
-            VALUE ($1 , $2 , $3)
+            VALUES ($1 , $2 , $3)
             `,
             [emotion, songId, action]
         )
@@ -30,7 +34,7 @@ let feedBackSongListened = async (emotion, songId, score, action) => {
             [songId]
         )
         await client.query("COMMIT")
-        return { status: "ok", score }
+        return { status: "ok", delta }
     } catch (err) {
         await client.query("ROLLBACK")
         console.error("Loi API feedback", err)

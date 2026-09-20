@@ -1,7 +1,14 @@
 const listenReportModel = require("../model/listenReportModel")
 
-let processListenReport = async (emotion, songId, finishPercent, action) => {
-    const delta = fishPercent >= 0.8 ? 1 : finishPercent < 0.4 ? -1 : 0.3;
+let processListenReport = async (emotion, songId, finishPercent) => {
+    let delta, action;
+    if (finishPercent >= 0.8) {
+        delta = 1; action = "good";
+    } else if (finishPercent < 0.4) {
+        delta = -1; action = "bad";
+    } else {
+        delta = 0.3; action = "neutral";
+    }
     return await listenReportModel.feedBackSongListened(emotion, songId, delta, action);
 }
 
