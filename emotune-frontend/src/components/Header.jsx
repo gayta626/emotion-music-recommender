@@ -23,7 +23,7 @@ const Header = () => {
                             <HomeIcon />
                         </button>
                         <div className="search-bar">
-                            <SearchIcon className="search-bar" />
+                            <SearchIcon className="search-icon" />
                             <input
                                 type="text"
                                 placeholder="Search music, artists, albums..."
@@ -37,7 +37,7 @@ const Header = () => {
 
 
                 <div className="action-container">
-                    <AIIcon />
+                    <AIIcon className="ai-icon" />
                     <button className="explore-premium-btn">
                         Explore Premium
                     </button>

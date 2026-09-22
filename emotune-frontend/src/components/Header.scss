@@ -5,12 +5,13 @@
     padding: 16px 32px;
     background-color: black;
     color: white;
+    position: relative;
 
     .app-name-container {
         display: flex;
         align-items: center;
         gap: 16px;
-        flex: 1;
+
 
         .logo-group {
 
@@ -34,16 +35,26 @@
         }
 
         .home-search-group {
-            margin-left: auto;
+            flex: 1;
+            max-width: 480px;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 16px;
+            padding-left: 170px;
 
             .home-btn {
                 background: none;
                 border: none;
                 padding: 10px;
+
+                &:hover {
+                    cursor: pointer;
+                }
+
             }
+
+
 
             .search-bar {
                 position: relative;
@@ -57,7 +68,7 @@
 
                 .search-input {
                     padding-left: 35px;
-                    width: 33ch;
+                    width: 45ch;
                     height: 36px;
                     border-radius: 30px;
                     border: none;
@@ -71,31 +82,54 @@
 
     .action-container {
         display: flex;
+        justify-content: center;
         align-items: center;
         gap: 20px;
-        flex-shrink: 0;
 
         .ai-icon {
-            width: 24px;
-            height: 24px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+
+            &:hover {
+                cursor: pointer;
+            }
         }
 
-        .premium-btn {
-            background: #ffffff;
-            color: #000000;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            white-space: nowrap; // tránh chữ bị xuống dòng làm vỡ nút
+        .explore-premium-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+            border-radius: 30px;
+            color: #27003C;
+            outline: none;
+            font-weight: 800;
+
+            &:hover {
+                cursor: pointer;
+            }
         }
 
         .setting-and-notification-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+
+            .notification-btn {
+                background: none;
+                border: none;
+
+                &:hover {
+                    cursor: pointer;
+                }
+            }
+
+            .user-btn {
+                background: none;
+                border: none;
+                margin-left: 20px;
+
+                &:hover {
+                    cursor: pointer;
+                }
+            }
         }
     }
 }
