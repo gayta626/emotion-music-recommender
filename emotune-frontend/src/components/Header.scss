@@ -1,0 +1,101 @@
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background-color: black;
+    color: white;
+
+    .app-name-container {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+
+        .logo-group {
+
+            .logo {
+                font-family: 'Playfair Display', serif;
+                font-weight: 400;
+                font-size: 24px;
+                color: #C9A9F5;
+                line-height: normal;
+                letter-spacing: 0.02em;
+            }
+
+            .web-name {
+                font-family: 'DM Sans', serif;
+                font-weight: 400;
+                font-size: 10px;
+                line-height: normal;
+                letter-spacing: 0.02em;
+                color: #A79FC9
+            }
+        }
+
+        .home-search-group {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+
+            .home-btn {
+                background: none;
+                border: none;
+                padding: 10px;
+            }
+
+            .search-bar {
+                position: relative;
+
+                .search-icon {
+                    position: absolute;
+                    left: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+
+                .search-input {
+                    padding-left: 35px;
+                    width: 33ch;
+                    height: 36px;
+                    border-radius: 30px;
+                    border: none;
+                    outline: none;
+                    background-color: #1A1A1A;
+                    color: white;
+                }
+            }
+        }
+    }
+
+    .action-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-shrink: 0;
+
+        .ai-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .premium-btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap; // tránh chữ bị xuống dòng làm vỡ nút
+        }
+
+        .setting-and-notification-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+    }
+}

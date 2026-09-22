@@ -17,9 +17,11 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "sass": "1.97.3"
   },
   "devDependencies": {
-    "nodemon": "3.1.14"
+    "nodemon": "3.1.14",
+    "sass-embedded": "^1.104.1"
   }
 }
