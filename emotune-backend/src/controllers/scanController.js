@@ -16,7 +16,7 @@ let scanAndSuggest = async (req, res) => {
             return res.status(404).json({ error: "Loi khong tim thay" })
         }
         console.log(`[SCAN] Emotion: ${emotionResult.emotion} (Confidence: ${emotionResult.confidence})`);
-        console.log(`[SCAN] Suggested: ${result.song.title} (isEncourage: ${result.isEncouragement})`);
+        console.log(`[SCAN] Suggested: ${result.song.title} (isEncourage: ${result.isEncourage})`);
 
         return res.status(200).json(result)
     } catch (err) {

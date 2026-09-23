@@ -12,13 +12,26 @@
         width: 72px;
 
         .action-container {
-            align-items: center;
+            flex-direction: column;
+            align-items: right;
+            gap: 16px;
+            padding-top: 16px;
+
+
+        }
+
+        .playlist-list {
+            .playlist-item {
+                justify-content: center; // thêm dòng này — canh giữa cover khi ẩn info
+                padding: 8px 0; // bỏ padding ngang 16px cũ, tránh lệch trong dải 72px hẹp
+            }
         }
     }
 
     .action-container {
         display: flex;
         align-items: center;
+
         justify-content: space-between;
         padding: 16px;
 
@@ -29,8 +42,9 @@
             .toggle {
                 background: none;
                 border: none;
-                margin-right: 20px;
+                margin-right: 10px;
                 cursor: pointer;
+                margin-left: 10px;
             }
 
             .title {
@@ -51,7 +65,7 @@
             justify-content: center;
             cursor: pointer;
             flex-shrink: 0;
-            
+            padding: 0;
         }
     }
 

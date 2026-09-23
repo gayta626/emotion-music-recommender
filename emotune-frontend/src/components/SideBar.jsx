@@ -19,28 +19,28 @@ const SideBar = () => {
             <div className="action-container">
                 <div className="toggle-title">
                     <button className='toggle' onClick={() => setCollapsed(!collapsed)}>
-                        {collapsed ? <CloseToggle /> : <OpenToggle />}
+                        {!collapsed ? <CloseToggle /> : <OpenToggle />}
                     </button>
                     {!collapsed && <span className='title'>Your Library</span>}
                 </div>
-                {!collapsed && (
-                    <button className='add-btn'>
-                        <AddIcon />
-                    </button>
-                )}
+
+                <button className="add-btn">
+                    <AddIcon />
+                </button>
+
             </div>
 
-            {!collapsed && (
+            {true && (
                 <>
-                    <div className="filter-tabs">
+                    {!collapsed && <div className="filter-tabs">
                         <button className="tab active">Playlists</button>
-                    </div>
+                    </div>}
 
                     <div className="search-row">
-                        <button className="search-icon-btn">
+                        {!collapsed && <button className="search-icon-btn">
                             <SearchIcon />
-                        </button>
-                        <span className="sort-label">Recents</span>
+                        </button>}
+                        {!collapsed && <span className="sort-label">Recents</span>}
                     </div>
 
                     <div className="playlist-list">
@@ -51,10 +51,10 @@ const SideBar = () => {
                                         ? <img src={item.cover} alt={item.name} />
                                         : <div className="cover-placeholder" />}
                                 </div>
-                                <div className="info">
+                                {!collapsed && <div className="info">
                                     <span className="name">{item.name}</span>
                                     <span className="subtitle">Playlist • {item.owner}</span>
-                                </div>
+                                </div>}
                             </div>
                         ))}
                     </div>

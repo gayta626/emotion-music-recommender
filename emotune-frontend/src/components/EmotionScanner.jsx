@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
-const EmotionScanner = () => {
+const EmotionScanner = (props) => {
+    const { onResult } = props;
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [isActive, setIsActive] = useState(false);
@@ -35,7 +36,7 @@ const EmotionScanner = () => {
                 image: base64Image
             })
                 .then((response) => {
-                    console.log("Ket qua:", response.data);
+                    onResult(response.data);
 
                 })
                 .catch((err) => {
@@ -56,7 +57,7 @@ const EmotionScanner = () => {
 
     return (
         <>
-            {isActive && <span>🔴</span>}
+            {isActive && <span>hehe</span>}
             <video ref={videoRef} autoPlay style={{ display: "none" }} />
             <canvas ref={canvasRef} style={{ display: "none" }} />
         </>
