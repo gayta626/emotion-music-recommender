@@ -1,96 +1,124 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Tóm tắt phiên làm việc gần nhất (25–26/09/2026) để phiên mới tiếp tục ngay.
+> Tóm tắt phiên làm việc gần nhất (**26/09/2026**) để phiên mới tiếp tục ngay.
 > Deadline dự án: **15/10/2026**. Báo cáo Pi cho thầy: **Thứ 2 (28/09)**.
-> Vòng lặp cốt lõi đã chạy được và **đã test e2e trên PC** (26/09). Việc tiếp theo: **đưa lên Pi**.
-> Máy dev là **PC** (mọi chỗ ghi "laptop" trong log cũ = PC). **Laptop chưa dựng** — sau này dùng làm máy demo/dự phòng: cần copy `music/`, `.env`, `npm install` 2 bên, venv + pip, `git lfs pull`, chạy schema + seed.
+> Trạng thái: vòng lặp cốt lõi **chạy được trên PC và trên Pi**. Đang thiết kế **mạch GPIO** (LED RGB + nút bấm) — mới duyệt xong phần phần cứng.
+> Máy dev là **PC** (log cũ ghi "laptop" = PC). **Laptop chưa dựng** — sau dùng làm máy demo/dự phòng.
 > Người dùng muốn **tự code**, Claude hướng dẫn từng nhiệm vụ nhỏ (gợi ý, không đưa code sẵn) trừ khi được nhờ làm trực tiếp.
 
 ---
 
 ## 1. Mục tiêu của phiên này
-- Khép vòng lặp trên PC: camera → cảm xúc → gợi ý → **phát nhạc** → đo thời gian nghe → `/listen-report` → quét lại.
+- Kiểm chứng vòng lặp trên PC (DB mới + test trình duyệt), push.
+- Đưa toàn bộ hệ thống lên Raspberry Pi và đo độ trễ AI.
+- Bắt đầu thiết kế mạch GPIO.
 
 ## 2. Những việc đã làm xong
-### Backend `emotune-backend/`
+### Phiên 26/09
+| Việc | Chi tiết |
+|---|---|
+| DB trên PC | Chạy lại `emotune-backend/db/schema.sql` + `db/seed.sql` (DBeaver **Alt+X**) → 10 bài, có index UNIQUE `songs_file_path_key`. |
+| Test e2e trên PC | `mood_history` ra đúng `suggested` / `good` / `bad`, mỗi bài 1 dòng `suggested`. |
+| `NOTES.md` | Cập nhật + push (commit `b1b39a4`, `8b95a5e`). |
+| **Pi chạy được toàn bộ** | Pi 5, user `vinh`, hostname `raspberrypi`, IP `192.168.1.191`. git pull + `git lfs pull` (model 328M), DB **`emotune`** (schema + seed, 10 bài), `music/` scp từ PC, venv Flask, backend, frontend. |
+| Độ trễ AI trên Pi | Log Flask `/predict` đều mỗi 3s, trả 200 → xử lý **< 3s**, không dồn request. |
+| Camera Pi | Webcam **Logitech C270** cắm USB Pi → `/dev/video0`. |
+| Âm thanh Pi | **Loa Bluetooth** (Pi 5 không có jack 3.5mm). |
+| Màn hình Pi | **VNC**: wayvnc (`raspi-config nonint do_vnc 0`), auto-login desktop (`do_boot_behaviour B4`); PC dùng **RealVNC Viewer** → `192.168.1.191`. |
+| Test trên Pi | Chromium trên Pi → `localhost:5173`: nhận mặt → phát nhạc → Next → `mood_history` có `suggested`, `bad`, rồi quét lại. |
+
+### Code hiện có (từ phiên 25/09, không đổi trong phiên này)
+**Backend `emotune-backend/`**
 | File | Nội dung |
 |---|---|
-| `db/schema.sql` | 4 bảng. `songs.file_path` giờ **UNIQUE**. ⚠️ Có `DROP TABLE` ở đầu. |
-| `db/seed.sql` | **10 bài thật** (2 bài × 5 cảm xúc), `ON CONFLICT (file_path) DO NOTHING` nên chạy lại không nhân đôi. |
-| `scripts/rename-music.js` (mới) + `npm run rename-music [-- --apply]` | Đổi tên mp3 trong `music/` sang dạng `noi_nay_co_anh.mp3`. Mặc định chạy thử, `--apply` mới đổi thật. |
-| `src/server.js` | `app.use("/music", express.static(...music))`. |
-| `music/` | 10 mp3 đã đổi tên (**không có trong git**, `music/.gitignore`). |
+| `db/schema.sql` | 4 bảng. `songs.file_path` **UNIQUE**. ⚠️ Có `DROP TABLE` ở đầu (xoá dữ liệu cũ). |
+| `db/seed.sql` | 10 bài thật (2 × 5 cảm xúc), `ON CONFLICT (file_path) DO NOTHING`. |
+| `scripts/rename-music.js` | `npm run rename-music [-- --apply]` đổi tên mp3. |
+| `src/server.js` | `app.use("/music", express.static(...))`. |
+| `music/` | 10 mp3 (**không có trong git**). |
 | `src/services/suggestService.js` | `generateSuggestion` trả thêm `emotion: targetEmotion`. |
-| `src/model/suggestModel.js` | `getMoodTrend` chỉ đếm `action = 'suggested'` (trước đó đếm cả good/bad nên lệch). |
+| `src/services/emotionService.js` | Gọi Flask `http://localhost:5000/predict`. |
+| `src/model/suggestModel.js` | `getMoodTrend` chỉ đếm `action = 'suggested'`. |
 
-Phân loại nhạc: happy = co_chac_yeu_la_day, muon_roi_ma_sao_con · sad = gia_nhu, kho_giu_chan_thanh · angry = meditation, reduce_stress (nhạc thư giãn) · surprise = blank_space, cilu · neutral = giac_mo_co_that, neu_nhu_ta_chang_con_feat_a_ap_uot_mi.
+Phân loại nhạc: happy = co_chac_yeu_la_day, muon_roi_ma_sao_con · sad = gia_nhu, kho_giu_chan_thanh · angry = meditation, reduce_stress · surprise = blank_space, cilu · neutral = giac_mo_co_that, neu_nhu_ta_chang_con_feat_a_ap_uot_mi.
 
-### Frontend `emotune-frontend/src/`
+**Frontend `emotune-frontend/src/`**
 | File | Nội dung |
 |---|---|
-| `config.js` (mới) | `API_URL = "http://localhost:8080"`. Lên Pi chỉ sửa 1 chỗ này. |
-| `components/EmotionScanner.jsx` | Dùng `API_URL`. Cờ `cancelled` trong cleanup để camera trả về trễ (StrictMode) vẫn bị tắt. |
-| `components/MusicPlayer.jsx` (mới) | Props `{data, onFinish}`. `<audio autoPlay controls>`, nút **⏭ Bài tiếp**. `finishAndSend`: **số giây thực nghe** = tổng `audio.played` (tua không tính), `finishPercent = min(listened/duration, 1)` (NaN → 0), gửi `/listen-report`, `.finally(onFinish)`. `reportedRef` chống gửi trùng. `onError` (thiếu file) → bỏ qua, không chấm điểm. |
-| `pages/HomePage.jsx` | Nút **▶ Bắt đầu** (Chrome chặn autoplay khi chưa có thao tác). `{!suggestResult && <EmotionScanner/>}`: đang phát thì gỡ scanner (cleanup tắt camera). `setSuggestResult(prev => prev ?? data)` bỏ kết quả về trễ. Không thấy mặt → hiện `notice`, không crash. `playNextSong` → `setSuggestResult(null)`. |
+| `config.js` | `API_URL = "http://localhost:8080"`. |
+| `components/EmotionScanner.jsx` | Quét mỗi 3s, cờ `cancelled` tắt camera về trễ. |
+| `components/MusicPlayer.jsx` | Đo **giây thực nghe** (`audio.played`), gửi `/listen-report`, nút ⏭ Next. |
+| `pages/HomePage.jsx` | Nút ▶ Bắt đầu; đang phát thì gỡ scanner; `prev ?? data` bỏ kết quả trễ. |
 
 ## 3. Các quyết định quan trọng và lý do
 | Quyết định | Lý do |
 |---|---|
-| `finishPercent` tính theo **giây thực nghe** (`audio.played`), không phải `currentTime` | Ý của người dùng: tua tới cuối không được tính là nghe hết (good). |
-| Không chia thư mục con trong `music/` | Cảm xúc lấy từ cột `songs.emotion`, file chỉ cần khớp `file_path`. |
-| Tự động hoàn toàn: có bài → gỡ scanner; hết bài/Next → report → quét lại | Hợp với Pi không có người bấm, không ghi rác `suggested` mỗi 3 giây. |
-| `/listen-report` gửi `targetEmotion` | `preferences` được tra theo targetEmotion. |
-| Chỉ Play/Pause (controls) + Next, không có nút 👎 | Next sớm (<40%) đã là `bad`. |
+| Dev trên **PC**, laptop để sau làm máy demo/dự phòng | PC mạnh hơn; code qua git nên đổi máy dễ. |
+| Mở web bằng **Chromium ngay trên Pi** (`localhost:5173`), xem qua VNC | Camera chạy trong trình duyệt → phải là trình duyệt trên Pi. Chrome chặn camera với `http://192.168.1.191` (không phải localhost/https). `API_URL` giữ `localhost`. |
+| Dùng **webcam USB C270**, chưa dùng camera Pi (CSI) | Chromium khó nhận CSI (libcamera); model được train bằng ảnh webcam; ảnh bị thu về 224×224 nên độ nét camera không quan trọng. |
+| **VNC** thay vì màn hình riêng | Chỉ có 1 màn hình (đang cắm PC). |
+| SSH bằng **Git Bash** | ssh của cmd Windows 11 (bản cũ) bị "Connection closed" với Pi. |
+| **Loa Bluetooth** | Pi 5 không có jack 3.5mm. |
+| Mạch GPIO: **LED RGB báo cảm xúc + 1 nút bấm**, làm LED trước | Chưa rõ thầy có bắt buộc mạch cho thứ 2 không → làm bản nhỏ, tách rời, không phá vòng lặp đang chạy. |
+| GPIO bằng **service Python riêng** (`gpio-service/`, Flask + `gpiozero`, cổng 5001) — "cách 1" | Tách biệt: service chết/không chạy (trên PC) thì backend bỏ qua lỗi. Không nhét vào Flask AI (trộn trách nhiệm, LED đổi theo mọi lần quét). Không dùng Node GPIO (`onoff` không hỗ trợ tốt Pi 5). |
 
-## 4. Các lệnh đã chạy / cách chạy lại
-Đã chạy trong phiên:
+## 4. Các lệnh đã chạy và cách chạy lại dự án
+### Đã chạy trong phiên (trên Pi, qua SSH Git Bash)
 ```bash
-cd emotune-backend && npm run rename-music -- --apply     # đổi tên 10 mp3
-# DBeaver: schema.sql + seed.sql (bản 10 bài thật)
-cd emotune-frontend && npx eslint src && npx vite build    # kiểm tra frontend: pass (1 warning)
-git commit 1daf1bc "Add music player loop ..."             # đã push
-# 26/09: chạy lại schema + seed (DBeaver Alt+X) -> 10 bài, có UNIQUE file_path
-# Test e2e trên PC: mood_history ra suggested / good / bad đúng, mỗi bài chỉ 1 dòng suggested
+sudo apt install -y git-lfs && git lfs install && git lfs pull
+sudo -u postgres psql -d emotune -f db/schema.sql
+sudo -u postgres psql -d emotune -f db/seed.sql
+python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+sudo raspi-config nonint do_vnc 0
+sudo raspi-config nonint do_boot_behaviour B4
+v4l2-ctl --list-devices          # thấy "C270 HD WEBCAM" /dev/video0
+# Trên PC (Git Bash):
+scp -r emotune-backend/music vinh@192.168.1.191:~/emotion-music-recommender/emotune-backend/
 ```
-Chạy lại dự án:
+
+### Chạy lại trên PC
 ```bash
-# DB (DBeaver: mở file -> Alt+X): db/schema.sql rồi db/seed.sql
-# Backend (.env: PORT=8080, DB_HOST=localhost, DB_PORT=5432, DB_USER=postgres, DB_NAME=postgres)
-cd emotune-backend && npm run dev
-# Flask AI (:5000)
-cd emotion-scanner && venv\Scripts\activate && python 3_backend_server.py
-# Frontend (:5173)
-cd emotune-frontend && npm run dev
+# DB (DBeaver, Alt+X): db/schema.sql rồi db/seed.sql   (.env PC: DB_NAME=postgres)
+cd emotion-scanner && venv\Scripts\activate && python 3_backend_server.py   # :5000
+cd emotune-backend && npm run dev                                           # :8080
+cd emotune-frontend && npm run dev                                          # :5173
 ```
-Test: bấm Bắt đầu → nhìn camera → nhạc phát, đèn webcam tắt → Next sớm → `bad` trong `mood_history`.
-Console `document.querySelector("audio").playbackRate = 16` để nghe nhanh hết bài → `good`.
 
-## 5. Lỗi đang gặp / việc còn dở
-- Camera chỉ bật **sau khi bấm ▶ Bắt đầu**; video ẩn nên dấu hiệu là đèn webcam + chữ "Đang quét cảm xúc". Không quét được → F12 Console xem `Loi :` (NotAllowed / NotReadable = app khác giữ camera).
-- ESLint warning: `EmotionScanner` useEffect thiếu dependency `onResult` (vô hại).
-- Chưa có style/giao diện đẹp cho player; `Setting.jsx` vẫn placeholder.
-
-## 6. Bước tiếp theo
-0. ✅ Trên PC: chạy lại DB (schema + seed), test trình duyệt (ra đủ suggested / good / bad) — xong 26/09.
-
-### ✅ Pi — vòng lặp đã chạy (26/09 tối)
-Pi 5, user `vinh`, hostname `raspberrypi`, IP 192.168.1.191. DB tên **`emotune`** (khác PC).
-- Bước 1–6 xong: git pull + `git lfs pull` (phải `sudo apt install git-lfs` trước), schema+seed (10 bài), scp `music/` từ PC, venv Flask, backend, frontend, **độ trễ AI < 3s** (log `/predict` đều mỗi 3s).
-- Camera: webcam **Logitech C270** (`/dev/video0`). Camera Pi (CSI) chưa nhận (`v4l2-ctl` không thấy) — Chromium cũng khó dùng CSI, để sau.
-- Âm thanh: **loa Bluetooth** (Pi 5 không có jack 3.5mm).
-- Màn hình: **VNC** (wayvnc bật bằng `raspi-config nonint do_vnc 0`, auto-login desktop `do_boot_behaviour B4`); PC dùng RealVNC Viewer → 192.168.1.191. Chromium trên Pi mở `localhost:5173` (Chrome chặn camera nếu mở `http://192.168.1.191` từ máy khác).
-- SSH từ PC: dùng **Git Bash** (`ssh vinh@192.168.1.191`); ssh của cmd Windows bị "Connection closed".
-
-Chạy lại trên Pi (3 cửa sổ SSH):
+### Chạy lại trên Pi (demo)
+1. Bật Pi, bật loa Bluetooth, cắm C270.
+2. PC mở 3 terminal **Git Bash** → `ssh vinh@192.168.1.191` mỗi cái:
 ```bash
 cd ~/emotion-music-recommender/emotion-scanner && source venv/bin/activate && python 3_backend_server.py
 cd ~/emotion-music-recommender/emotune-backend && npm start
 cd ~/emotion-music-recommender/emotune-frontend && npm run dev
-sudo -u postgres psql -d emotune -c "select id, emotion, action from mood_history order by id"   # kiểm tra
 ```
+3. RealVNC Viewer → `192.168.1.191` → Chromium → `localhost:5173` → ▶ Bắt đầu → Allow camera.
+4. Kiểm tra: `sudo -u postgres psql -d emotune -c "select id, emotion, action, created_at from mood_history order by id"`
 
-### Tiếp theo
-1. Kiểm tra `mood_history` trên Pi có `bad`/`good` sau khi Next / nghe hết.
-2. `EmotionScanner`: vẫn gửi ảnh mỗi 3s khi camera chưa mở (ảnh đen → "không phát hiện khuôn mặt") → nên bỏ qua khi chưa có stream.
-3. Nếu còn thời gian: GPIO (`gpiozero`), tự khởi động 3 server khi Pi bật.
-4. Sau báo cáo: camera Pi, Mood Journey chart, voice control, trang Settings, style player. Dựng laptop làm máy dự phòng.
+## 5. Lỗi đang gặp hoặc việc còn dở
+- **Thiết kế GPIO dở dang**: mới duyệt **Phần 1 (phần cứng)**; còn Phần 2 (service GPIO) và Phần 3 (nối vào hệ thống + test), sau đó viết spec → kế hoạch.
+- Chưa chắc có điện trở / giá trị bao nhiêu → chụp ảnh linh kiện gửi Claude đọc vạch màu. Chưa biết LED RGB là **catot chung hay anot chung** → thử khi nối.
+- `mood_history` trên Pi: dòng 1 và 2 đều `happy suggested` cho 1 bài → chưa rõ là lần test cũ hay 2 request quét gần như cùng lúc (backend ghi cả 2, frontend bỏ 1). Xem `created_at`.
+- `EmotionScanner` vẫn gửi ảnh mỗi 3s khi camera chưa mở (ảnh đen → "Không phát hiện khuôn mặt") → nên bỏ qua khi chưa có stream.
+- Camera Pi (CSI) không được nhận (`v4l2-ctl` không thấy) — có thể cáp lỏng; để sau.
+- 3 server phải mở tay qua 3 SSH mỗi lần bật Pi.
+- ESLint warning `onResult` dependency (vô hại); chưa style player; `Setting.jsx` placeholder.
+- Laptop chưa dựng.
+
+### Thiết kế mạch đã duyệt (Phần 1 — phần cứng)
+| Linh kiện | Chân Pi (số vật lý) |
+|---|---|
+| LED R / G / B | GPIO17 (11) / GPIO27 (13) / GPIO22 (15), **mỗi màu 1 điện trở 220–330Ω** |
+| Chân chung LED | GND (9) nếu catot chung, 3.3V (1) nếu anot chung |
+| Nút (Bắt đầu khi chưa phát / Next khi đang phát) | GPIO5 (29) ↔ GND (30), dùng pull-up trong |
+
+Màu: happy vàng (R+G) · sad xanh dương (B) · angry đỏ (R) · surprise tím (R+B) · neutral trắng · chờ = tắt.
+⚠️ Tắt Pi trước khi cắm/rút dây.
+
+## 6. Bước tiếp theo nên làm
+1. **Trước thứ 2:** tập chạy demo từ đầu 1 lượt (mục 4 "Chạy lại trên Pi"); hỏi thầy có cần mạch cho buổi thứ 2 không.
+2. Tiếp tục brainstorm GPIO: **Phần 2 — service GPIO** (API `POST /led {emotion}`, nút bấm, cài `gpiozero`/`lgpio` trong venv trên Pi 5), **Phần 3 — backend gọi `/led` sau `generateSuggestion` (bỏ qua lỗi), cách nút báo sang trình duyệt, test**. Sau đó viết spec + kế hoạch.
+3. Chụp ảnh linh kiện (điện trở, LED RGB) → xác định giá trị / loại.
+4. Sửa nhỏ: `EmotionScanner` bỏ qua khi chưa có stream; kiểm tra lỗi ghi `suggested` 2 lần.
+5. Tự khởi động 3 server khi Pi bật (systemd) — tiện cho demo.
+6. Sau báo cáo: camera Pi, Mood Journey chart, voice control, trang Settings, style player, dựng laptop dự phòng.
