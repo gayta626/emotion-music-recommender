@@ -73,13 +73,24 @@ Console `document.querySelector("audio").playbackRate = 16` để nghe nhanh h�
 ## 6. Bước tiếp theo
 0. ✅ Trên PC: chạy lại DB (schema + seed), test trình duyệt (ra đủ suggested / good / bad) — xong 26/09.
 
-Lên Pi (192.168.1.191, check `hostname -I`):
-1. `cd ~/emotion-music-recommender && git pull && git lfs pull` (model `emotion-scanner/my_emotion_model/model.safetensors` ~328MB).
-2. Chạy `emotune-backend/db/schema.sql` + `seed.sql` (thay schema gõ tay bằng nano cũ).
-3. Từ **PC** (nhạc nằm trên PC): `scp -r emotune-backend/music <user>@192.168.1.191:~/emotion-music-recommender/emotune-backend/`.
-4. Python venv + cài thư viện → `python 3_backend_server.py`, check `GET :5000/health`.
-5. Backend `npm install && npm start`; frontend `npm install && npm run dev -- --host`.
-   `API_URL`: mở trình duyệt trên Pi → giữ `localhost`; mở từ máy khác → `http://192.168.1.191:8080`.
-6. **Đo độ trễ AI trên Pi** (rủi ro lớn nhất; nếu > 3s thì request dồn → tăng interval quét).
-7. Nếu còn thời gian: GPIO (`gpiozero`), loa Bluetooth (`bluetoothctl`).
-8. Sau báo cáo: Mood Journey chart, voice control, trang Settings, style player.
+### ✅ Pi — vòng lặp đã chạy (26/09 tối)
+Pi 5, user `vinh`, hostname `raspberrypi`, IP 192.168.1.191. DB tên **`emotune`** (khác PC).
+- Bước 1–6 xong: git pull + `git lfs pull` (phải `sudo apt install git-lfs` trước), schema+seed (10 bài), scp `music/` từ PC, venv Flask, backend, frontend, **độ trễ AI < 3s** (log `/predict` đều mỗi 3s).
+- Camera: webcam **Logitech C270** (`/dev/video0`). Camera Pi (CSI) chưa nhận (`v4l2-ctl` không thấy) — Chromium cũng khó dùng CSI, để sau.
+- Âm thanh: **loa Bluetooth** (Pi 5 không có jack 3.5mm).
+- Màn hình: **VNC** (wayvnc bật bằng `raspi-config nonint do_vnc 0`, auto-login desktop `do_boot_behaviour B4`); PC dùng RealVNC Viewer → 192.168.1.191. Chromium trên Pi mở `localhost:5173` (Chrome chặn camera nếu mở `http://192.168.1.191` từ máy khác).
+- SSH từ PC: dùng **Git Bash** (`ssh vinh@192.168.1.191`); ssh của cmd Windows bị "Connection closed".
+
+Chạy lại trên Pi (3 cửa sổ SSH):
+```bash
+cd ~/emotion-music-recommender/emotion-scanner && source venv/bin/activate && python 3_backend_server.py
+cd ~/emotion-music-recommender/emotune-backend && npm start
+cd ~/emotion-music-recommender/emotune-frontend && npm run dev
+sudo -u postgres psql -d emotune -c "select id, emotion, action from mood_history order by id"   # kiểm tra
+```
+
+### Tiếp theo
+1. Kiểm tra `mood_history` trên Pi có `bad`/`good` sau khi Next / nghe hết.
+2. `EmotionScanner`: vẫn gửi ảnh mỗi 3s khi camera chưa mở (ảnh đen → "không phát hiện khuôn mặt") → nên bỏ qua khi chưa có stream.
+3. Nếu còn thời gian: GPIO (`gpiozero`), tự khởi động 3 server khi Pi bật.
+4. Sau báo cáo: camera Pi, Mood Journey chart, voice control, trang Settings, style player. Dựng laptop làm máy dự phòng.
