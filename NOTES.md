@@ -41,7 +41,15 @@ Phân loại nhạc: happy = co_chac_yeu_la_day, muon_roi_ma_sao_con · sad = gi
 | `/listen-report` gửi `targetEmotion` | `preferences` được tra theo targetEmotion. |
 | Chỉ Play/Pause (controls) + Next, không có nút 👎 | Next sớm (<40%) đã là `bad`. |
 
-## 4. Cách chạy lại
+## 4. Các lệnh đã chạy / cách chạy lại
+Đã chạy trong phiên:
+```bash
+cd emotune-backend && npm run rename-music -- --apply     # đổi tên 10 mp3
+# DBeaver: schema.sql + seed.sql (bản 10 bài thật)
+cd emotune-frontend && npx eslint src && npx vite build    # kiểm tra frontend: pass (1 warning)
+git commit 1daf1bc "Add music player loop ..."             # CHƯA push
+```
+Chạy lại dự án:
 ```bash
 # DB (DBeaver: mở file -> Alt+X): db/schema.sql rồi db/seed.sql
 # Backend (.env: PORT=8080, DB_HOST=localhost, DB_PORT=5432, DB_USER=postgres, DB_NAME=postgres)
@@ -55,12 +63,17 @@ Test: bấm Bắt đầu → nhìn camera → nhạc phát, đèn webcam tắt �
 Console `document.querySelector("audio").playbackRate = 16` để nghe nhanh hết bài → `good`.
 
 ## 5. Lỗi đang gặp / việc còn dở
+- ❗ Commit `1daf1bc` **chưa push** → phải `git push` trước khi `git pull` trên Pi.
+- ❗ Chưa kiểm chứng `schema.sql` + `seed.sql` mới (psql trên Windows đòi mật khẩu → dùng DBeaver). Kỳ vọng: 10 bài, chạy seed lần 2 vẫn 10.
 - ❗ **Chưa test end-to-end trên trình duyệt** sau khi thêm nút Bắt đầu / Next (đã qua eslint + build).
 - ❗ DB local đang chạy bản schema cũ (chưa UNIQUE `file_path`) → chạy lại `schema.sql` + `seed.sql`.
 - ESLint warning: `EmotionScanner` useEffect thiếu dependency `onResult` (vô hại).
 - Chưa có style/giao diện đẹp cho player; `Setting.jsx` vẫn placeholder.
 
-## 6. Bước tiếp theo — lên Pi (192.168.1.191, check `hostname -I`)
+## 6. Bước tiếp theo
+0. Trên laptop: chạy lại DB (schema + seed), test trình duyệt (Bắt đầu → phát → Next → `bad`), rồi `git push` (có thể commit kèm NOTES.md này).
+
+Lên Pi (192.168.1.191, check `hostname -I`):
 1. `cd ~/emotion-music-recommender && git pull && git lfs pull` (model `emotion-scanner/my_emotion_model/model.safetensors` ~328MB).
 2. Chạy `emotune-backend/db/schema.sql` + `seed.sql` (thay schema gõ tay bằng nano cũ).
 3. Từ laptop: `scp -r emotune-backend/music <user>@192.168.1.191:~/emotion-music-recommender/emotune-backend/`.
