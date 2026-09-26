@@ -2,13 +2,14 @@
 
 > Tóm tắt phiên làm việc gần nhất (25–26/09/2026) để phiên mới tiếp tục ngay.
 > Deadline dự án: **15/10/2026**. Báo cáo Pi cho thầy: **Thứ 2 (28/09)**.
-> Vòng lặp cốt lõi đã chạy được **trên laptop**. Việc tiếp theo: **đưa lên Pi**.
+> Vòng lặp cốt lõi đã chạy được và **đã test e2e trên PC** (26/09). Việc tiếp theo: **đưa lên Pi**.
+> Máy dev là **PC** (mọi chỗ ghi "laptop" trong log cũ = PC). **Laptop chưa dựng** — sau này dùng làm máy demo/dự phòng: cần copy `music/`, `.env`, `npm install` 2 bên, venv + pip, `git lfs pull`, chạy schema + seed.
 > Người dùng muốn **tự code**, Claude hướng dẫn từng nhiệm vụ nhỏ (gợi ý, không đưa code sẵn) trừ khi được nhờ làm trực tiếp.
 
 ---
 
 ## 1. Mục tiêu của phiên này
-- Khép vòng lặp trên laptop: camera → cảm xúc → gợi ý → **phát nhạc** → đo thời gian nghe → `/listen-report` → quét lại.
+- Khép vòng lặp trên PC: camera → cảm xúc → gợi ý → **phát nhạc** → đo thời gian nghe → `/listen-report` → quét lại.
 
 ## 2. Những việc đã làm xong
 ### Backend `emotune-backend/`
@@ -47,7 +48,9 @@ Phân loại nhạc: happy = co_chac_yeu_la_day, muon_roi_ma_sao_con · sad = gi
 cd emotune-backend && npm run rename-music -- --apply     # đổi tên 10 mp3
 # DBeaver: schema.sql + seed.sql (bản 10 bài thật)
 cd emotune-frontend && npx eslint src && npx vite build    # kiểm tra frontend: pass (1 warning)
-git commit 1daf1bc "Add music player loop ..."             # CHƯA push
+git commit 1daf1bc "Add music player loop ..."             # đã push
+# 26/09: chạy lại schema + seed (DBeaver Alt+X) -> 10 bài, có UNIQUE file_path
+# Test e2e trên PC: mood_history ra suggested / good / bad đúng, mỗi bài chỉ 1 dòng suggested
 ```
 Chạy lại dự án:
 ```bash
@@ -63,20 +66,17 @@ Test: bấm Bắt đầu → nhìn camera → nhạc phát, đèn webcam tắt �
 Console `document.querySelector("audio").playbackRate = 16` để nghe nhanh hết bài → `good`.
 
 ## 5. Lỗi đang gặp / việc còn dở
-- ❗ Commit `1daf1bc` **chưa push** → phải `git push` trước khi `git pull` trên Pi.
-- ❗ Chưa kiểm chứng `schema.sql` + `seed.sql` mới (psql trên Windows đòi mật khẩu → dùng DBeaver). Kỳ vọng: 10 bài, chạy seed lần 2 vẫn 10.
-- ❗ **Chưa test end-to-end trên trình duyệt** sau khi thêm nút Bắt đầu / Next (đã qua eslint + build).
-- ❗ DB local đang chạy bản schema cũ (chưa UNIQUE `file_path`) → chạy lại `schema.sql` + `seed.sql`.
+- Camera chỉ bật **sau khi bấm ▶ Bắt đầu**; video ẩn nên dấu hiệu là đèn webcam + chữ "Đang quét cảm xúc". Không quét được → F12 Console xem `Loi :` (NotAllowed / NotReadable = app khác giữ camera).
 - ESLint warning: `EmotionScanner` useEffect thiếu dependency `onResult` (vô hại).
 - Chưa có style/giao diện đẹp cho player; `Setting.jsx` vẫn placeholder.
 
 ## 6. Bước tiếp theo
-0. Trên laptop: chạy lại DB (schema + seed), test trình duyệt (Bắt đầu → phát → Next → `bad`), rồi `git push` (có thể commit kèm NOTES.md này).
+0. ✅ Trên PC: chạy lại DB (schema + seed), test trình duyệt (ra đủ suggested / good / bad) — xong 26/09.
 
 Lên Pi (192.168.1.191, check `hostname -I`):
 1. `cd ~/emotion-music-recommender && git pull && git lfs pull` (model `emotion-scanner/my_emotion_model/model.safetensors` ~328MB).
 2. Chạy `emotune-backend/db/schema.sql` + `seed.sql` (thay schema gõ tay bằng nano cũ).
-3. Từ laptop: `scp -r emotune-backend/music <user>@192.168.1.191:~/emotion-music-recommender/emotune-backend/`.
+3. Từ **PC** (nhạc nằm trên PC): `scp -r emotune-backend/music <user>@192.168.1.191:~/emotion-music-recommender/emotune-backend/`.
 4. Python venv + cài thư viện → `python 3_backend_server.py`, check `GET :5000/health`.
 5. Backend `npm install && npm start`; frontend `npm install && npm run dev -- --host`.
    `API_URL`: mở trình duyệt trên Pi → giữ `localhost`; mở từ máy khác → `http://192.168.1.191:8080`.
