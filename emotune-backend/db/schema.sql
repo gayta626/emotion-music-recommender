@@ -10,7 +10,7 @@ CREATE TABLE songs (
     id          SERIAL PRIMARY KEY,
     title       TEXT NOT NULL,
     artist      TEXT,
-    file_path   TEXT NOT NULL,
+    file_path   TEXT NOT NULL UNIQUE,
     emotion     TEXT NOT NULL CHECK (emotion IN ('neutral', 'happy', 'sad', 'angry', 'surprise')),
     energy      REAL CHECK (energy BETWEEN 0 AND 1)
 );

@@ -51,6 +51,7 @@ let generateSuggestion = async (emotion, confidence) => {
     await suggestModel.logSuggestion(emotion, confidence, chosenSong.id)
     return {
         song: chosenSong,
+        emotion: trendResult.targetEmotion,
         message: suggestMessage,
         isEncourage: trendResult.isEncourage
     }

@@ -6,6 +6,7 @@ let getMoodTrend = async (days) => {
             `SELECT emotion, COUNT(*) AS cnt
              FROM mood_history
              WHERE created_at >= NOW() - ($1 || ' days')::interval
+               AND action = 'suggested'
              GROUP BY emotion`,
             [days]
         )

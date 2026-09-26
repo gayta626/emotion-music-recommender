@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-
+import { API_URL } from '../config';
 const EmotionScanner = (props) => {
     const { onResult } = props;
     const videoRef = useRef(null);
@@ -9,9 +9,14 @@ const EmotionScanner = (props) => {
 
     useEffect(() => {
         let stream;
-
+        let cancelled = false
         navigator.mediaDevices.getUserMedia({ video: true })
             .then((mediaStream) => {
+                if (cancelled) {
+                    // camera ve tre, luc nay khong ai dung nua -> tat ngay
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    return;
+                }
                 stream = mediaStream;
                 videoRef.current.srcObject = mediaStream;
                 setIsActive(true);
@@ -32,7 +37,7 @@ const EmotionScanner = (props) => {
 
             const base64Image = canvas.toDataURL("image/jpeg", 0.8);
 
-            axios.post('http://localhost:8080/scan-and-suggest', {
+            axios.post(`${API_URL}/scan-and-suggest`, {
                 image: base64Image
             })
                 .then((response) => {
@@ -47,6 +52,7 @@ const EmotionScanner = (props) => {
         const intervalId = setInterval(captureAndSend, 3000);
 
         return () => {
+            cancelled = true;
             clearInterval(intervalId);
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
@@ -57,7 +63,7 @@ const EmotionScanner = (props) => {
 
     return (
         <>
-            {isActive && <span>hehe</span>}
+            {isActive && <span>Đang quét cảm xúc</span>}
             <video ref={videoRef} autoPlay style={{ display: "none" }} />
             <canvas ref={canvasRef} style={{ display: "none" }} />
         </>
