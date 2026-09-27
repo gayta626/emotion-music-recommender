@@ -33,7 +33,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit
 from transformers import (
     AutoImageProcessor,
     AutoModelForImageClassification,
@@ -51,6 +51,9 @@ OUTPUT_DIR = "my_emotion_model"
 BASE_MODEL = "trpakov/vit-face-expression"
 
 EMOTIONS = ["neutral", "happy", "sad", "angry", "surprise"]
+
+# Số NGƯỜI được giữ riêng làm tập validation (không có mặt trong tập train)
+VAL_PEOPLE = 2
 
 SEED = 42
 random.seed(SEED)
@@ -73,6 +76,26 @@ def load_dataset_paths():
             paths.append(os.path.join(emo_dir, f))
             labels.append(emo)
     return paths, labels
+
+
+def person_of(path):
+    """Tên người chụp, lấy từ tên file dạng <ten>_<camxuc>_<timestamp>.jpg (1_capture_data.py)."""
+    return os.path.basename(path).rsplit("_", 2)[0]
+
+
+def split_by_person(paths, labels):
+    """
+    Chia train/validation theo NGƯỜI thay vì theo ảnh ngẫu nhiên.
+    Nếu chia theo ảnh, cùng 1 người có mặt ở cả train lẫn validation (identity leakage)
+    -> accuracy đo được cao ảo (đo thực tế: 92.5% trên người đã học, chỉ 71.5% trên người lạ).
+    Chia theo người giúp validation phản ánh đúng khả năng nhận diện khuôn mặt MỚI.
+    """
+    people = [person_of(p) for p in paths]
+    splitter = GroupShuffleSplit(n_splits=1, test_size=VAL_PEOPLE, random_state=SEED)
+    train_idx, val_idx = next(splitter.split(paths, labels, groups=people))
+    pick = lambda idx, items: [items[i] for i in idx]
+    val_people = sorted({people[i] for i in val_idx})
+    return pick(train_idx, paths), pick(val_idx, paths), pick(train_idx, labels), pick(val_idx, labels), val_people
 
 
 class FaceEmotionDataset(Dataset):
@@ -149,10 +172,9 @@ def main():
     print(f"Các cảm xúc sẽ huấn luyện: {present_emotions}")
     print(f"Tổng số ảnh: {len(paths)}\n")
 
-    train_paths, val_paths, train_labels, val_labels = train_test_split(
-        paths, labels, test_size=0.15, random_state=SEED, stratify=labels
-    )
-    print(f"Tập train: {len(train_paths)} ảnh | Tập validation: {len(val_paths)} ảnh\n")
+    train_paths, val_paths, train_labels, val_labels, val_people = split_by_person(paths, labels)
+    print(f"Tập train: {len(train_paths)} ảnh | Tập validation: {len(val_paths)} ảnh")
+    print(f"Người dùng làm validation (model KHÔNG được học): {', '.join(val_people)}\n")
 
     print(f"Đang tải model gốc '{BASE_MODEL}' (đã biết cảm xúc từ FER2013, sẽ fine-tune tiếp theo bạn)...")
     processor = AutoImageProcessor.from_pretrained(BASE_MODEL)

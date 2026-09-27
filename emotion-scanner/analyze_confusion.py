@@ -14,13 +14,14 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 DATA_DIR = "data"
 MODEL_DIR = "my_emotion_model"
 EMOTIONS = ["neutral", "happy", "sad", "angry", "surprise"]
 SEED = 42
+VAL_PEOPLE = 2  # phải giống 2_finetune_model.py
 
 
 def load_dataset_paths():
@@ -36,6 +37,11 @@ def load_dataset_paths():
     return paths, labels
 
 
+def person_of(path):
+    """Tên người chụp, lấy từ tên file dạng <ten>_<camxuc>_<timestamp>.jpg."""
+    return os.path.basename(path).rsplit("_", 2)[0]
+
+
 def main():
     print("Đang tải model...")
     processor = AutoImageProcessor.from_pretrained(MODEL_DIR)
@@ -46,11 +52,14 @@ def main():
     present_emotions = [id2label[i] for i in range(len(id2label))]
 
     paths, labels = load_dataset_paths()
-    # Lấy lại ĐÚNG tập validation như lúc train (cùng seed, cùng tỉ lệ chia)
-    # để đánh giá công bằng, không lẫn ảnh đã train vào
-    _, val_paths, _, val_labels = train_test_split(
-        paths, labels, test_size=0.15, random_state=SEED, stratify=labels
-    )
+    # Lấy lại ĐÚNG tập validation như lúc train (chia theo người, cùng seed)
+    # để đánh giá công bằng, không lẫn người đã train vào
+    people = [person_of(p) for p in paths]
+    splitter = GroupShuffleSplit(n_splits=1, test_size=VAL_PEOPLE, random_state=SEED)
+    _, val_idx = next(splitter.split(paths, labels, groups=people))
+    val_paths = [paths[i] for i in val_idx]
+    val_labels = [labels[i] for i in val_idx]
+    print(f"Người trong tập validation: {', '.join(sorted({people[i] for i in val_idx}))}")
 
     print(f"Đang đánh giá trên {len(val_paths)} ảnh validation...\n")
 

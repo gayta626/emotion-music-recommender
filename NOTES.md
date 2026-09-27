@@ -24,6 +24,20 @@
 | `gpio-service/gpio_service.py` (mới) | Flask :5001 + gpiozero. `POST /led {state}` (`off`/`scanning` = trắng nhấp nháy/5 cảm xúc), `GET /buttons` → bộ đếm `{next, pause}`. `LED_COMMON_ANODE=1` nếu LED anot chung. Đã test bằng mock pin trên laptop. |
 | Frontend | `src/hardware.js` (mới: `setLed`, hook `useHardwareButtons` hỏi `/buttons` mỗi 300ms), `config.js` thêm `GPIO_URL`, `HomePage.jsx` đổi màu đèn theo trạng thái + nút 1 = Bắt đầu, `MusicPlayer.jsx` nút 1 = bài tiếp, nút 2 = tạm dừng/phát. Không có service (PC) → bỏ qua im lặng. |
 
+### Phiên 27/09 tối — AI train lại + slide + thiết kế "gợi ý theo gu"
+| Việc | Chi tiết |
+|---|---|
+| Đo model cũ (14/09, nền FER2013, 977 ảnh / 5 người) | Validation chia theo ảnh (cùng người): **92.5%** · 4 người mới (mom, nhat, phuc, trung): **71.5%** → 92.5% là ảo (identity leakage). Yếu: neutral 49%, sad 60% (→ neutral), surprise → happy. |
+| Dữ liệu hiện có | **1.934 ảnh, 10 người** (thêm dat — không có ảnh surprise). vui 402 · buồn 405 · giận 403 · ngạc nhiên 322 · bình thường 402 |
+| `2_finetune_model.py`, `analyze_confusion.py` | Chia train/val **theo người** (`GroupShuffleSplit`, `VAL_PEOPLE = 2`, seed 42 → val = ducvinh, vanquynh). **Chưa commit.** |
+| Train lại (~4h trên CPU) | Tốt nhất epoch 19: **72.5%** trên 2 người lạ (angry 26% ⚠ → neutral, happy 94, neutral 63, sad 84, surprise 95). Train loss 0.004 → overfit. `load_best_model_at_end` KHÔNG nạp bản tốt nhất — lấy tay từ `train_checkpoints/checkpoint-3629`. |
+| Model | **`my_emotion_model/` = model cũ** (khớp Git LFS, sha `3aae7340bd…`) — dùng cho demo vì đã học mặt ducvinh. Backup cũ: `Documents/HIC/model_backup_2026-09-14/`. Model mới: `Documents/HIC/model_new_2026-09-27_best/` (sha `8912cdaac7…`). |
+| Slide | `docs/EmoTune_bao_cao_28-09.pptx` (PPT Master, 12 slide, có speaker notes). Slide 5 số liệu thật; slide 10 nhãn "Thiết kế & code xong · đang lắp mạch". Nguồn nội dung `docs/slide-bao-cao-28-09.md` (bản đầu, slide 5 cũ đã lỗi thời). Project PPT Master: `~/.claude/plugins/cache/ppt-master/ppt-master/projects/emotune_bao_cao_ppt169_20260927/`. |
+| Phần cứng | Board đang có là **board đồng cần hàn**, không phải breadboard → chưa lắp. Cần mua breadboard nhựa 830 lỗ (+ dây). LED RGB trong suốt, chân dài nhất = chân 2 (thứ tự R, chung, G, B khi chân dài ở vị trí 2). Điện trở dải băng be = 220Ω (đỏ-đỏ-nâu). |
+| Gợi ý theo gu | Spec `docs/superpowers/specs/2026-09-27-taste-based-recommendation-design.md`, plan `docs/superpowers/plans/2026-09-27-taste-based-recommendation.md` (65/35, đặc trưng âm thanh librosa + ID3, ca sĩ/dòng nhạc). Người dùng sẽ đọc plan sau, **chưa chọn cách thực hiện**. |
+
+**Sau báo cáo (AI):** train bản cuối trên đủ 10 người để triển khai; xem lại ảnh "giận" của ducvinh/vanquynh; thử giảm overfit (augmentation mạnh hơn, ít epoch, mở 1 lớp); sửa `load_best_model_at_end`; cập nhật `AI_NOTES.md` (số 977 ảnh / 85% đã cũ, `check_data_quality.py` không có trong repo).
+
 ### Phiên 26/09
 | Việc | Chi tiết |
 |---|---|
