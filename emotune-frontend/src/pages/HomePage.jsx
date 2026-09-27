@@ -1,10 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import EmotionScanner from '../components/EmotionScanner';
 import MusicPlayer from '../components/MusicPlayer';
+import { setLed, useHardwareButtons } from '../hardware';
 const HomePage = () => {
     const [started, setStarted] = useState(false);
     const [suggestResult, setSuggestResult] = useState(null);
     const [notice, setNotice] = useState("")
+
+    // den LED: chua bat dau -> tat; dang quet -> trang nhap nhay (camera dang bat); dang phat -> mau cam xuc
+    useEffect(() => {
+        if (!started) setLed('off')
+        else if (!suggestResult) setLed('scanning')
+        else setLed(suggestResult.emotion)
+    }, [started, suggestResult])
+
+    // nut 1 tren mach thay cho nut Bat dau (dang phat thi MusicPlayer tu xu ly nut)
+    useHardwareButtons({ onNext: () => setStarted(true) })
 
     const handleResult = (data) => {
         if (data.error || !data.song) {

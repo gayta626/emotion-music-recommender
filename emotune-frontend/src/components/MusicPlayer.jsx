@@ -1,6 +1,7 @@
 import { API_URL } from '../config'
 import axios from 'axios'
 import { useRef } from 'react'
+import { useHardwareButtons } from '../hardware'
 
 const MusicPlayer = (props) => {
     const { data, onFinish } = props;
@@ -42,6 +43,15 @@ const MusicPlayer = (props) => {
         reportedRef.current = true;
         onFinish()
     }
+
+    // nut tren mach: nut 1 = bai tiep, nut 2 = tam dung / phat tiep
+    useHardwareButtons({
+        onNext: finishAndSend,
+        onPause: () => {
+            const audio = audioRef.current;
+            if (audio.paused) audio.play(); else audio.pause();
+        }
+    })
 
     return (
         <>

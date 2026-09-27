@@ -1,10 +1,10 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Tóm tắt phiên làm việc gần nhất (**26/09/2026**) để phiên mới tiếp tục ngay.
+> Tóm tắt phiên làm việc gần nhất (**27/09/2026**) để phiên mới tiếp tục ngay. Phiên 27/09 ở mục 2 (đầu tiên).
 > Deadline dự án: **15/10/2026**. Báo cáo Pi cho thầy: **Thứ 2 (28/09)**.
-> Trạng thái: vòng lặp cốt lõi **chạy được trên PC và trên Pi**. Đang thiết kế **mạch GPIO** (LED RGB + nút bấm) — mới duyệt xong phần phần cứng.
-> Máy dev là **PC** (log cũ ghi "laptop" = PC). **Laptop chưa dựng** — sau dùng làm máy demo/dự phòng.
-> Người dùng muốn **tự code**, Claude hướng dẫn từng nhiệm vụ nhỏ (gợi ý, không đưa code sẵn) trừ khi được nhờ làm trực tiếp.
+> Trạng thái: vòng lặp cốt lõi **chạy được trên PC và trên Pi**, tập demo qua **hotspot laptop** OK. Hướng mới: biến đồ án thành **"hộp nhạc cảm xúc"** (thiết bị vật lý). Giai đoạn 1 (LED RGB + 2 nút) **đã code, chưa test trên Pi thật**.
+> Máy dev là **PC**; **laptop** (hostname `vinh`) dùng để điều khiển Pi khi demo. Laptop: DB còn bản cũ 15 bài, chưa có mp3 → chưa chạy dự phòng được.
+> Người dùng muốn **tự code**, Claude hướng dẫn từng nhiệm vụ nhỏ (gợi ý, không đưa code sẵn) trừ khi được nhờ làm trực tiếp (phần GPIO 27/09: nhờ Claude code, người dùng nối mạch).
 
 ---
 
@@ -14,6 +14,16 @@
 - Bắt đầu thiết kế mạch GPIO.
 
 ## 2. Những việc đã làm xong
+### Phiên 27/09 (trên laptop)
+| Việc | Chi tiết |
+|---|---|
+| Mạng demo | Hotspot laptop: tên `gayta626`, 2.4 GHz, **Share over = Wi-Fi**, **Power saving = Off** (bật thì hotspot tự tắt). Pi có connection `demo-hotspot` (priority 10) → tự vào hotspot khi thấy. Pi trong hotspot: `192.168.137.x`. |
+| Gọi Pi bằng tên | `ssh vinh@raspberrypi.local`, VNC `raspberrypi.local`. Không vào được → `ipconfig /flushdns` (laptop nhớ IP cũ). |
+| Tập demo trên Pi qua hotspot | 3 server + loa BT + C270 chạy trọn vòng, không lỗi. |
+| Hướng đồ án | Chọn **A + C**: thiết bị tự chạy, tương tác vật lý (đèn, nút), ảnh xử lý tại chỗ. Spec: `docs/superpowers/specs/2026-09-27-gpio-led-buttons-design.md`. |
+| `gpio-service/gpio_service.py` (mới) | Flask :5001 + gpiozero. `POST /led {state}` (`off`/`scanning` = trắng nhấp nháy/5 cảm xúc), `GET /buttons` → bộ đếm `{next, pause}`. `LED_COMMON_ANODE=1` nếu LED anot chung. Đã test bằng mock pin trên laptop. |
+| Frontend | `src/hardware.js` (mới: `setLed`, hook `useHardwareButtons` hỏi `/buttons` mỗi 300ms), `config.js` thêm `GPIO_URL`, `HomePage.jsx` đổi màu đèn theo trạng thái + nút 1 = Bắt đầu, `MusicPlayer.jsx` nút 1 = bài tiếp, nút 2 = tạm dừng/phát. Không có service (PC) → bỏ qua im lặng. |
+
 ### Phiên 26/09
 | Việc | Chi tiết |
 |---|---|
@@ -85,40 +95,42 @@ cd emotune-frontend && npm run dev                                          # :5
 ```
 
 ### Chạy lại trên Pi (demo)
-1. Bật Pi, bật loa Bluetooth, cắm C270.
-2. PC mở 3 terminal **Git Bash** → `ssh vinh@192.168.1.191` mỗi cái:
+1. Laptop bật hotspot `gayta626` (Power saving Off). Bật Pi, bật loa Bluetooth, cắm C270, đợi ~1 phút.
+2. Laptop mở 4 terminal **Git Bash** → `ssh vinh@raspberrypi.local` mỗi cái:
 ```bash
 cd ~/emotion-music-recommender/emotion-scanner && source venv/bin/activate && python 3_backend_server.py
 cd ~/emotion-music-recommender/emotune-backend && npm start
 cd ~/emotion-music-recommender/emotune-frontend && npm run dev
+cd ~/emotion-music-recommender/gpio-service && python3 gpio_service.py   # LED anot chung: LED_COMMON_ANODE=1 python3 gpio_service.py
 ```
-3. RealVNC Viewer → `192.168.1.191` → Chromium → `localhost:5173` → ▶ Bắt đầu → Allow camera.
+   (gpio-service chạy bằng python3 hệ thống, cài 1 lần: `sudo apt install -y python3-flask python3-flask-cors`)
+3. RealVNC Viewer → `raspberrypi.local` → terminal trên Pi: `chromium-browser --autoplay-policy=no-user-gesture-required http://localhost:5173` (không có lệnh thì `chromium`) → bấm **nút 1** hoặc ▶ Bắt đầu → Allow camera. Cờ autoplay cần vì bấm nút vật lý không tính là thao tác trên trang.
 4. Kiểm tra: `sudo -u postgres psql -d emotune -c "select id, emotion, action, created_at from mood_history order by id"`
 
 ## 5. Lỗi đang gặp hoặc việc còn dở
-- **Thiết kế GPIO dở dang**: mới duyệt **Phần 1 (phần cứng)**; còn Phần 2 (service GPIO) và Phần 3 (nối vào hệ thống + test), sau đó viết spec → kế hoạch.
-- Chưa chắc có điện trở / giá trị bao nhiêu → chụp ảnh linh kiện gửi Claude đọc vạch màu. Chưa biết LED RGB là **catot chung hay anot chung** → thử khi nối.
+- **GPIO giai đoạn 1 chưa test trên Pi thật** (mới test mock). Chưa biết LED RGB là **catot chung hay anot chung** → thử khi nối. Chưa chắc giá trị điện trở.
 - `mood_history` trên Pi: dòng 1 và 2 đều `happy suggested` cho 1 bài → chưa rõ là lần test cũ hay 2 request quét gần như cùng lúc (backend ghi cả 2, frontend bỏ 1). Xem `created_at`.
 - `EmotionScanner` vẫn gửi ảnh mỗi 3s khi camera chưa mở (ảnh đen → "Không phát hiện khuôn mặt") → nên bỏ qua khi chưa có stream.
 - Camera Pi (CSI) không được nhận (`v4l2-ctl` không thấy) — có thể cáp lỏng; để sau.
-- 3 server phải mở tay qua 3 SSH mỗi lần bật Pi.
+- 4 service phải mở tay qua 4 SSH mỗi lần bật Pi.
+- Trên PC/laptop (không có gpio-service), console trình duyệt hiện lỗi kết nối `localhost:5001` mỗi 300ms — vô hại.
 - ESLint warning `onResult` dependency (vô hại); chưa style player; `Setting.jsx` placeholder.
 - Laptop chưa dựng.
 
-### Thiết kế mạch đã duyệt (Phần 1 — phần cứng)
+### Thiết kế mạch đã duyệt
 | Linh kiện | Chân Pi (số vật lý) |
 |---|---|
 | LED R / G / B | GPIO17 (11) / GPIO27 (13) / GPIO22 (15), **mỗi màu 1 điện trở 220–330Ω** |
 | Chân chung LED | GND (9) nếu catot chung, 3.3V (1) nếu anot chung |
-| Nút (Bắt đầu khi chưa phát / Next khi đang phát) | GPIO5 (29) ↔ GND (30), dùng pull-up trong |
+| Nút 1 (Bắt đầu khi chưa phát / Next khi đang phát) | GPIO5 (29) ↔ GND (30), dùng pull-up trong |
+| Nút 2 (Tạm dừng / Phát tiếp) | GPIO6 (31) ↔ GND (34), dùng pull-up trong |
 
-Màu: happy vàng (R+G) · sad xanh dương (B) · angry đỏ (R) · surprise tím (R+B) · neutral trắng · chờ = tắt.
+Màu: happy vàng (R+G) · sad xanh dương (B) · angry đỏ (R) · surprise tím (R+B) · neutral trắng · đang quét = trắng nhấp nháy (đèn báo camera) · chưa bắt đầu = tắt.
 ⚠️ Tắt Pi trước khi cắm/rút dây.
 
 ## 6. Bước tiếp theo nên làm
-1. **Trước thứ 2:** tập chạy demo từ đầu 1 lượt (mục 4 "Chạy lại trên Pi"); hỏi thầy có cần mạch cho buổi thứ 2 không.
-2. Tiếp tục brainstorm GPIO: **Phần 2 — service GPIO** (API `POST /led {emotion}`, nút bấm, cài `gpiozero`/`lgpio` trong venv trên Pi 5), **Phần 3 — backend gọi `/led` sau `generateSuggestion` (bỏ qua lỗi), cách nút báo sang trình duyệt, test**. Sau đó viết spec + kế hoạch.
-3. Chụp ảnh linh kiện (điện trở, LED RGB) → xác định giá trị / loại.
+1. **Nối mạch + test GPIO trên Pi** (spec mục "Các bước làm" 1, 2, 4, 6): `git pull`, cài python3-flask, `curl -X POST localhost:5001/led -H "Content-Type: application/json" -d '{"state":"happy"}'` → đèn vàng; bấm nút → `curl localhost:5001/buttons` tăng; rồi test toàn luồng.
+2. **Giai đoạn 2 (sau demo):** tự khởi động khi cắm điện (systemd cho 4 service + Chromium `--kiosk --autoplay-policy=no-user-gesture-required`), không cần VNC. Viết spec riêng. Có thể thêm cảm biến PIR / màn OLED nếu mua được.
+3. Laptop dự phòng: scp mp3 từ Pi về, chạy lại `schema.sql` + `seed.sql` bằng DBeaver.
 4. Sửa nhỏ: `EmotionScanner` bỏ qua khi chưa có stream; kiểm tra lỗi ghi `suggested` 2 lần.
-5. Tự khởi động 3 server khi Pi bật (systemd) — tiện cho demo.
-6. Sau báo cáo: camera Pi, Mood Journey chart, voice control, trang Settings, style player, dựng laptop dự phòng.
+5. Sau báo cáo: camera Pi, Mood Journey chart, voice control, trang Settings, style player.
