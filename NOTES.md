@@ -126,6 +126,15 @@ LED RGB trong suốt: xoay sao cho chân dài nhất ở **vị trí 2** → th�
 - Cũ, chưa sửa: `EmotionScanner` gửi ảnh khi camera chưa mở; `mood_history` có thể ghi `suggested` 2 lần; camera CSI không nhận; mỗi lần bật Pi phải mở tay các server qua SSH.
 - Global Python laptop có sẵn xung đột cũ (tensorflow-intel 2.17, facenet-pytorch) — không liên quan dự án, đừng "sửa".
 
+### Đánh giá tiến độ phần cứng cho buổi demo trong ngày 28/09 (đã chốt)
+| Phần | Đánh giá | Thời gian ước tính |
+|---|---|---|
+| **LED RGB + 2 nút** | ✅ **Làm hôm nay** — code đã xong + test mock | ~1–1,5 giờ (lắp 30–45 phút + cài/test Pi 20 phút + chạy thử 15 phút) |
+| **OLED 0.96" I2C** | 🟡 **Chỉ làm nếu còn ≥ 1,5 giờ** — bản đơn giản: `gpio_service.py` vẽ tên cảm xúc lên OLED mỗi khi nhận `POST /led` (không sửa web) | ~1–1,5 giờ (bật I2C, cài thư viện, code) |
+| **PIR HC-SR501** | ❌ **Để buổi sau** — phải đổi logic web (tự quét / tự dừng), chỉnh độ nhạy + thời gian trễ, rủi ro phá vòng lặp đang chạy | ~2–3 giờ |
+
+Thứ tự: (1) LED + nút → (2) OLED nếu còn giờ → (3) chừa **≥ 30 phút cuối** chạy thử toàn bộ như lúc demo. Mạch lỗi thì nhạc vẫn chạy → dự phòng: demo bằng nút trên màn hình.
+
 ## 6. Bước tiếp theo nên làm
 1. **28/09 — báo cáo:** theo `docs/script-thuyet-trinh-28-09.md`; demo bằng nút trên màn hình, **cười tươi** (vui nhận diện tốt nhất), tránh demo "giận".
 2. **Lắp mạch đèn + nút** (đã có đủ linh kiện) theo sơ đồ mục 4, hướng dẫn **từng bước chậm** (người dùng chưa lắp mạch bao giờ) → test `curl -X POST localhost:5001/led -H "Content-Type: application/json" -d '{"state":"happy"}'` (đèn vàng) và `curl localhost:5001/buttons` → test toàn luồng với Chromium cờ autoplay.
