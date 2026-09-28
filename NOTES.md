@@ -1,7 +1,7 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **27/09/2026** (trên **laptop**, hostname `vinh`). Deadline dự án **15/10/2026**. Báo cáo tiến độ cho thầy **Thứ 2 28/09**.
-> Trạng thái: vòng lặp cốt lõi (camera → AI → nhạc → chấm điểm) **chạy trên Pi qua hotspot laptop**. Code đèn LED + 2 nút **xong nhưng chưa lắp mạch** (thiếu breadboard). Mai **demo không mạch**, dùng **model AI cũ**.
+> Phiên gần nhất: **27–28/09/2026** (trên **laptop**, hostname `vinh`). Deadline dự án **15/10/2026**. Báo cáo tiến độ cho thầy: **28/09**.
+> Trạng thái: vòng lặp cốt lõi (camera → AI → nhạc → chấm điểm) **chạy trên Pi qua hotspot laptop**. Code đèn LED + 2 nút **xong nhưng chưa lắp mạch** — **đã mua breadboard + dây, OLED, cảm biến PIR** (28/09) → lắp được rồi. Demo 28/09: không mạch, dùng **model AI cũ**.
 > Người dùng: sinh viên, cần hướng dẫn từng bước rõ ràng; thường tự code theo gợi ý, nhưng phiên này nhờ Claude code trực tiếp (GPIO, script train, slide).
 
 ---
@@ -29,6 +29,15 @@
 | **Thiết kế "gợi ý theo gu"** (commit `6cf8fc1`, `189a92e`) | Spec `docs/superpowers/specs/2026-09-27-taste-based-recommendation-design.md`, plan `docs/superpowers/plans/2026-09-27-taste-based-recommendation.md` (7 task). **Chưa code.** |
 | Ghi chép AI | `AI_NOTES.md` (người dùng viết; số liệu 977 ảnh / 85% trong đó đã cũ). |
 | Cài trên laptop | Plugin PPT Master (`/plugin install ppt-master@ppt-master`) + `pip install -r requirements.txt` của nó (cần `PYTHONUTF8=1`). |
+
+### Phiên 28/09 (sáng)
+| Việc | File / kết quả |
+|---|---|
+| **Slide tiếng Việt** | `docs/EmoTune_bao_cao_28-09.pptx`: điền tên (Nhóm 6 · Nguyễn Đức Vinh, Hoàng Tuấn Phát, Phạm Thế Vỹ · GV Nguyễn Trọng Kiên); slide "Gợi ý nhạc" đổi **65/35** (ghi rõ "bản nâng cấp, đang code"); thêm slide **"Gợi ý theo gu"** (3 nguồn: âm thanh / thẻ ID3 / nhãn tay + công thức điểm + ví dụ ballad). Sau đó **người dùng tự bỏ 3 slide** (AI nhận diện, Xử lý ảnh, Khó khăn) trong PowerPoint → còn **10 slide**; ⚠ số trang góc dưới vẫn ghi "/ 13", sửa tay nếu dùng. |
+| **Slide tiếng Anh** | `docs/EmoTune_report_28-09_EN.pptx` — 10 slide đúng bản người dùng giữ lại, số trang "/ 10", speaker notes tiếng Anh, tiêu đề bìa "The Mood Music Box". Project PPT Master: `~/.claude/plugins/cache/ppt-master/ppt-master/projects/emotune_report_en_ppt169_20260928/` (bản VN: `.../emotune_bao_cao_ppt169_20260927/`, hiện 13 slide). |
+| **Kịch bản thuyết trình** | `docs/script-thuyet-trinh-28-09.md` cập nhật theo bản 13 slide (thêm slide 8 "Gợi ý theo gu", 65/35, câu hỏi về librosa/kho nhạc). **Chưa khớp bản 10 slide**, chưa có bản tiếng Anh. |
+| **Đã mua linh kiện** | Breadboard, dây đực–đực, dây đực–cái, **màn hình OLED**, **cảm biến chuyển động (PIR)** — xem "Checklist linh kiện" ở mục 4. |
+| **Hỏi đáp (chưa làm gì)** | Micro: thử **micro có sẵn trong webcam C270** trước (`arecord -l`), cần thì mua mic USB mini. Loa: thay Bluetooth bằng **loa vi tính USB (tiếng qua USB)**. Edge Impulse: làm được (MobileNetV2, upload ảnh đã cắt mặt, để 2 người ở "Testing") — nên làm như **thí nghiệm so sánh** với ViT 72.5%, chưa thay model chính; lưu ý xin phép trước khi upload ảnh mặt lên cloud. |
 
 ## 3. Các quyết định quan trọng và lý do
 
@@ -82,6 +91,23 @@ cd emotune-backend && npm run dev                                           # :8
 cd emotune-frontend && npm run dev                                          # :5173
 ```
 
+### Checklist linh kiện (mua / chưa mua)
+
+| Món | Trạng thái | Ghi chú |
+|---|---|---|
+| Raspberry Pi 5 + nguồn, webcam Logitech C270, loa Bluetooth | ✅ có | C270 có micro sẵn |
+| LED RGB 4 chân (trong suốt) | ✅ có | chân dài nhất ở vị trí 2 → R, chung, G, B |
+| Điện trở 220Ω (đỏ-đỏ-nâu) | ✅ có | dải băng be; dải băng vàng (nâu-đen-…) chưa rõ giá trị, để riêng |
+| Nút bấm 4 chân | ✅ có | cần 2 |
+| **Breadboard nhựa 830 lỗ** | ✅ mua 28/09 | board đồng cũ (cần hàn) không dùng |
+| **Dây đực–cái** | ✅ mua 28/09 | chân Pi → breadboard |
+| **Dây đực–đực** | ✅ mua 28/09 | nối trên breadboard |
+| **Màn hình OLED 0.96" I2C, 4 chân** (GND, VCC, SCL, SDA) | ✅ mua 28/09 | **chưa có code**; chip thường là SSD1306, địa chỉ I2C 0x3C (kiểm tra bằng `i2cdetect -y 1`) |
+| **Cảm biến chuyển động PIR HC-SR501** | ✅ mua 28/09 | **chưa có code** — có người → tự quét, đi khỏi → dừng nhạc |
+| Loa vi tính USB (tiếng qua USB) | ⬜ chưa mua · tùy chọn | thay loa Bluetooth cho ổn định |
+| Micro USB mini | ⬜ chưa mua · tùy chọn | chỉ khi làm giọng nói và mic C270 không đủ rõ |
+| Module MAX98357A + loa 3W 4Ω | ⬜ chưa mua · để sau | loa gắn liền mạch, **phải hàn** |
+
 ### Sơ đồ mạch (chưa lắp)
 | Linh kiện | Chân Pi (số vật lý) |
 |---|---|
@@ -92,18 +118,20 @@ cd emotune-frontend && npm run dev                                          # :5
 LED RGB trong suốt: xoay sao cho chân dài nhất ở **vị trí 2** → thứ tự R, chung, G, B. ⚠ Tắt Pi trước khi cắm dây.
 
 ## 5. Lỗi đang gặp hoặc việc còn dở
-- **Chưa có breadboard** (board hiện có là board đồng cần hàn) → mạch chưa lắp, GPIO chưa test trên Pi thật. Cần: breadboard nhựa 830 lỗ + dây đực–cái (có thể thêm đực–đực).
+- **Mạch đèn + nút chưa lắp**, GPIO chưa test trên Pi thật (đã có đủ linh kiện từ 28/09). OLED 0.96" I2C 4 chân + PIR HC-SR501 **chưa thiết kế, chưa code**.
 - **Laptop chưa chạy dự phòng được**: DB laptop còn bản cũ 15 bài, `emotune-backend/music/` trống.
 - **AI**: 72.5% với người lạ; lớp **giận yếu** (26%, bị đoán thành bình thường); overfit mạnh; `load_best_model_at_end` **không nạp** bản tốt nhất (phải lấy tay từ checkpoint); `dat` thiếu ảnh surprise; `AI_NOTES.md` đã cũ, `check_data_quality.py` được nhắc nhưng không có trong repo.
-- `docs/script-thuyet-trinh-28-09.md` và `NOTES.md` (bản này) **chưa commit**.
-- Slide 1 còn `[tên nhóm]`, `[tên 1..3]`, `[tên thầy]` — người dùng tự điền.
+- **Chưa commit:** `docs/EmoTune_bao_cao_28-09.pptx` (bản 10 slide người dùng sửa), `docs/EmoTune_report_28-09_EN.pptx`, `docs/script-thuyet-trinh-28-09.md`.
+- Kịch bản thuyết trình chưa khớp bản 10 slide; slide VN còn số trang "/ 13".
 - Cũ, chưa sửa: `EmotionScanner` gửi ảnh khi camera chưa mở; `mood_history` có thể ghi `suggested` 2 lần; camera CSI không nhận; mỗi lần bật Pi phải mở tay các server qua SSH.
 - Global Python laptop có sẵn xung đột cũ (tensorflow-intel 2.17, facenet-pytorch) — không liên quan dự án, đừng "sửa".
 
 ## 6. Bước tiếp theo nên làm
 1. **28/09 — báo cáo:** theo `docs/script-thuyet-trinh-28-09.md`; demo bằng nút trên màn hình, **cười tươi** (vui nhận diện tốt nhất), tránh demo "giận".
-2. **Mua breadboard** → lắp mạch theo sơ đồ mục 4 → test `curl -X POST localhost:5001/led -H "Content-Type: application/json" -d '{"state":"happy"}'` (đèn vàng) và `curl localhost:5001/buttons` → test toàn luồng với Chromium cờ autoplay.
+2. **Lắp mạch đèn + nút** (đã có đủ linh kiện) theo sơ đồ mục 4, hướng dẫn **từng bước chậm** (người dùng chưa lắp mạch bao giờ) → test `curl -X POST localhost:5001/led -H "Content-Type: application/json" -d '{"state":"happy"}'` (đèn vàng) và `curl localhost:5001/buttons` → test toàn luồng với Chromium cờ autoplay.
 3. **AI:** xem lại ảnh "giận" của ducvinh/vanquynh; thử giảm overfit (augmentation mạnh hơn, ít epoch, mở 1 lớp); sửa lấy best checkpoint; sau đó **train bản cuối trên đủ 10 người** → commit model (Git LFS) → trên Pi `git pull && git lfs pull` → restart `3_backend_server.py`. Cập nhật `AI_NOTES.md`.
 4. **Gợi ý theo gu:** người dùng đọc plan rồi chọn cách thực hiện (Native / Subagent / tự code). Cần thêm bài hát (≥ 8–10 bài mỗi cảm xúc) thì tính năng mới có ý nghĩa.
-5. **Giai đoạn 2 phần cứng:** cắm điện là chạy (systemd cho các service + Chromium kiosk), không cần VNC.
-6. Laptop dự phòng: `scp` mp3 từ Pi về, chạy lại `schema.sql` + `seed.sql`.
+5. **OLED 0.96" I2C + PIR HC-SR501:** brainstorm thiết kế (OLED hiện tên bài + cảm xúc; PIR tự quét / tự dừng) — mở rộng `gpio-service`, rồi spec → plan.
+6. **Giai đoạn 2 phần cứng:** cắm điện là chạy (systemd cho các service + Chromium kiosk), không cần VNC.
+7. (Tùy chọn) Thí nghiệm Edge Impulse so với ViT trên cùng 2 người kiểm tra.
+8. Laptop dự phòng: `scp` mp3 từ Pi về, chạy lại `schema.sql` + `seed.sql`.
