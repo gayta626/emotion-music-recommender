@@ -1,58 +1,64 @@
 """
-Service GPIO - điều khiển đèn LED RGB và 2 nút bấm trên Raspberry Pi
+Service GPIO - màn hình OLED + 2 nút bấm trên Raspberry Pi
 Đề tài: Hệ thống gợi ý nhạc theo cảm xúc
 
 Trình duyệt (chạy ngay trên Pi) gọi service này để:
-    - đổi màu đèn theo trạng thái / cảm xúc
+    - hiện trạng thái / cảm xúc lên màn hình OLED
     - hỏi xem nút nào vừa được bấm
 
 Sơ đồ nối (số trong ngoặc là số chân vật lý):
-    LED R / G / B : GPIO17 (11) / GPIO27 (13) / GPIO22 (15), mỗi màu 1 điện trở 220-330Ω
-    Chân chung LED: GND (9) nếu catot chung, 3.3V (1) nếu anot chung
-    Nút 1 (Bắt đầu / Bài tiếp)    : GPIO5 (29) <-> GND (30)
-    Nút 2 (Tạm dừng / Phát tiếp) : GPIO6 (31) <-> GND (34)
+    OLED VCC / SDA / SCL / GND   : 3.3V (1) / GPIO2 (3) / GPIO3 (5) / GND (9)
+    Nút 1 (Bắt đầu / Bài tiếp)    : GPIO17 (11) <-> GND (6)
+    Nút 2 (Tạm dừng / Phát tiếp) : GPIO27 (13) <-> GND (6)   (2 nút dùng chung 1 dây GND)
 
 Cách cài đặt (trên Pi, dùng python3 của hệ thống - đã có sẵn gpiozero + lgpio):
     sudo apt install -y python3-flask python3-flask-cors
+    + phần cài OLED ghi ở đầu file oled.py
 
 Cách chạy:
-    python3 gpio_service.py                     # LED catot chung
-    LED_COMMON_ANODE=1 python3 gpio_service.py  # LED anot chung
+    python3 gpio_service.py
 
 Server lắng nghe tại: http://localhost:5001
 API:  POST /led      {"state": "off" | "scanning" | "happy" | "sad" | "angry" | "surprise" | "neutral"}
+      (tên /led giữ nguyên từ bản dùng đèn LED để trang web không phải sửa)
       GET  /buttons  -> {"next": <số lần bấm nút 1>, "pause": <số lần bấm nút 2>}
 
-Thử trên máy không có GPIO (PC):
-    GPIOZERO_PIN_FACTORY=mock GPIOZERO_MOCK_PIN_CLASS=mockpwmpin python gpio_service.py
+Thử trên máy không có GPIO (PC) - không có OLED thì service vẫn chạy, chỉ bỏ qua màn hình:
+    GPIOZERO_PIN_FACTORY=mock python gpio_service.py
 """
 
-import os
 import threading
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from gpiozero import Button, RGBLED
+from gpiozero import Button
 
-# LED anot chung: chân chung nối 3.3V -> phải kéo chân màu xuống thấp mới sáng -> đảo tín hiệu
-COMMON_ANODE = os.environ.get("LED_COMMON_ANODE") == "1"
+next_button = Button(17, bounce_time=0.05)   # pull-up trong: bấm = nối GND
+pause_button = Button(27, bounce_time=0.05)
 
-led = RGBLED(red=17, green=27, blue=22, active_high=not COMMON_ANODE)
-next_button = Button(5, bounce_time=0.05)   # pull-up trong: bấm = nối GND
-pause_button = Button(6, bounce_time=0.05)
+# Màn hình lỗi / chưa cắm thì service vẫn chạy (nút bấm vẫn dùng được)
+try:
+    from oled import Oled
+    oled = Oled()
+except Exception as e:
+    print("Khong mo duoc OLED, bo qua man hinh:", e)
+    oled = None
 
-# (đỏ, xanh lá, xanh dương), mỗi màu từ 0 đến 1
-COLORS = {
-    "happy": (1, 1, 0),       # vàng
-    "sad": (0, 0, 1),         # xanh dương
-    "angry": (1, 0, 0),       # đỏ
-    "surprise": (1, 0, 1),    # tím
-    "neutral": (1, 1, 1),     # trắng
+# state -> (dòng nhỏ ở trên, chữ to ở giữa); OLED khó hiện tiếng Việt có dấu nên viết không dấu
+SCREENS = {
+    "off": ("EmoTune", "San sang"),
+    "scanning": ("Camera", "Dang quet..."),
+    "happy": ("Cam xuc", "VUI"),
+    "sad": ("Cam xuc", "BUON"),
+    "angry": ("Cam xuc", "GIAN"),
+    "surprise": ("Cam xuc", "NGAC NHIEN"),
+    "neutral": ("Cam xuc", "BINH THUONG"),
 }
 
 # chỉ đếm số lần bấm; trình duyệt tự so với lần hỏi trước để biết có lần bấm mới
 counts = {"next": 0, "pause": 0}
 counts_lock = threading.Lock()  # nút được xử lý ở luồng riêng của gpiozero
+oled_lock = threading.Lock()    # Flask có thể xử lý 2 request cùng lúc
 
 
 def make_counter(name):
@@ -71,18 +77,17 @@ CORS(app)  # trang web chạy ở cổng 5173 gọi sang cổng 5001
 
 
 @app.route("/led", methods=["POST"])
-def set_led():
+def set_screen():
     state = (request.get_json(silent=True) or {}).get("state")
-
-    if state == "off":
-        led.off()
-    elif state == "scanning":
-        # trắng nhấp nháy = camera đang bật
-        led.blink(on_time=0.5, off_time=0.5, on_color=(1, 1, 1))
-    elif state in COLORS:
-        led.color = COLORS[state]  # tự dừng nhấp nháy nếu đang nháy
-    else:
+    if state not in SCREENS:
         return jsonify({"error": f"state khong hop le: {state}"}), 400
+
+    if oled:
+        try:
+            with oled_lock:
+                oled.show(*SCREENS[state])
+        except OSError as e:  # dây lỏng -> lỗi I2C, không làm hỏng web
+            print("Loi ghi OLED:", e)
 
     return jsonify({"state": state})
 
@@ -94,6 +99,7 @@ def get_buttons():
 
 
 if __name__ == "__main__":
-    print("GPIO service chay tai http://localhost:5001",
-          "(LED anot chung)" if COMMON_ANODE else "(LED catot chung)")
+    if oled:
+        oled.show(*SCREENS["off"])
+    print("GPIO service chay tai http://localhost:5001")
     app.run(host="0.0.0.0", port=5001, debug=False)
