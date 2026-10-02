@@ -44,12 +44,29 @@ const MusicPlayer = (props) => {
         onFinish()
     }
 
+    // true khi nhac dang dung vi nguoi dung di khoi -> quay lai moi tu phat tiep
+    // (tu bam dung thi khong tu phat lai)
+    const pausedByAwayRef = useRef(false);
+
     // nut tren mach: nut 1 = bai tiep, nut 2 = tam dung / phat tiep
+    // cam bien PIR: vang nguoi 30s -> tam dung, quay lai -> phat tiep
     useHardwareButtons({
         onNext: finishAndSend,
         onPause: () => {
             const audio = audioRef.current;
+            pausedByAwayRef.current = false;
             if (audio.paused) audio.play(); else audio.pause();
+        },
+        onAway: () => {
+            const audio = audioRef.current;
+            if (audio.paused) return;
+            pausedByAwayRef.current = true;
+            audio.pause();
+        },
+        onBack: () => {
+            if (!pausedByAwayRef.current) return;
+            pausedByAwayRef.current = false;
+            audioRef.current.play();
         }
     })
 

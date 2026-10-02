@@ -10,8 +10,9 @@ export const setLed = (state) => {
     axios.post(`${GPIO_URL}/led`, { state }).catch(() => { })
 }
 
-// Hoi gpio-service moi 300ms xem nut co duoc bam them lan nao khong.
+// Hoi gpio-service moi 300ms xem nut co duoc bam them lan nao khong, va co nguoi truoc hop khong.
 // Service chi tra ve so lan bam -> so voi lan hoi truoc, tang len thi goi ham tuong ung.
+// present (cam bien PIR) doi true -> false thi goi onAway, false -> true thi goi onBack.
 export const useHardwareButtons = (handlers) => {
     // luu ham moi nhat vao ref -> interval khong phai tao lai moi lan component render
     const handlersRef = useRef(handlers)
@@ -28,6 +29,8 @@ export const useHardwareButtons = (handlers) => {
                     if (last) {
                         if (data.next > last.next) handlersRef.current.onNext?.()
                         if (data.pause > last.pause) handlersRef.current.onPause?.()
+                        if (last.present && !data.present) handlersRef.current.onAway?.()
+                        if (!last.present && data.present) handlersRef.current.onBack?.()
                     }
                     last = data
                 })

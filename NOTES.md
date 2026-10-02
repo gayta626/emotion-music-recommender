@@ -1,17 +1,18 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **27–28/09/2026** (trên **laptop**, hostname `vinh`). Deadline dự án **15/10/2026**. Báo cáo tiến độ cho thầy: **28/09**.
-> Trạng thái: vòng lặp cốt lõi (camera → AI → nhạc → chấm điểm) **chạy trên Pi qua hotspot laptop**. **Màn OLED đã chạy trọn vòng với web** (28/09 chiều): quét → "Dang quet..." → hiện cảm xúc. **Bỏ đèn LED.** **Nút bấm cứng chưa chạy** → demo 28/09 dùng nút trên màn hình, buổi sau thay bằng module chạm **TTP223**. Model AI trên Pi vẫn là **model cũ**.
-> Người dùng: sinh viên, cần hướng dẫn từng bước rõ ràng; thường tự code theo gợi ý, nhưng phiên này nhờ Claude code trực tiếp (GPIO, OLED, script train, slide). Lắp phần cứng: **mỗi tin nhắn 1 bước**, chờ người dùng báo xong.
+> Phiên gần nhất: **30/09 – 02/10/2026** (trên **laptop**, hostname `vinh`). Deadline dự án **15/10/2026**.
+> Trạng thái: vòng lặp cốt lõi (camera → AI → nhạc → chấm điểm) **chạy trên Pi qua hotspot laptop**. **OLED** + **2 nút chạm TTP223** chạy trọn vòng với web ✅. **PIR HC-SR501**: code xong (chào trên OLED + vắng 30s thì tạm dừng nhạc) nhưng **cảm biến không đáng tin** (báo nhầm khi phòng trống, có lúc bỏ sót người ngồi yên) → định thay bằng radar **LD2410C**. Model AI trên Pi vẫn là **model cũ**. Code phiên này **đã commit + push lên `master` (02/10)**; Pi vẫn đang chạy bản chép bằng `scp`.
+> Người dùng: sinh viên, cần hướng dẫn từng bước rõ ràng; phiên này nhờ Claude code trực tiếp. Lắp phần cứng: **mỗi tin nhắn 1 bước**, chờ người dùng báo xong; chỉ chân Pi theo kiểu **"hàng trên/dưới, chân thứ N"** tính từ lỗ ốc. Lệnh cho Git Bash phải **ngắn, mỗi lệnh 1 dòng** (lệnh dài bị cắt dòng).
 
 ---
 
-## 1. Mục tiêu của phiên này
-1. Dựng laptop để điều khiển Pi khi demo ở trường (không có wifi nhà).
-2. Làm Pi "có ý nghĩa phần cứng": đèn LED RGB + nút bấm.
-3. Làm slide + kịch bản báo cáo 28/09.
-4. Đo lại và train lại AI cho trung thực (model đang đoán sai nhiều).
-5. Thiết kế tính năng "gợi ý theo gu" (65/35, dòng nhạc, ca sĩ).
+## 1. Mục tiêu của phiên này (30/09 – 02/10)
+1. Đọc `NOTES.md` + `graphify-out/GRAPH_REPORT.md`, tóm tắt việc đã làm / cần làm.
+2. Lắp và chạy **2 module chạm TTP223** thay nút bấm cơ.
+3. Thêm **cảm biến chuyển động PIR HC-SR501**: có người lại gần → OLED chào; vắng người 30s → tạm dừng nhạc, quay lại → phát tiếp.
+4. Khi PIR không ổn: tìm cảm biến thay thế.
+
+(Mục tiêu các phiên trước 27–28/09: mạng demo qua hotspot, GPIO/OLED, slide + kịch bản báo cáo 28/09, train lại AI chia theo người, thiết kế "gợi ý theo gu".)
 
 ## 2. Những việc đã làm xong
 
@@ -49,6 +50,20 @@
 | **Thiết kế vỏ hộp** | Artifact "Hộp nhạc EmoTune": https://claude.ai/artifact/4gG9bMeum3LbByggG66QK1 — hộp gỗ nắp bản lề 22×15×12 cm; mặt trước: lưới loa trái, camera Ø15 / OLED 26×15 / 2 nút Ø12 bên phải (có bảng toạ độ tâm lỗ); Pi góc sau phải, quạt dưới khe nắp, cổng USB-C ra sau. Làm thử bằng carton trước. (Nếu dùng TTP223 thì không cần khoét lỗ nút.) Chưa biết kích thước loa Bluetooth — đang chừa ~6 cm. |
 | Cách chép code sang Pi | Code OLED được **`scp` từ laptop** (`scp gpio-service/*.py vinh@raspberrypi.local:~/emotion-music-recommender/gpio-service/`), chưa qua git → xem mục 5 trước khi `git pull` trên Pi. |
 
+### Phiên 30/09 – 02/10 — nút chạm TTP223 + cảm biến PIR
+| Việc | File / kết quả |
+|---|---|
+| **2 module TTP223 — chạy ✅** | Nhãn chân (trái→phải): **GND · I/O · VCC**. Dây cái–cái thẳng vào Pi. Module 1: VCC 3.3V (17) / GND (25) / I/O GPIO17 (11). Module 2: VCC **GPIO22 (15)** (code bật sẵn mức cao, vì chân 3.3V còn lại đã dành cho OLED) / GND (39) / I/O GPIO27 (13). |
+| Code TTP223 | `gpio-service/gpio_service.py`, `gpio-service/test_hardware.py`: `Button(pin, pull_up=None, active_state=True)` + `DigitalOutputDevice(22, initial_value=True)`. `test_hardware.py` OK; **toàn luồng với web + Chromium cờ autoplay OK** (chạm 1 = bắt đầu / bài tiếp, chạm 2 = tạm dừng / phát tiếp). |
+| **PIR — code xong** (thiết kế bounded, chốt trong chat, không có file spec) | `gpio-service/gpio_service.py`: `DigitalInputDevice(23, pull_up=False)` (không `bounce_time`), `PRESENCE_TIMEOUT = 30`; "có người" = PIR đang mức cao **hoặc** báo trong 30s gần nhất (bắt cả lúc báo qua `when_activated` lẫn lúc giữ cao qua `is_active`); **chưa báo lần nào từ lúc bật → coi như có người** (PIR rút ra thì nhạc không tự dừng). `GET /buttons` trả thêm `"present"`. OLED tự chọn màn: chờ + có người → `GREETING` "Xin chao! / Cham de quet"; đang phát + vắng → `PAUSED` "Khong thay ai / Tam dung"; đang quét luôn "Dang quet..."; chỉ vẽ lại khi đổi (luồng `watch_presence` 0.5s). |
+| PIR — web | `emotune-frontend/src/hardware.js`: `useHardwareButtons` gọi thêm `onAway` (present true→false) / `onBack` (false→true). `emotune-frontend/src/components/MusicPlayer.jsx`: `pausedByAwayRef` — vắng thì dừng, quay lại **chỉ phát tiếp nếu chính PIR đã dừng** (tự chạm nút 2 dừng thì không tự phát). Tạm dừng vì vắng **không** gửi listen-report. eslint + `npm run build` OK. |
+| PIR — file thử | `gpio-service/test_hardware.py`: thử 2 nút + PIR, in `CO NGUOI` tối đa 2s/lần, in "30 giay khong thay ai" khi vắng 30s (cùng cách tính với service). Bỏ `from signal import pause` (dùng vòng lặp). |
+| Test tự động (mock pin) | `gpio-service/test_presence.py` (chạy trên laptop, cần `gpiozero flask flask-cors`): chào / 29s vẫn có người / 31s vắng → Tam dung / quay lại / đang quét / không vẽ lại / xung PIR ngắn / PIR giữ cao > 30s / nút vẫn đếm → **ALL OK**. |
+| **PIR trên mạch thật — chưa ổn ❌** | Nối đúng (úp cốc thì `pinctrl get 23` đứng yên `lo`). Núm **trái = thời gian giữ** (đang ở min, ngược chiều kim đồng hồ hết), núm **phải = độ nhạy**; jumper để nguyên. Kết quả: ngồi nghe nhạc ở độ nhạy nửa vòng có lúc báo đều 6–7s/lần (tốt), nhưng (1) **phòng trống vẫn báo nhầm** mỗi 10–40s (cả khi độ nhạy max lẫn nửa vòng), (2) có lúc **bỏ sót người ngồi yên** > 30s. **Úp cốc làm lệch nắp vòm** → PIR "mù", phải lắc mới báo. **Chưa thử toàn luồng PIR với web/nhạc.** |
+| Chọn cảm biến thay thế | Khuyên mua **Hlk-ld2410c** (radar 24GHz, bắt cả người ngồi im/nhịp thở, không bị nhiệt/gió; chân 2.54mm cắm dây cái–cái; VCC 5V, OUT 3.3V → **cắm đúng 3 chỗ của PIR, code gần như không đổi**). Đừng mua LD2410/LD2410B (chân 1.27mm), LD1010/1020/2411/2420 (loại khác), không cần "Dòng 2,54MM 5P". Shop Shopee đã xem: giao **4–14/10** → sát deadline, nên tìm shop cùng thành phố / hỏa tốc / tiệm linh kiện. Rẻ hơn: HC-SR04 (siêu âm, ~15–25k, bắt người ngồi im nhưng chùm hẹp, ECHO 5V cần 2 điện trở hạ áp, sửa code nhiều) · RCWL-0516 (~10–20k, vẫn bắt chuyển động, hay báo nhầm — **không khuyên**). **Người dùng chưa chốt mua loại nào.** |
+| Sự cố scp | Lệnh `scp hardware.js MusicPlayer.jsx` bị cắt dòng (thiếu đích Pi) → **ghi đè `MusicPlayer.jsx` trên laptop** bằng nội dung `hardware.js`. Đã khôi phục bằng `git checkout` + sửa lại phần PIR. |
+| Ghi nhớ | Memory `pin-counting.md`: chỉ chân theo "hàng trên/dưới, chân thứ N". |
+
 ## 3. Các quyết định quan trọng và lý do
 
 | Quyết định | Lý do |
@@ -66,6 +81,15 @@
 | Nối OLED bằng **dây cái–cái thẳng vào Pi** | Ít điểm tiếp xúc hơn qua breadboard; qua breadboard `i2cdetect` không thấy. |
 | Nút: **thay bằng module chạm TTP223** | Nút cơ trên breadboard / nút 6 chân đều không ăn, trong khi Pi + code đã được chứng minh tốt; TTP223 cắm thẳng 3 dây cái–cái, chạm xuyên vách hộp. |
 | Demo 28/09: **OLED + nút trên màn hình** | Không phí thêm giờ gỡ nút trước báo cáo. |
+| TTP223 #2 lấy điện từ **GPIO22 bật cao** | Pi chỉ có 2 chân 3.3V; chân 1 cho OLED, chân 17 cho TTP223 #1. Module chỉ tốn vài mA. |
+| PIR: có người lại gần → **chỉ chào** trên OLED, vẫn phải chạm nút 1 mới quét | Không tự bật camera khi người chỉ đi ngang; demo chủ động thời điểm quét. |
+| PIR: vắng **30s** → tạm dừng, quay lại → **tự phát tiếp** (chỉ khi PIR dừng, không khi tự bấm dừng) | Người dùng chọn 30s (1 phút quá lâu so với bài vài phút). |
+| Đếm 30s + chọn màn OLED nằm **trong `gpio-service`**, web chỉ đọc `present` | Web không phải sửa phần OLED; giống cách bộ đếm nút. |
+| PIR chưa báo lần nào → coi như **có người** | Chân GPIO đọc `lo` khi rút PIR → nếu không thì nhạc tự dừng sau 30s. |
+| PIR OUT ở **GPIO23 (hàng trên thứ 8)** thay vì GPIO4 (hàng dưới thứ 4) | Hàng dưới chật, người dùng không cắm được. |
+| **Không dùng `bounce_time`** cho PIR | PIR báo thành nhiều nhịp < 0.1s → chống rung lọc mất hết; báo 1 hay 10 nhịp đều chỉ làm mới mốc thời gian. |
+| Thay PIR bằng **radar LD2410C** (đề xuất, chờ người dùng mua) | PIR (cảm biến nhiệt) không thể vừa bắt người ngồi im vừa không báo nhầm; chỉnh núm chỉ đổi lỗi này lấy lỗi kia. LD2410C cắm thay thẳng, code giữ nguyên. |
+| Trong lúc chờ: đề xuất **PIR chỉ dùng để chào, tắt tự dừng nhạc** ("cách 3") | Báo nhầm chỉ làm OLED chào nhầm, không ảnh hưởng nhạc. **Chưa được người dùng duyệt, chưa code.** |
 | "Gợi ý theo gu": cảm xúc vẫn là tiêu chí chính; gu chỉ xếp hạng **trong** cùng cảm xúc; hiểu bài từ âm thanh (librosa) + thẻ ID3 + nhãn tay (tùy chọn); 65/35 | Giữ đúng đề tài + tính năng chăm sóc cảm xúc; chạy được cả khi không ai điền nhãn. |
 
 ## 4. Các lệnh đã chạy và cách chạy lại dự án
@@ -82,6 +106,21 @@ PYTHONUTF8=1 venv/Scripts/python analyze_confusion.py
 # Laptop: xuất lại slide (PPT Master) — S = thư mục skill, P = thư mục project PPT Master
 python $S/scripts/svg_quality_checker.py $P --canonical-authoring --stage final --json
 python $S/scripts/total_md_split.py $P && python $S/scripts/finalize_svg.py $P && python $S/scripts/svg_to_pptx.py $P
+
+# --- Phiên 30/09 – 02/10 ---
+# Laptop (Git Bash, thư mục dự án): chép code sang Pi — MỖI LỆNH 1 DÒNG, đích Pi phải nằm cùng dòng
+scp gpio-service/*.py vinh@raspberrypi.local:~/emotion-music-recommender/gpio-service/
+cd ~/Documents/HIC/emotion-music-recommender/emotune-frontend/src
+scp hardware.js vinh@raspberrypi.local:~/emotion-music-recommender/emotune-frontend/src/
+scp components/MusicPlayer.jsx vinh@raspberrypi.local:~/emotion-music-recommender/emotune-frontend/src/components/
+# Pi: thử nút chạm + PIR (Ctrl+C thoát)
+cd ~/emotion-music-recommender/gpio-service && python3 test_hardware.py
+# Pi: xem tín hiệu thô PIR (lo / hi)
+watch -n 0.2 pinctrl get 23
+# Laptop: test mock service (cần venv có gpiozero + flask + flask-cors; in "ALL OK")
+cd gpio-service && PYTHONUTF8=1 python test_presence.py
+# Laptop: kiểm tra web
+cd emotune-frontend && npx eslint src/hardware.js src/components/MusicPlayer.jsx && npm run build
 ```
 
 ### Chạy demo trên Pi
@@ -91,13 +130,14 @@ python $S/scripts/total_md_split.py $P && python $S/scripts/finalize_svg.py $P &
 cd ~/emotion-music-recommender/emotion-scanner && source venv/bin/activate && python 3_backend_server.py
 cd ~/emotion-music-recommender/emotune-backend && npm start
 cd ~/emotion-music-recommender/emotune-frontend && npm run dev
-cd ~/emotion-music-recommender/gpio-service && python3 gpio_service.py   # OLED (cửa sổ thứ 4)
+cd ~/emotion-music-recommender/gpio-service && python3 gpio_service.py   # OLED + nút chạm + PIR (cửa sổ thứ 4)
 #   cài 1 lần: sudo raspi-config nonint do_i2c 0
 #              sudo apt install -y i2c-tools python3-smbus2 python3-pil python3-flask python3-flask-cors
 #   thử riêng: i2cdetect -y 1 (thấy 3c) · python3 oled.py · curl -X POST localhost:5001/led -H "Content-Type: application/json" -d '{"state":"happy"}'
 ```
 3. RealVNC Viewer → `raspberrypi.local` → Chromium `localhost:5173` → ▶ Bắt đầu → Allow camera.
-   (Khi dùng nút vật lý: mở `chromium-browser --autoplay-policy=no-user-gesture-required http://localhost:5173`.)
+   (Khi dùng nút chạm: **đóng hẳn Chromium**, mở Terminal trong VNC chạy `chromium-browser --autoplay-policy=no-user-gesture-required http://localhost:5173` — không có lệnh thì dùng `chromium`.)
+   PIR mới cấp điện cần ~30–60s ổn định → bật Pi sớm.
 4. Xem DB: `sudo -u postgres psql -d emotune -c "select id, emotion, action, created_at from mood_history order by id desc limit 5"`
 
 ### Chạy trên PC / laptop
@@ -114,12 +154,13 @@ cd emotune-frontend && npm run dev                                          # :5
 |---|---|---|
 | Raspberry Pi 5 + nguồn, webcam Logitech C270, loa Bluetooth | ✅ có | C270 có micro sẵn |
 | LED RGB 4 chân (trong suốt), điện trở 220Ω | ✅ có · **không dùng nữa** | LED là loại **anot chung** |
-| Nút 4 chân núm đen, nút 6 chân xám (nhấn nhả) | ✅ có · **chưa ăn** | thay bằng TTP223 |
+| Nút 4 chân núm đen, nút 6 chân xám (nhấn nhả) | ✅ có · **không dùng** | đã thay bằng TTP223 |
 | Breadboard 830 lỗ, dây đực–cái, dây đực–đực | ✅ mua 28/09 | nghi breadboard có chỗ không thông |
 | **Dây cái–cái** | ✅ có | nối thẳng module → Pi; mua thêm loại **dài 20 cm** khi lắp hộp |
 | **Màn hình OLED 0.96" I2C** (thứ tự chân: **VCC GND SCL SDA**) | ✅ **chạy** | đã nhờ tiệm hàn chân; SSD1306, địa chỉ `0x3C` |
-| **Cảm biến chuyển động PIR HC-SR501** | ✅ mua 28/09 | **chưa có code**, cần 5V — có người → tự quét, đi khỏi → dừng nhạc |
-| **2 module chạm TTP223** | ⬜ **cần mua** | thay nút bấm; nhờ hàn sẵn chân |
+| **Cảm biến chuyển động PIR HC-SR501** | ✅ có · code xong · **không đáng tin** | chân VCC · OUT · GND; báo nhầm khi phòng trống; đừng úp cốc (lệch nắp vòm) |
+| **Radar LD2410C** (chọn ô **Hlk-ld2410c**) | ⬜ **nên mua** | thay PIR, cắm đúng 3 chỗ của PIR; tìm shop giao nhanh (deadline 15/10) |
+| **2 module chạm TTP223** | ✅ **chạy** (30/09) | chân GND · I/O · VCC |
 | Hộp gỗ nắp bản lề ~22×15×12 cm | ⬜ chưa mua | xem artifact "Hộp nhạc EmoTune" (mục 2) |
 | Loa vi tính USB (tiếng qua USB) | ⬜ chưa mua · tùy chọn | thay loa Bluetooth cho ổn định |
 | Micro USB mini | ⬜ chưa mua · tùy chọn | chỉ khi làm giọng nói và mic C270 không đủ rõ |
@@ -131,30 +172,33 @@ Chân 1 = đầu hàng 40 chân **gần lỗ ốc**, cổng nguồn ở dưới 
 | Linh kiện | Chân Pi (số vật lý) · vị trí đếm từ trái | Trạng thái |
 |---|---|---|
 | OLED VCC / SDA / SCL / GND | 3.3V (1) / GPIO2 (3) / GPIO3 (5) / GND (9) · hàng dưới thứ 1 / 2 / 3 / 5 | ✅ chạy |
-| Nút 1 / Nút 2 (hoặc SIG của TTP223) | GPIO17 (11) / GPIO27 (13) · hàng dưới thứ 6 / 7 | code sẵn, phần cứng chưa ăn |
-| GND cho nút | GND (39) · **chân cuối cùng hàng dưới** (dễ tìm nhất) | |
+| TTP223 #1 VCC / GND / I/O | 3.3V (17) / GND (25) / GPIO17 (11) · hàng dưới thứ 9 / 13 / 6 | ✅ chạy |
+| TTP223 #2 VCC / GND / I/O | GPIO22 (15) / GND (39) / GPIO27 (13) · hàng dưới thứ 8 / 20 (cuối) / 7 | ✅ chạy |
+| PIR (sau này LD2410C) VCC / GND / OUT | 5V (2) / GND (6) / GPIO23 (16) · **hàng trên** thứ 1 / 3 / 8 | nối đúng; cảm biến không đáng tin |
+
+⚠ Dây **OUT** không bao giờ cắm vào hàng trên thứ 1–2 (5V). Dây GND OLED ở hàng dưới **thứ 5** (thứ 4 để trống).
 
 ⚠ Tắt Pi (`sudo shutdown now`) và rút điện trước khi cắm/rút dây.
 
 ## 5. Lỗi đang gặp hoặc việc còn dở
-- **Trên Pi, code gpio-service được chép bằng `scp`** → lần `git pull` sau sẽ báo trùng file. Trước khi pull, chạy trên Pi (từng dòng, trong `~/emotion-music-recommender`):
-  `rm gpio-service/oled.py gpio-service/test_hardware.py` · `git checkout gpio-service/gpio_service.py` · `git pull` (nội dung giống hệt bản đã commit).
-- **Nút bấm cứng chưa chạy** (xem mục 2, phiên chiều) → mua TTP223. Khi có: TTP223 xuất mức **cao** khi chạm → sửa `Button(17)` thành `Button(17, pull_up=None, active_state=True)` (tương tự 27); VCC TTP223 nối 3.3V (hàng trên không có 3.3V dư → dùng chân 17, hàng dưới thứ 9).
-- **PIR HC-SR501 chưa thiết kế, chưa code.**
+- **Đã commit + push (02/10)**: `gpio-service/gpio_service.py`, `test_hardware.py`, `test_presence.py`, `emotune-frontend/src/hardware.js`, `components/MusicPlayer.jsx`, `NOTES.md`, `.gitignore` (+ bỏ `__pycache__` khỏi git). Vẫn chưa track: `docs/EmoTune_Group6_Report_EN.pptx`, `docs/EmoTune_report_EN_v2.pptx`, `docs/EmoTune_report_EN_v3.pptx`, `docs/script-presentation-EN.md`, `docs/script-thuyet-trinh-VI.md` (người dùng tự làm, chưa rõ bản nào là cuối). Cũng chưa track: `emotion-scanner/docs/`.
+- **Trên Pi, code được chép bằng `scp`** (gpio-service + 2 file web) → lần `git pull` sau sẽ báo trùng file. **Commit + push trên laptop trước**, rồi trên Pi (trong `~/emotion-music-recommender`): `git checkout -- gpio-service emotune-frontend/src` · xoá file chưa track bị báo trùng · `git pull`.
+- **PIR không đáng tin** (mục 2): báo nhầm khi phòng trống, có lúc bỏ sót người ngồi yên. **Toàn luồng PIR với web + nhạc chưa thử** (OLED chào / Tam dung / tự phát tiếp). Không chắc 2 file web (`hardware.js`, `MusicPlayer.jsx`) đã được scp sang Pi thành công — chép lại cho chắc.
+- Đang chờ người dùng: (1) chốt mua cảm biến nào (LD2410C khuyên dùng), (2) có làm "cách 3" (PIR chỉ chào, tắt tự dừng nhạc) trong lúc chờ không.
 - Trang web còn comment/tên hàm cũ nói "đèn LED" (`hardware.js` `setLed`, `HomePage.jsx`) — chạy đúng, chỉ là tên cũ.
 - **Laptop chưa chạy dự phòng được**: DB laptop còn bản cũ 15 bài, `emotune-backend/music/` trống.
 - **AI**: 72.5% với người lạ; lớp **giận yếu** (26%, bị đoán thành bình thường); overfit mạnh; `load_best_model_at_end` **không nạp** bản tốt nhất (phải lấy tay từ checkpoint); `dat` thiếu ảnh surprise; `AI_NOTES.md` đã cũ, `check_data_quality.py` được nhắc nhưng không có trong repo.
-- Kịch bản thuyết trình chưa khớp bản 10 slide; slide VN còn số trang "/ 13". Slide/kịch bản vẫn nói "đèn LED + nút" → nên sửa thành **OLED** (nút: "đang làm, dùng module chạm").
+- Kịch bản thuyết trình chưa khớp bản 10 slide; slide VN còn số trang "/ 13". Slide/kịch bản vẫn nói "đèn LED + nút" → nên sửa thành **OLED + nút chạm TTP223 + cảm biến có người**.
 - Cũ, chưa sửa: `EmotionScanner` gửi ảnh khi camera chưa mở; `mood_history` có thể ghi `suggested` 2 lần; camera CSI không nhận; mỗi lần bật Pi phải mở tay các server qua SSH.
 - Global Python laptop có sẵn xung đột cũ (tensorflow-intel 2.17, facenet-pytorch) — không liên quan dự án, đừng "sửa".
 
 ## 6. Bước tiếp theo nên làm
-1. **28/09 — báo cáo:** theo `docs/script-thuyet-trinh-28-09.md`; bật thêm `gpio_service.py` để **OLED hiện cảm xúc**; bấm bằng nút trên màn hình; **cười tươi** (vui nhận diện tốt nhất), tránh demo "giận".
-2. **Nút bấm bằng TTP223:** mua 2 module (nhờ hàn chân) → sửa `Button(...)` theo mục 5 → nối SIG vào GPIO17/27 bằng dây cái–cái → `python3 test_hardware.py` → test toàn luồng với Chromium cờ autoplay. Hướng dẫn **1 bước mỗi tin nhắn**.
+1. **Cảm biến có người:** chốt mua **Hlk-ld2410c** (shop giao nhanh). Trong lúc chờ, nếu người dùng đồng ý → làm "cách 3": PIR chỉ chào, tắt `onAway/onBack` (hoặc 1 cờ trong `gpio_service.py`). Khi LD2410C tới: tắt Pi → cắm VCC/GND/OUT vào hàng trên thứ 1/3/8 (thay PIR) → `test_hardware.py` → bật lại tự dừng → **thử toàn luồng** (bảng 6 tình huống: chào / quét / ngồi 1 phút không dừng / đi ra 40s → Tam dung / quay lại → phát tiếp / tự chạm dừng thì không tự phát). Hướng dẫn **1 bước mỗi tin nhắn**.
+2. **Đồng bộ Pi qua git** (code đã push): làm theo mục 5 để bỏ bản scp rồi `git pull`.
 3. **AI:** xem lại ảnh "giận" của ducvinh/vanquynh; thử giảm overfit (augmentation mạnh hơn, ít epoch, mở 1 lớp); sửa lấy best checkpoint; sau đó **train bản cuối trên đủ 10 người** → commit model (Git LFS) → trên Pi `git pull && git lfs pull` → restart `3_backend_server.py`. Cập nhật `AI_NOTES.md`.
 4. **Gợi ý theo gu:** người dùng đọc plan rồi chọn cách thực hiện (Native / Subagent / tự code). Cần thêm bài hát (≥ 8–10 bài mỗi cảm xúc) thì tính năng mới có ý nghĩa.
-5. **PIR HC-SR501** (tự quét khi có người / dừng khi đi khỏi) + (tùy chọn) OLED hiện thêm tên bài: brainstorm → spec → plan, mở rộng `gpio-service`.
-5b. **Vỏ hộp:** theo artifact "Hộp nhạc EmoTune"; làm thử bằng carton; gửi Claude kích thước loa Bluetooth để chỉnh bản vẽ.
+5. **Vỏ hộp:** theo artifact "Hộp nhạc EmoTune"; làm thử bằng carton; gửi Claude kích thước loa Bluetooth để chỉnh bản vẽ. Thêm lỗ cho cảm biến có người ở mặt trước (LD2410C nhìn xuyên được vách gỗ/nhựa mỏng → có thể không cần khoét).
+5b. Sửa slide/kịch bản: "đèn LED + nút" → "OLED + nút chạm + cảm biến có người".
 6. **Giai đoạn 2 phần cứng:** cắm điện là chạy (systemd cho các service + Chromium kiosk), không cần VNC.
 7. (Tùy chọn) Thí nghiệm Edge Impulse so với ViT trên cùng 2 người kiểm tra.
 8. Laptop dự phòng: `scp` mp3 từ Pi về, chạy lại `schema.sql` + `seed.sql`.
