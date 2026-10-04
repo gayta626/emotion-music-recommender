@@ -1,8 +1,7 @@
 .side-bar-container {
-    width: 300px;
-    height: 100vh;
-    background-color: #1A1A1A;
-    border-radius: 10px;
+    width: 240px;
+    background-color: var(--surface);
+    border-radius: var(--radius);
     transition: width 0.3s ease;
     overflow: hidden;
     display: flex;
@@ -13,77 +12,67 @@
 
         .action-container {
             flex-direction: column;
-            align-items: right;
             gap: 16px;
-            padding-top: 16px;
-
-
+            padding: 16px 0 0;
         }
 
-        .playlist-list {
-            .playlist-item {
-                justify-content: center; // thêm dòng này — canh giữa cover khi ẩn info
-                padding: 8px 0; // bỏ padding ngang 16px cũ, tránh lệch trong dải 72px hẹp
-            }
+        .playlist-list .playlist-item {
+            justify-content: center;
+            padding: 8px 0;
         }
     }
 
     .action-container {
         display: flex;
         align-items: center;
-
         justify-content: space-between;
-        padding: 16px;
+        padding: 16px 19px 0;
 
         .toggle-title {
             display: flex;
             align-items: center;
+            gap: 10px;
 
             .toggle {
                 background: none;
                 border: none;
-                margin-right: 10px;
+                display: flex;
                 cursor: pointer;
-                margin-left: 10px;
             }
 
             .title {
                 color: white;
+                font-size: 12px;
                 font-weight: 600;
+                letter-spacing: 0.02em;
                 white-space: nowrap;
             }
         }
 
         .add-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: #2a2a2a;
+            background: none;
             border: none;
             display: flex;
-            align-items: center;
-            justify-content: center;
             cursor: pointer;
-            flex-shrink: 0;
             padding: 0;
         }
     }
 
     .filter-tabs {
-        padding: 0 16px 12px;
+        padding: 18px 20px 0;
 
         .tab {
-            background-color: #2a2a2a;
+            height: 25px;
+            padding: 0 11px;
+            background-color: var(--chip);
             color: white;
             border: none;
-            border-radius: 999px;
-            padding: 6px 14px;
-            font-size: 13px;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
             cursor: pointer;
-
-            &.active {
-                background-color: #3a3a3a;
-            }
         }
     }
 
@@ -91,18 +80,23 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 16px 12px;
+        padding: 14px 20px 12px;
 
         .search-icon-btn {
             background: none;
             border: none;
+            display: flex;
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.7);
         }
 
         .sort-label {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
             cursor: pointer;
         }
     }
@@ -114,8 +108,8 @@
         .playlist-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
+            gap: 7px;
+            padding: 5px 19px;
             cursor: pointer;
 
             &:hover {
@@ -123,45 +117,32 @@
             }
 
             .cover {
-                width: 48px;
-                height: 48px;
+                width: 42px;
+                height: 42px;
                 flex-shrink: 0;
-                border-radius: 4px;
-                overflow: hidden;
-
-                img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .cover-placeholder {
-                    width: 100%;
-                    height: 100%;
-                    background-color: #333;
-                }
+                border-radius: 50%;
+                object-fit: cover;
             }
 
             .info {
                 display: flex;
                 flex-direction: column;
+                gap: 5px;
                 overflow: hidden;
+                font-size: 11px;
+                letter-spacing: 0.02em;
 
                 .name {
                     color: white;
-                    font-size: 14px;
-                    font-weight: 500;
+                    font-weight: 600;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
 
                 .subtitle {
-                    color: rgba(255, 255, 255, 0.6);
-                    font-size: 12px;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    color: white;
+                    font-weight: 400;
                 }
             }
         }

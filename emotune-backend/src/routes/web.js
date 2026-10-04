@@ -4,6 +4,7 @@ const feedBackController = require("../controllers/feedBackController")
 const suggestController = require("../controllers/suggestController")
 const listenReportController = require("../controllers/listenReportController")
 const requestSongController = require("../controllers/requestSongController")
+const artistController = require("../controllers/artistController")
 const ScanController = require("../controllers/scanController")
 
 let router = express.Router()
@@ -13,6 +14,7 @@ let initWebRoutes = (app) => {
         return res.send("Hello world with vinh1310 va vanquynh2603")
     });
 
+    router.get('/artists', artistController.getArtists);
     router.get('/mood-history', moodHistoryController.getMoodHistory);
 
     router.post('/feed-back', feedBackController.submitFeedBack);

@@ -34,10 +34,9 @@ const Header = () => {
 
                 </div>
 
-
+                <AIIcon className="ai-icon" />
 
                 <div className="action-container">
-                    <AIIcon className="ai-icon" />
                     <button className="explore-premium-btn">
                         Explore Premium
                     </button>

@@ -4,8 +4,9 @@ let getRequestSong = async (songName) => {
     try {
         const result = await db.query(
             `
-        SELECT s.id , s.title ,s.artist , s.file_path, s.emotion , s.energy
+        SELECT s.id , s.title , a.name AS artist , s.file_path, s.emotion , s.energy
         FROM songs s
+        LEFT JOIN artists a ON a.id = s.artist_id
         WHERE s.title ILIKE '%' || $1 || '%' 
         LIMIT 1
         `,

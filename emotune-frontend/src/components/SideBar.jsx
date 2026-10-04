@@ -3,16 +3,20 @@ import OpenToggle from '../assets/icons/open_toggle.svg?react'
 import CloseToggle from '../assets/icons/close_toggle.svg?react'
 import AddIcon from '../assets/icons/add_icon.svg?react'
 import SearchIcon from '../assets/icons/search_icon.svg?react'
-import { useState } from 'react'
-
-const playlists = [
-    { id: 1, name: 'My Playlist #4', owner: 'nguyen duc vinh', cover: null },
-    { id: 2, name: 'My Playlist #3', owner: 'nguyen duc vinh', cover: null },
-    { id: 3, name: 'My Playlist #2', owner: 'nguyen duc vinh', cover: null },
-]
+import BarsIcon from '../assets/icons/bars_icon.svg?react'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+import { API_URL } from '../config'
 
 const SideBar = () => {
     const [collapsed, setCollapsed] = useState(false)
+    const [artists, setArtists] = useState([])
+
+    useEffect(() => {
+        axios.get(`${API_URL}/artists`)
+            .then(res => setArtists(res.data))
+            .catch(() => { })
+    }, [])
 
     return (
         <div className={`side-bar-container ${collapsed ? 'collapse' : ''}`}>
@@ -24,42 +28,36 @@ const SideBar = () => {
                     {!collapsed && <span className='title'>Your Library</span>}
                 </div>
 
-                <button className="add-btn">
+                {!collapsed && <button className="add-btn">
                     <AddIcon />
-                </button>
-
+                </button>}
             </div>
 
-            {true && (
-                <>
-                    {!collapsed && <div className="filter-tabs">
-                        <button className="tab active">Playlists</button>
-                    </div>}
+            {!collapsed && <div className="filter-tabs">
+                <button className="tab active">Artists</button>
+            </div>}
 
-                    <div className="search-row">
-                        {!collapsed && <button className="search-icon-btn">
-                            <SearchIcon />
-                        </button>}
-                        {!collapsed && <span className="sort-label">Recents</span>}
-                    </div>
+            {!collapsed && <div className="search-row">
+                <button className="search-icon-btn">
+                    <SearchIcon />
+                </button>
+                <span className="sort-label">
+                    Recents
+                    <BarsIcon />
+                </span>
+            </div>}
 
-                    <div className="playlist-list">
-                        {playlists.map((item) => (
-                            <div className="playlist-item" key={item.id}>
-                                <div className="cover">
-                                    {item.cover
-                                        ? <img src={item.cover} alt={item.name} />
-                                        : <div className="cover-placeholder" />}
-                                </div>
-                                {!collapsed && <div className="info">
-                                    <span className="name">{item.name}</span>
-                                    <span className="subtitle">Playlist • {item.owner}</span>
-                                </div>}
-                            </div>
-                        ))}
+            <div className="playlist-list">
+                {artists.map((item) => (
+                    <div className="playlist-item" key={item.id}>
+                        <img className="cover" src={`${API_URL}/avatars/${item.avatar}`} alt={item.name} />
+                        {!collapsed && <div className="info">
+                            <span className="name">{item.name}</span>
+                            <span className="subtitle">Artist</span>
+                        </div>}
                     </div>
-                </>
-            )}
+                ))}
+            </div>
         </div>
     )
 }

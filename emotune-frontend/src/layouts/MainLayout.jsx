@@ -1,21 +1,17 @@
 import { Outlet } from 'react-router-dom'
 import Header from '../components/Header';
 import SideBar from '../components/SideBar';
-import Footer from '../components/Footer';
-import { useState } from 'react';
+import './MainLayout.scss'
 
 const MainLayout = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const toggleSideBar = () => {
-        setIsOpen(!isOpen)
-    }
     return (
-        <>
+        <div className="app-shell">
             <Header />
             <SideBar />
-            <Outlet />
-            <Footer />
-        </>
+            <main className="app-main">
+                <Outlet />
+            </main>
+        </div>
     )
 }
 

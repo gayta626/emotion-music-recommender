@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "rename-music": "node scripts/rename-music.js"
+    "rename-music": "node scripts/rename-music.js",
+    "db:setup": "node scripts/db-setup.js"
   },
   "keywords": [
     "nodejs",

@@ -1,0 +1,23 @@
+.app-shell {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+
+    > .header-container {
+        grid-column: 1 / -1;
+    }
+
+    > .side-bar-container {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: calc(100vh - var(--header-h));
+        margin-left: 1px;
+    }
+
+    .app-main {
+        min-width: 0;
+        padding: 24px;
+    }
+}

@@ -19,9 +19,10 @@ let getMoodTrend = async (days) => {
 let getSongsByEmotion = async (emotion) => {
     try {
         const result = await db.query(
-            `SELECT s.id, s.title, s.artist, s.file_path, s.emotion, s.energy,
+            `SELECT s.id, s.title, a.name AS artist, s.file_path, s.emotion, s.energy,
                     COALESCE(p.score, 0) AS score
              FROM songs s
+             LEFT JOIN artists a ON a.id = s.artist_id
              LEFT JOIN preferences p
                     ON p.song_id = s.id AND p.emotion = $1
              WHERE s.emotion = $1
@@ -38,9 +39,10 @@ let getSongsByEmotion = async (emotion) => {
 
         if (candidates.length === 0) {
             const fallback = await db.query(
-                `SELECT s.id, s.title, s.artist, s.file_path, s.emotion, s.energy,
+                `SELECT s.id, s.title, a.name AS artist, s.file_path, s.emotion, s.energy,
                         COALESCE(p.score, 0) AS score
                  FROM songs s
+                 LEFT JOIN artists a ON a.id = s.artist_id
                  LEFT JOIN preferences p ON p.song_id = s.id AND p.emotion = $1
                  WHERE s.emotion = $1
                  ORDER BY score DESC`,

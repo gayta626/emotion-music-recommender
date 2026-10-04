@@ -1,3 +1,15 @@
+:root {
+  --bg: #08070c;
+  --surface: #1a1a1a;
+  --chip: #3f3542;
+  --accent: #c9a9f5;
+  --muted: #a79fc9;
+  --search-text: #dad1ff;
+  --on-premium: #27003c;
+  --radius: 20px;
+  --header-h: 117px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -6,6 +18,9 @@
 
 body {
   margin: 0;
+  background: var(--bg);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
 }
 
 #root {
