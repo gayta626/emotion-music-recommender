@@ -36,6 +36,8 @@ Người dùng **tự code phần frontend và backend** để hiểu hệ thố
 - Giải thích ngắn gọn bằng tiếng Việt, từng bước một; khi người dùng nhờ "cách làm" thì đưa hướng đi + ví dụ nhỏ, không dán cả file hoàn chỉnh.
 - **Mỗi bước hướng dẫn phải kèm một chú thích nhỏ** (2–3 dòng) trả lời: *đang làm gì* và *có ý nghĩa gì cho hệ thống* (nó phục vụ tính năng nào, dữ liệu đi đâu tiếp theo, thiếu nó thì hệ thống bị gì). Ví dụ: "📌 Model chỉ lấy dữ liệu thô từ DB → service sẽ biến nó thành dạng frontend cần. Tách riêng để sau này đổi DB không phải sửa logic."
 - Hướng dẫn **từng file / từng bước một**, chờ người dùng viết xong và gửi code để review rồi mới sang bước sau.
+- **Cần đến đâu viết đến đó**: chỉ hướng dẫn viết hàm/file khi bước hiện tại **thật sự dùng tới nó**, không bảo viết trước cho "đủ bộ" (vd không viết `findUserById` lúc làm đăng ký/đăng nhập, để đến lúc làm `GET /auth/me` mới viết). Người dùng muốn tư duy theo kiểu "cần cái gì thì tạo cái đó" để hiểu lý do tồn tại của từng hàm. Plan có liệt kê hàm ở task trước thì dời sang task dùng nó.
+- **`TIEN_DO.md` (gốc repo) là bảng tiến độ của người dùng**: mỗi khi người dùng xong một phần (một bước/task, đã kiểm tra chạy đúng), Claude đánh dấu ✅ + ngày, chuyển 🔄 sang việc tiếp theo, cập nhật mục "📍 Đang ở đâu", bảng tổng quan và "Nhật ký hoàn thành". Việc mới phát sinh thì thêm dòng vào đúng giai đoạn.
 - Lưu ý lịch sử: ở phiên 03/10 Claude đã chỉnh Header/SideBar/MainLayout (đã có sẵn do người dùng viết) cho khớp Figma và viết `GET /artists` (model/service/controller/route + SideBar gọi API). Người dùng bảo bỏ qua, không cần làm lại; từ nay chỉ hướng dẫn.
 
 ## Kiến trúc: 4 service chạy riêng, nối bằng HTTP

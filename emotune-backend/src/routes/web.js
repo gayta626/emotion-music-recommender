@@ -5,7 +5,9 @@ const suggestController = require("../controllers/suggestController")
 const listenReportController = require("../controllers/listenReportController")
 const requestSongController = require("../controllers/requestSongController")
 const artistController = require("../controllers/artistController")
-const ScanController = require("../controllers/scanController")
+const scanController = require("../controllers/scanController")
+const authController = require('../controllers/authController')
+const { requireAuth } = require('../middleware/auth')
 
 let router = express.Router()
 
@@ -21,7 +23,10 @@ let initWebRoutes = (app) => {
     router.post('/suggest', suggestController.getSuggest)
     router.post('/listen-report', listenReportController.submitListenReport)
     router.post('/request-song', requestSongController.postRequestSong)
-    router.post('/scan-and-suggest', ScanController.scanAndSuggest)
+    router.post('/scan-and-suggest', scanController.scanAndSuggest)
+    router.post('/auth/register', authController.register)
+    router.post('/auth/login', authController.login)
+    router.get('/auth/me', requireAuth, authController.getUserByJWT)
     return app.use("/", router);
 }
 

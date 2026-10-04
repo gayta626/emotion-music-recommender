@@ -4,6 +4,8 @@
 >
 > ⚠ **Ngoại lệ của dự án này (CLAUDE.md thắng skill):** người dùng **tự code** backend/frontend. Mỗi task ghi rõ **[Claude]** hay **[Người dùng]**. Ở task [Người dùng], plan chỉ đưa **giao diện hàm, test case, lệnh kiểm tra, gợi ý nhỏ** — không dán file hoàn chỉnh. Claude hướng dẫn **từng file một**, mỗi bước kèm chú thích 📌 (đang làm gì / ý nghĩa cho hệ thống), chờ người dùng gửi code → review → mới sang bước sau. Subagent **không** được tự viết code cho task [Người dùng].
 
+> **04/10 — người dùng chọn bỏ viết unit test vì gấp deadline** (học test sau): các bước "viết test trước" ở Task 2 và 6 là **tuỳ chọn**; kiểm tra bằng curl / thử tay ở mỗi task là **bắt buộc**. `test/authValidation.test.js` (2 test mẫu Claude viết) giữ lại, chạy `npm test` là có thêm một bước kiểm tra miễn phí.
+
 **Goal:** Mỗi người có tài khoản riêng (username + mật khẩu); điểm sở thích, lịch sử cảm xúc, bài vừa nghe, khảo sát gu tách theo người; dùng được trên web (laptop/điện thoại) và hộp nhạc Pi qua nút "Dùng hộp nhạc".
 
 **Architecture:** Thêm bảng `users` + `devices`, gắn `user_id` vào 5 bảng dữ liệu cá nhân. Backend phát JWT khi đăng nhập; middleware `requireAuth` (web) và `resolveUser` (web hoặc hộp nhạc qua header `X-Device-Id: box`) gắn `req.userId`; mọi model nhận `userId` làm **tham số đầu tiên**. Frontend dùng một axios instance chung (`src/api.js`) tự gắn token/`X-Device-Id`; trên Pi (`VITE_DEVICE_ID=box`) không có trang đăng nhập mà hỏi `GET /devices/box/current` mỗi 3 giây.
@@ -292,13 +294,12 @@ test("username duoc trim + chu thuong", () => {
 - Produces:
   - `userModel.createUser(username, passwordHash) → { id, username, survey_done_at }` — trùng username thì để lỗi pg (mã `err.code === "23505"`) bay lên.
   - `userModel.findUserByUsername(username) → row có password_hash | undefined`
-  - `userModel.findUserById(id) → { id, username, survey_done_at } | undefined`
   - `authService.toPublicUser(row) → { id, username, surveyDone: row.survey_done_at !== null }`
   - `authService.signToken(userId) → string` — `jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN })`
   - `authService.register(rawUsername, password) → { token, user }` và `authService.login(rawUsername, password) → { token, user }`. Lỗi nghiệp vụ ném `Error` có thêm `err.status` (400 / 401 / 409); controller trả `res.status(err.status || 500).json({ error: err.message })`.
   - Route: `router.post('/auth/register', authController.register)`, `router.post('/auth/login', authController.login)`.
 
-- [ ] **Step 1:** `userModel.js` — 3 hàm trên. `RETURNING id, username, survey_done_at` cho `createUser`.
+- [ ] **Step 1:** `userModel.js` — 2 hàm trên (`createUser`, `findUserByUsername`). `RETURNING id, username, survey_done_at` cho `createUser`.
 - [ ] **Step 2:** `authService.js`. Gợi ý: `bcrypt.hash(password, 10)`, `bcrypt.compare(password, row.password_hash)`. Đăng nhập: không có user **hoặc** sai mật khẩu → cùng một lỗi 401 "Tên đăng nhập hoặc mật khẩu không đúng". Đăng ký: bắt `err.code === "23505"` → 409 (không SELECT kiểm tra trước — Review Focus #1).
 - [ ] **Step 3:** `authController.js` (`register` trả `201`, `login` trả `200`) + 2 route.
 - [ ] **Step 4: Kiểm tra bằng curl** (Git Bash, backend đang chạy `npm run dev`):
@@ -344,6 +345,7 @@ Expected: cả hai `401` và **cùng một** câu thông báo.
 **Interfaces:**
 - Produces:
   - `requireAuth(req, res, next)` — header phải dạng `Bearer <token>`; `jwt.verify` OK → `req.userId = payload.userId; next()`; mọi trường hợp khác → `401 { error: "unauthorized" }`.
+  - `userModel.findUserById(id) → { id, username, survey_done_at } | undefined` — viết ở task này (lúc cần lần đầu), không lấy `password_hash`.
   - `authController.me` → `200 { id, username, surveyDone }` (dùng `findUserById(req.userId)`; không thấy user — tài khoản bị xoá — → 401).
   - Route: `router.get('/auth/me', requireAuth, authController.me)`.
 
