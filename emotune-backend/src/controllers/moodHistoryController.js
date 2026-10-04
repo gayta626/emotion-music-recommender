@@ -3,7 +3,7 @@ const moodHistoryService = require("../services/moodHistoryService")
 
 let getMoodHistory = async (req, res) => {
     try {
-        const data = await moodHistoryService.getMoodHistoryTrend()
+        const data = await moodHistoryService.getMoodHistoryTrend(req.userId)
         return res.status(200).json(data)
     } catch (err) {
         console.log("Loi goi API moodHistory :" + err)

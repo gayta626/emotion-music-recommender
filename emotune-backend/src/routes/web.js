@@ -17,13 +17,13 @@ let initWebRoutes = (app) => {
     });
 
     router.get('/artists', artistController.getArtists);
-    router.get('/mood-history', moodHistoryController.getMoodHistory);
+    router.get('/mood-history', requireAuth, moodHistoryController.getMoodHistory);
 
-    router.post('/feed-back', feedBackController.submitFeedBack);
-    router.post('/suggest', suggestController.getSuggest)
-    router.post('/listen-report', listenReportController.submitListenReport)
-    router.post('/request-song', requestSongController.postRequestSong)
-    router.post('/scan-and-suggest', scanController.scanAndSuggest)
+    router.post('/feed-back', requireAuth, feedBackController.submitFeedBack);
+    router.post('/suggest', requireAuth, suggestController.getSuggest)
+    router.post('/listen-report', requireAuth, listenReportController.submitListenReport)
+    router.post('/request-song', requireAuth, requestSongController.postRequestSong)
+    router.post('/scan-and-suggest', requireAuth, scanController.scanAndSuggest)
     router.post('/auth/register', authController.register)
     router.post('/auth/login', authController.login)
     router.get('/auth/me', requireAuth, authController.getUserByJWT)

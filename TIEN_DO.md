@@ -6,15 +6,15 @@
 
 ## 📍 Đang ở đâu
 
-**Giai đoạn A — Task 5:** thêm `user_id` vào gợi ý, chấm điểm, lịch sử (Bạn). Xong task này web quét/chấm điểm chạy lại được.
-Trước đó: **commit Task 3 + 4** (chưa commit).
+**Giai đoạn A — Task 6:** `resolveUser` — hộp nhạc mượn tài khoản người đang giữ hộp (Bạn).
+Task 5 xong nhưng **chưa commit**. ⚠ Web quét nhạc đang báo 401 cho tới khi làm F6 (`api.js` gắn token) — đúng thiết kế.
 
 ## Tổng quan
 
 | Giai đoạn | Hạn | Tiến độ |
 |---|---|---|
 | 0. Nền tảng (trước 04/10) | — | ✅ 10 / 10 |
-| A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 5 / 11 |
+| A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 6 / 11 |
 | F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 4 / 17 |
 | B. Hoàn thiện phần cứng + demo HIC | **15/10/2026** | ⬜ 0 / 8 |
 | C. Môn Xây dựng hệ thống thông minh | chưa biết | ⬜ 0 / 11 |
@@ -53,8 +53,13 @@ Trước đó: **commit Task 3 + 4** (chưa commit).
 | | ↳ 3.3 `authController.js` + route `POST /auth/register`, `POST /auth/login` | Bạn | ✅ 04/10 |
 | | ↳ 3.4 Thử bằng curl/Postman (6 trường hợp) + commit | Bạn + Claude | ✅ 04/10 |
 | 4 ⭐ | Middleware `requireAuth` + `GET /auth/me` (+ `findUserById`) | Bạn | ✅ 04/10 |
-| 5 ⭐ | Thêm `user_id` vào gợi ý, chấm điểm, lịch sử (web) — sau task này quét lại chạy được | Bạn | 🔄 |
-| 6 ⭐ | `resolveUser`: hộp nhạc mượn tài khoản người đang giữ hộp (tự nhả sau 30 phút) | Bạn | ⬜ |
+| 5 ⭐ | Thêm `user_id` vào gợi ý, chấm điểm, lịch sử — mọi API cá nhân cần đăng nhập | Bạn + Claude | ✅ 04/10 |
+| | ↳ 5.1 Luồng gợi ý: `suggestModel` → `suggestService` → `suggestController` + `scanController`, route có `requireAuth` | Bạn + Claude | ✅ 04/10 |
+| | ↳ 5.2 Luồng chấm điểm: `POST /listen-report` (`listenReportModel` → service → controller) | Claude | ✅ 04/10 |
+| | ↳ 5.3 Từ chối bài + xin bài: `POST /feed-back`, `POST /request-song` (`feedBackModel` dùng chung) | Claude | ✅ 04/10 |
+| | ↳ 5.4 Lịch sử cảm xúc: `GET /mood-history` | Claude | ✅ 04/10 |
+| | ↳ 5.5 Thử 2 tài khoản A/B (preferences tách riêng) + commit | Claude | ✅ 04/10 (chờ commit) |
+| 6 ⭐ | `resolveUser`: hộp nhạc mượn tài khoản người đang giữ hộp (tự nhả sau 30 phút) | Bạn | 🔄 |
 | 7 ⭐ | API hộp nhạc: `claim` / `release` / `current` | Bạn | ⬜ |
 | 8 | `GET /genres`, `GET/POST /profile` (khảo sát gu theo từng người) | Bạn | ⬜ |
 | 13 | OLED màn chờ đăng nhập | Claude | ⏸ |
@@ -128,4 +133,4 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 | Ngày | Xong |
 |---|---|
-| 04/10 | A-0 commit việc dở · A-1 DB nhiều tài khoản · A-2 `authValidation` · A-3 đăng ký + đăng nhập (`userModel`, `authService`, `authController`, route) · A-4 `requireAuth` + `GET /auth/me` |
+| 04/10 | A-0 commit việc dở · A-1 DB nhiều tài khoản · A-2 `authValidation` · A-3 đăng ký + đăng nhập (`userModel`, `authService`, `authController`, route) · A-4 `requireAuth` + `GET /auth/me` · A-5 gợi ý, chấm điểm, từ chối/xin bài, lịch sử theo từng người |

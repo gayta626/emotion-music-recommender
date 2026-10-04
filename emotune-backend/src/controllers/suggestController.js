@@ -16,7 +16,7 @@ let getSuggest = async (req, res) => {
         })
     }
     try {
-        const result = await suggestService.generateSuggestion(emotion, confidence);
+        const result = await suggestService.generateSuggestion(req.userId, emotion, confidence);
         if (!result) {
             return res.status(404).json({
                 error: "Loi : Khong tim thay"

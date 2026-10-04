@@ -1,6 +1,6 @@
 const db = require("../config/db")
 
-let updateFeedBack = async (emotion, songId, delta, historyAction) => {
+let updateFeedBack = async (userId, emotion, songId, delta, historyAction) => {
 
     const client = await db.pool.connect();
 
@@ -9,21 +9,21 @@ let updateFeedBack = async (emotion, songId, delta, historyAction) => {
 
         // cap nhat feedback dua tren accept va decline
         await client.query(
-            `INSERT INTO preferences (emotion , song_id , score)
-            VALUES($1 , $2 , $3)
-            ON CONFLICT (emotion , song_id)
-            DO UPDATE SET score = preferences.score + $3 , updated_at =NOW()
+            `INSERT INTO preferences (user_id, emotion , song_id , score)
+            VALUES($1 , $2 , $3 , $4)
+            ON CONFLICT (user_id, emotion , song_id)
+            DO UPDATE SET score = preferences.score + $4 , updated_at =NOW()
             `,
-            [emotion, songId, delta]
+            [userId, emotion, songId, delta]
         );
 
         // cap nhat mood history
         await client.query(
             `
-            INSERT INTO mood_history (emotion , song_id ,action)
-            VALUES($1 ,$2 , $3)
+            INSERT INTO mood_history (user_id, emotion , song_id ,action)
+            VALUES($1 ,$2 , $3 , $4)
             `,
-            [emotion, songId, historyAction]
+            [userId, emotion, songId, historyAction]
         )
 
 

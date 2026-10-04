@@ -4,7 +4,7 @@ let postRequestSong = async (req, res) => {
     const { emotion, songName } = req.body;
 
     try {
-        const result = await requestSongService.processRequestSong(emotion, songName);
+        const result = await requestSongService.processRequestSong(req.userId, emotion, songName);
 
         if (!result) {
             return res.status(404).json({ error: `Không tìm thấy bài hát nào khớp '${songName}'` });

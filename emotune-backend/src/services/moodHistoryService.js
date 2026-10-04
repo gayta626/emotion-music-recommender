@@ -1,7 +1,7 @@
 const moodHistoryModel = require("../model/moodHistoryModel")
 
-let getMoodHistoryTrend = () => {
-    return moodHistoryModel.getMoodHistoryData();
+let getMoodHistoryTrend = (userId) => {
+    return moodHistoryModel.getMoodHistoryData(userId);
 }
 
 

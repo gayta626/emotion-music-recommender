@@ -1,6 +1,6 @@
 const db = require("../config/db")
 
-let feedBackSongListened = async (emotion, songId, delta, action) => {
+let feedBackSongListened = async (userId, emotion, songId, delta, action) => {
     const client = await db.pool.connect();
     try {
 
@@ -8,30 +8,30 @@ let feedBackSongListened = async (emotion, songId, delta, action) => {
 
         await client.query(
             `
-            INSERT INTO preferences (emotion ,song_id, score)
-            VALUES ($1 , $2 , $3)
-            ON CONFLICT (emotion , song_id)
-            DO UPDATE SET score = preferences.score + $3 , updated_at =NOW()
+            INSERT INTO preferences (user_id, emotion ,song_id, score)
+            VALUES ($1 , $2 , $3 , $4)
+            ON CONFLICT (user_id, emotion , song_id)
+            DO UPDATE SET score = preferences.score + $4 , updated_at =NOW()
             `
             ,
-            [emotion, songId, delta]
+            [userId, emotion, songId, delta]
         )
 
         // cap nhat mood history
         await client.query(
             `
-            INSERT INTO mood_history(emotion ,song_id , action)
-            VALUES ($1 , $2 , $3)
+            INSERT INTO mood_history(user_id, emotion ,song_id , action)
+            VALUES ($1 , $2 , $3 , $4)
             `,
-            [emotion, songId, action]
+            [userId, emotion, songId, action]
         )
 
         //cap nhat recently_played
         await client.query(
             `
-            INSERT INTO recently_played(song_id) VALUES($1)
+            INSERT INTO recently_played(user_id, song_id) VALUES($1, $2)
             `,
-            [songId]
+            [userId, songId]
         )
         await client.query("COMMIT")
         return { status: "ok", delta }

@@ -11,7 +11,7 @@ let scanAndSuggest = async (req, res) => {
                 message: "Không phát hiện khuôn mặt, vui lòng nhìn vào camera"
             });
         }
-        const result = await suggestService.generateSuggestion(emotionResult.emotion, emotionResult.confidence)
+        const result = await suggestService.generateSuggestion(req.userId, emotionResult.emotion, emotionResult.confidence)
         if (!result) {
             return res.status(404).json({ error: "Loi khong tim thay" })
         }

@@ -1,9 +1,10 @@
 const suggestModel = require("../model/suggestModel")
 const { getRandomMessage } = require("../messages")
 
-let checkMoodTrend = async (emotion) => {
+// xu huong cam xuc 1-3 ngay cua CHINH nguoi dung nay
+let checkMoodTrend = async (userId, emotion) => {
     const NEGATIVE_EMOTIONS = ["sad", "angry"];
-    let trend1Day = await suggestModel.getMoodTrend(1);
+    let trend1Day = await suggestModel.getMoodTrend(userId, 1);
     let totalCount1Day = trend1Day.reduce((sum, row) => {
         return sum + parseInt(row.cnt);
     }, 0);
@@ -14,7 +15,7 @@ let checkMoodTrend = async (emotion) => {
         trend = trend1Day;
         totalCount = totalCount1Day;
     } else {
-        trend = await suggestModel.getMoodTrend(3);
+        trend = await suggestModel.getMoodTrend(userId, 3);
         totalCount = trend.reduce((sum, row) => {
             return sum + parseInt(row.cnt);
         }, 0);
@@ -35,9 +36,9 @@ let checkMoodTrend = async (emotion) => {
 }
 
 
-let generateSuggestion = async (emotion, confidence) => {
-    const trendResult = await checkMoodTrend(emotion);
-    const songSuggested = await suggestModel.getSongsByEmotion(trendResult.targetEmotion);
+let generateSuggestion = async (userId, emotion, confidence) => {
+    const trendResult = await checkMoodTrend(userId, emotion);
+    const songSuggested = await suggestModel.getSongsByEmotion(userId, trendResult.targetEmotion);
     //kiem tra xem con bai hat de goi y khong
     if (songSuggested.length === 0) {
         return null;
@@ -48,7 +49,7 @@ let generateSuggestion = async (emotion, confidence) => {
 
     const suggestMessage = getRandomMessage(trendResult.targetEmotion, trendResult.isEncourage);
 
-    await suggestModel.logSuggestion(emotion, confidence, chosenSong.id)
+    await suggestModel.logSuggestion(userId, emotion, confidence, chosenSong.id)
     return {
         song: chosenSong,
         emotion: trendResult.targetEmotion,
