@@ -1,15 +1,106 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **03 – 04/10/2026** trên **máy mới** (vừa đổi máy, cài lại từ đầu). Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: backend + frontend + AI chạy được trên máy mới, **chưa thử trọn vòng vì chưa có camera**. DB mới 9 bảng (một file `setup.sql`). Đang làm **khảo sát gu lần đầu** (thiết kế Figma xong, DB xong, người dùng đang tự viết `GET /profile`). **Đã chốt: nhiều tài khoản (username + mật khẩu) + bắt buộc đăng nhập** → spec đã viết (`docs/superpowers/specs/2026-10-04-multi-user-accounts-design.md`), đang chờ người dùng duyệt spec rồi viết plan; schema chưa đổi. ⚠ **Toàn bộ thay đổi phiên này CHƯA COMMIT.**
-> Cách làm việc (đã ghi trong `CLAUDE.md` + memory): **người dùng tự code FE/BE**, Claude chỉ hướng dẫn từng file một (kèm chú thích 📌 "đang làm gì / ý nghĩa cho hệ thống"), review code, và làm thay việc phụ: CSS/SCSS, asset, tài liệu, cấu hình, script.
-> Lắp phần cứng: **mỗi tin nhắn 1 bước**, chờ người dùng báo xong; chỉ chân Pi theo kiểu **"hàng trên/dưới, chân thứ N"** tính từ lỗ ốc. Lệnh cho Git Bash phải **ngắn, mỗi lệnh 1 dòng** (lệnh dài bị cắt dòng).
+> Phiên gần nhất: **04/10/2026 (chiều–tối)** trên máy mới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: **backend nhiều tài khoản xong phần web** (đăng ký / đăng nhập / JWT / mọi API cá nhân lọc theo `user_id`); frontend đã gắn token (`src/api.js`) nhưng **chưa có trang đăng nhập** → vào web phải dán token tay. Hộp nhạc (Task 6–7) **để sau**. Mọi thứ **đã commit** (trừ `.claude/settings.json`).
+> **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
+> Cách làm việc (ghi trong `CLAUDE.md`): người dùng tự code FE/BE, Claude hướng dẫn **từng file** (chú thích 📌), **cần đến đâu viết đến đó**; khi người dùng nói "bạn làm luôn" (do gấp) thì Claude làm rồi giải thích. Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
 
 ---
 
-# Phiên 03 – 04/10/2026
+# Phiên 04/10/2026 (chiều–tối) — nhiều tài khoản + đăng nhập
 
-## 1. Mục tiêu của phiên này
+## 1. Mục tiêu
+1. Viết plan triển khai cho spec nhiều tài khoản; chốt mua cảm biến LD2410C.
+2. Dựng DB mới (users, devices, `user_id`), rồi hướng dẫn người dùng code backend đăng ký / đăng nhập / middleware.
+3. Đưa `user_id` vào mọi API cá nhân; frontend gửi token.
+4. Tạo bảng tiến độ toàn dự án.
+
+## 2. Việc đã xong (đều đã commit)
+| Việc | File | Commit |
+|---|---|---|
+| Plan 15 task (nhãn [Claude]/[Người dùng], Review Focus, lệnh curl kiểm tra) | `docs/superpowers/plans/2026-10-04-multi-user-accounts.md` | `ae33d5f` |
+| DB **10 bảng**: thêm `users` (username regex `^[a-z0-9_]{3,30}$`, `password_hash` bcrypt, `role`, `survey_done_at`), `devices` (dòng `'box'`); `user_id NOT NULL` ở `preferences` (UNIQUE `user_id, emotion, song_id`), `mood_history`, `recently_played`, `survey_artists`, `survey_genres`; bỏ `user_profile`; tài khoản **`demo` / `demo1234`** | `emotune-backend/db/setup.sql` | `c2b5b9a` |
+| Cài `bcryptjs`, `jsonwebtoken`; `.env` thêm `JWT_SECRET`, `JWT_EXPIRES_IN=7d`; `npm test` = `node --test "test/**/*.test.js"` | `emotune-backend/package.json`, `.evn.example`, `.env` (không vào git) | `c2b5b9a` |
+| Kiểm tra username/mật khẩu (hàm thuần) + 2 test mẫu | `src/services/authValidation.js`, `test/authValidation.test.js` | `bfc3a42` |
+| `POST /auth/register` (201 / 400 / 409), `POST /auth/login` (200 / 401 cùng 1 câu) | `src/model/userModel.js`, `src/services/authService.js` (`signToken`, `toPublicUser`), `src/controllers/authController.js`, `src/routes/web.js` | `ec4383a` |
+| Middleware `requireAuth` (mọi lỗi token → 401) + `GET /auth/me` | `src/middleware/auth.js`, `authController.getUserByJWT`, `userModel.findUserById` | `ec4383a` |
+| **Task 5**: `userId` là tham số đầu ở mọi model/service; SQL lọc/ghi `user_id` (cả truy vấn con `recently_played` và câu fallback trong `getSongsByEmotion`); `ON CONFLICT (user_id, emotion, song_id)`; 6 route cần `requireAuth`: `/suggest`, `/scan-and-suggest`, `/listen-report`, `/feed-back`, `/request-song`, `/mood-history` | `src/model/{suggest,listenReport,feedBack,moodHistory}Model.js`, service/controller tương ứng, `requestSongService.js`, `web.js` | `da29bc3` |
+| **F6**: `src/api.js` (axios dùng chung, interceptor gắn `Authorization: Bearer`, 401 ngoài trang `/login` → xoá token + về `/login`); `config.js` đọc `VITE_API_URL`, `VITE_DEVICE_ID` (`IS_BOX`); `EmotionScanner`, `MusicPlayer`, `SideBar` dùng `api` (`API_URL` chỉ còn cho `<audio>` / `<img>`) | `emotune-frontend/src/api.js`, `src/config.js`, `.env.example`, 3 component | `0930d6e` |
+| Bảng tiến độ 5 giai đoạn: 0 nền tảng · A backend · **F giao diện** · B phần cứng HIC · C môn HTTM | `TIEN_DO.md` | |
+| `CLAUDE.md`: 10 bảng, quy tắc "cần đến đâu viết đến đó", quy tắc cập nhật `TIEN_DO.md`, có unit test backend | `CLAUDE.md` | |
+| Bỏ bản nháp `profileModel.js` (viết lại ở Task 8) | — | `ec4383a` |
+
+Đã kiểm chứng (curl + Playwright): 2 tài khoản A/B có `preferences`, `mood_history`, `recently_played`, xu hướng buồn **tách riêng**; API cá nhân không token → 401; trình duyệt có token → `/auth/me`, `/suggest` chạy; token hỏng → tự về `/login`.
+
+## 3. Quyết định và lý do
+| Quyết định | Lý do |
+|---|---|
+| Mua radar **LD2410C** (không làm "cách 3") | PIR báo nhầm / bỏ sót người ngồi yên |
+| **Bỏ viết unit test** (chỉ giữ 2 test mẫu); kiểm tra bằng curl/Postman ở mỗi task | Gấp deadline, người dùng học test sau |
+| **Cần đến đâu viết đến đó** (`findUserById` để tới `/auth/me`, `setToken` để tới trang Login, `AuthContext` để tới F8) | Người dùng muốn hiểu lý do tồn tại của từng hàm |
+| `userId` luôn là **tham số đầu** mọi hàm | Truyền nhầm thứ tự (vd `days`) không báo lỗi mà lọc sai người |
+| `p.user_id = $1` đặt trong **`ON` của LEFT JOIN**, không ở `WHERE` | Ở `WHERE` thì bài chưa có điểm bị loại → người mới không được gợi ý bài nào |
+| Trùng username: bắt mã Postgres `23505` → 409 (không SELECT trước) | 2 người đăng ký cùng lúc vẫn đúng |
+| Sai tên và sai mật khẩu → **cùng 1 câu 401**; mọi lỗi token → 401 (không 400) | Không lộ tên nào tồn tại; frontend dựa vào 401 để đưa về trang đăng nhập |
+| Lỗi 500 chỉ trả "Lỗi server"; `req.body || {}` | Không lộ câu lỗi Postgres / đường dẫn máy |
+| Model 1 câu SQL dùng `db.query` (không `pool.connect`, không `try/catch` chỉ để `throw`) | `pool.connect` không `release` → treo server sau ~10 request (đã gặp thật) |
+| Token để ở `localStorage` (không cookie `HttpOnly`) | Đơn giản cho đồ án; nêu được khi bị hỏi bảo mật |
+| **Task 6–7 (hộp nhạc) để sau**; dự phòng: Pi tự đăng nhập tài khoản `demo` | Ưu tiên web chạy lại + trang đăng nhập; môn HTTM không cần hộp |
+| Giao diện tách giai đoạn **F** riêng (F1–F17), thêm F9 trang chủ + F10 trình phát theo Figma | Trước đó frontend nằm rải rác, thiếu 2 màn chính |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/)
+npm install                       # có bcryptjs, jsonwebtoken
+npm run db:setup                  # XOÁ + tạo lại 10 bảng, tài khoản demo/demo1234 (DB máy này đã chạy 04/10)
+npm run dev                       # :8080
+npm test                          # 2 test authValidation
+# .env cần: PORT, DB_*, JWT_SECRET, JWT_EXPIRES_IN=7d
+#   tạo JWT_SECRET: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# Frontend (emotune-frontend/)
+npm run dev                       # :5173 ; .env.local (tuỳ chọn) theo .env.example
+# Chưa có trang đăng nhập -> lấy token bằng Postman: POST localhost:8080/auth/login {"username":"demo","password":"demo1234"}
+# rồi DevTools -> Application -> Local storage -> http://localhost:5173 -> key emotune_token = <token>
+
+# AI (emotion-scanner/)
+venv\Scripts\activate && python 3_backend_server.py   # :5000
+
+# Thử nhanh API bằng Git Bash (thêm lệnh trong plan Task 3–5)
+TOKEN=$(curl -s -X POST localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"demo","password":"demo1234"}' | node -pe "JSON.parse(require('fs').readFileSync(0)).token")
+curl -s localhost:8080/auth/me -H "Authorization: Bearer $TOKEN"
+```
+Cài máy mới từ đầu (PostgreSQL 17, Git LFS model, venv, đổi tên mp3): xem "Lệnh thường dùng" trong `CLAUDE.md`.
+⚠ Git Bash gửi chữ có dấu trong curl bị sai mã hoá (vd "Giá Như" → 404) — thử chữ có dấu bằng Postman / trình duyệt.
+
+## 5. Lỗi / việc còn dở
+- ⚠ **VS Code ghi đè file Claude vừa sửa** (đã xảy ra 3 lần: mất `authValidation.js`, `signToken`, `authController.js`). Trước khi nhờ Claude sửa: Ctrl+K S lưu hết; sau khi Claude sửa: tab có ● thì **Revert File**, không Ctrl+S. File đã commit thì cứu bằng `git checkout -- <file>`.
+- **Web chưa có trang đăng nhập** → `/login` đang trống; vào trang chủ phải dán token tay.
+- **Task 6–7 hộp nhạc chưa làm** → Pi chưa dùng được với backend mới (mọi API quét/chấm điểm cần token).
+- **Figma MCP hết lượt gọi (gói Starter)** → chưa sửa được Sign in/Sign up (F5), chưa đối chiếu Figma để bổ sung màn hình vào `TIEN_DO.md`.
+- Câu thông báo trong `authService.js` còn tiếng Anh ("Username have been used", "Wrong username or password...") → đổi tiếng Việt trước khi làm trang Login.
+- `requestSong` cộng điểm với cảm xúc hiện tại kể cả khi bài thuộc cảm xúc khác (logic cũ, chưa sửa).
+- Chưa có camera trên máy mới → chưa thử trọn vòng quét → phát → chấm điểm qua web.
+- DB trên Pi vẫn bản cũ → khi lên Pi phải `npm run db:setup` (mất điểm thử cũ — đã chấp nhận).
+- Lint có sẵn: `AIAssistantContext.jsx` (1 lỗi), `EmotionScanner.jsx` (cảnh báo `onResult`).
+- `.claude/settings.json` có `"effortLevel": "high"` chưa commit (cài đặt cá nhân, cố ý để ngoài).
+
+## 6. Bước tiếp theo
+1. **F7 — trang Đăng nhập / Đăng ký** (chờ người dùng quyết: tự viết JSX hay Claude làm logic): thêm `setToken` vào `api.js` → `pages/LoginPage.jsx`, `RegisterPage.jsx` (ô nhập lại mật khẩu) → `components/RequireAuth.jsx` (không token → `<Navigate to="/login">`, có → `<Outlet/>`) → `App.jsx`: `/login`, `/register` **ngoài** `MainLayout`, `/` + `/settings` bọc `RequireAuth` → Claude viết `AuthPage.scss` theo màu/font NYX (bỏ ô ngày sinh + Apple/Facebook, "Email" → "Tên đăng nhập").
+2. F8 header tên + đăng xuất (lúc này mới tạo `AuthContext`, gọi `GET /auth/me`).
+3. F9 trang chủ + F10 trình phát nhạc theo Figma (hiện chỉ là nút/chữ trần).
+4. Task 8 (`GET /genres`, `GET/POST /profile`) + F12 form khảo sát gu.
+5. Task 6–7 + F11 hộp nhạc + Task 14 lên Pi (hoặc dự phòng: Pi tự đăng nhập `demo`); song song giai đoạn B: lắp LD2410C khi hàng về, vỏ hộp, systemd + kiosk, sửa slide.
+6. Hỏi người dùng yêu cầu nộp của môn HTTM (báo cáo / slide / demo, hạn) → thêm vào `TIEN_DO.md`.
+
+---
+
+# Nhật ký các phiên trước
+
+## Phiên 03 – 04/10/2026 (sáng) — giao diện NYX, DB một file, spec nhiều tài khoản
+
+
+### 1. Mục tiêu của phiên này
 1. Dựng giao diện NYX theo Figma (node `58:14`): header, sidebar "Your Library", layout.
 2. Sidebar lấy danh sách nghệ sĩ từ backend (bảng `artists` mới).
 3. Tạo `CLAUDE.md`; ghi lại bối cảnh 2 môn học + cách làm việc (người dùng tự code).
@@ -19,7 +110,7 @@
 7. Bắt đầu hướng dẫn người dùng tự viết `GET /profile`.
 8. Chốt chuyển sang **nhiều tài khoản + đăng nhập** (web trên laptop/điện thoại và hộp nhạc), viết spec thiết kế.
 
-## 2. Những việc đã làm xong
+### 2. Những việc đã làm xong
 | Việc | File |
 |---|---|
 | Giao diện NYX: font (DM Sans, Inter, Playfair), màu ở `:root`, layout grid Header / SideBar / `<main>`, header 3 cột, sidebar 240px artist tròn. Bỏ `<Footer />` placeholder khỏi layout (file vẫn còn) | `emotune-frontend/index.html`, `src/index.css`, `src/layouts/MainLayout.jsx` + `MainLayout.scss` (mới), `src/components/Header.jsx/.scss`, `src/components/SideBar.jsx/.scss`, `src/assets/icons/bars_icon.svg` (mới) |
@@ -34,7 +125,7 @@
 | Người dùng đã học cách viết test (`node:test`, ví dụ `slugify`) và đọc tóm tắt cách tính điểm hiện tại | — |
 | Spec **nhiều tài khoản + đăng nhập** (dữ liệu, 9 API mới, middleware `requireAuth`/`resolveUser`, hộp nhạc "Dùng hộp nhạc", frontend, lỗi, test, ai làm gì) | `docs/superpowers/specs/2026-10-04-multi-user-accounts-design.md` |
 
-## 3. Các quyết định quan trọng và lý do
+### 3. Các quyết định quan trọng và lý do
 | Quyết định | Lý do |
 |---|---|
 | **Người dùng tự code FE/BE**, Claude hướng dẫn + viết CSS/tài liệu | Người dùng cần hiểu hệ thống để bảo vệ 2 môn |
@@ -50,47 +141,6 @@
 | Nối người dùng với hộp: **cách A** (bấm "Dùng hộp nhạc", bảng `devices`), tự nhả sau 30 phút không hoạt động; cách B (mã ghép đôi 4 số trên OLED) để sau | Kịp 15/10; B an toàn hơn, nâng cấp sau chỉ thêm 1 bước |
 | `opencv-python` giữ bản **4.x** (đã khoá trong `requirements.txt`) | OpenCV 5 bỏ `cv2.CascadeClassifier` dùng để cắt mặt |
 
-## 4. Các lệnh đã chạy và cách chạy lại dự án
-```bash
-# --- Cài máy mới (1 lần) ---
-winget install PostgreSQL.PostgreSQL.17        # cài im lặng -> mật khẩu user postgres mặc định là "postgres"
-# emotune-backend/.env: PORT=8080, DB_HOST=localhost, DB_PORT=5432, DB_USER=postgres, DB_PASSWORD=..., DB_NAME=postgres
-git lfs pull --include="emotion-scanner/my_emotion_model/model.safetensors"   # model 343 MB, sha256 3aae7340bd...
-cd emotion-scanner && python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt
-cd emotune-backend && npm install && npm run db:setup     # XOÁ + tạo lại 9 bảng + dữ liệu mẫu
-npm run rename-music -- --apply                           # tên mp3 khớp cột file_path
-cd emotune-frontend && npm install
-
-# --- Chạy hằng ngày (3 terminal) ---
-cd emotion-scanner && venv\Scripts\activate && python 3_backend_server.py   # :5000
-cd emotune-backend && npm run dev                                          # :8080
-cd emotune-frontend && npm run dev                                         # :5173
-# Thử nhanh: http://localhost:8080/artists (11 ca sĩ) · http://localhost:8080/music/gia_nhu.mp3
-```
-(Chạy trên Pi + phần cứng: xem "Chạy demo trên Pi" trong nhật ký phiên trước bên dưới.)
-
-## 5. Lỗi đang gặp hoặc việc còn dở
-- ⚠ **CHƯA COMMIT**: mọi file ở mục 2 (cùng việc xoá `schema.sql`/`seed.sql`). `.claude/settings.json` cũng đang bị sửa — không rõ ai sửa, xem lại trước khi commit.
-- **Chưa có camera** → chưa thử trọn vòng quét → gợi ý → phát → chấm điểm trên máy mới.
-- **Cảm biến có người (04/10): người dùng chốt mua radar LD2410C** (ô Hlk-ld2410c) — không làm "cách 3". Khi hàng về: làm theo mục 6 bước 1 của nhật ký phiên trước.
-- **Nhiều tài khoản: chưa code.** Spec `docs/superpowers/specs/2026-10-04-multi-user-accounts-design.md` **đã duyệt**; plan `docs/superpowers/plans/2026-10-04-multi-user-accounts.md` (Task 0–14, nhãn [Claude]/[Người dùng]; tối thiểu cho HIC: Task 1–7, 9, 10, 12, 14). Nội dung chính: bảng `users` (username, password_hash, role, survey_done_at) + `devices`; thêm `user_id` vào `survey_*`, `preferences`, `mood_history`, `recently_played`; bỏ `user_profile`; tài khoản demo `demo` / `demo1234`. Khi đổi, query trong `suggestModel`, `listenReportModel`, `feedBackModel`, `requestSongService` đều phải nhận `userId`. Spec tự giả định (người dùng có thể phản đối): điểm thử trên Pi bị xoá khi chạy DB mới; thêm sẵn cột `role` cho trang admin.
-- `emotune-backend/src/model/profileModel.js` (người dùng đang viết, **bản nháp**): bảng `profiles` không tồn tại, câu thứ 2 còn trống, `catch` rỗng nuốt lỗi → sẽ viết lại theo người dùng sau khi đổi schema.
-- Sidebar hiện ảnh lỗi cho 5 ca sĩ không có `avatar` (cần fallback chữ viết tắt ở frontend).
-- **DB trên Pi vẫn cấu trúc cũ** → code mới (JOIN `artist_id`) sẽ lỗi trên Pi; `db:setup` trên Pi xoá điểm đã học → cần quyết định hoặc viết migrate.
-- Spec "gợi ý theo gu" (`docs/superpowers/specs/2026-09-27-taste-based-recommendation-design.md`) còn ghi `songs.genre TEXT` — nay là bảng `genres`; sẽ phải thêm `user_id` khi tính gu.
-- Lỗi lint có sẵn: `AIAssistantContext.jsx` (1 lỗi), `EmotionScanner.jsx` (1 cảnh báo).
-
-## 6. Bước tiếp theo nên làm
-1. **Commit** toàn bộ thay đổi (xem lại `.claude/settings.json` trước).
-2. **Duyệt spec nhiều tài khoản** (`docs/superpowers/specs/2026-10-04-multi-user-accounts-design.md`) → Claude viết plan → Claude cập nhật `setup.sql` + hash tài khoản demo + cài `bcryptjs`, `jsonwebtoken` + `JWT_SECRET` → `npm run db:setup`. Claude cũng sửa Figma Sign in/Sign up (Email → Tên đăng nhập, bỏ ngày sinh + Apple/Facebook).
-3. **Người dùng tự code** theo thứ tự trong spec mục 10: đăng ký / đăng nhập / `GET /auth/me` + `requireAuth` → thêm `user_id` vào query cũ + `resolveUser` → trang Login/Register + `src/api.js` + route guard (Claude viết SCSS, co giãn cho điện thoại).
-4. Tiếp khảo sát gu theo từng người dùng: `GET /profile` → `GET /genres` → `POST /profile` (transaction) → component khảo sát (JSX: người dùng; SCSS: Claude) → `HomePage` hiện khảo sát khi `done = false` → điểm thưởng khảo sát (hàm thuần + test) trong `suggestService`, bằng điểm thì chọn ngẫu nhiên.
-5. **HIC trước 15/10**: đặt mua radar **LD2410C** ngay (giao 4–14/10) hoặc làm "cách 3"; đồng bộ Pi qua git (+ DB mới); thí nghiệm **Edge Impulse**; sửa slide/kịch bản (OLED + nút chạm + cảm biến; thêm đăng nhập/khảo sát nếu kịp); vỏ hộp; tự khởi động (systemd + Chromium kiosk).
-6. Sau 15/10 (môn Hệ thống thông minh): gợi ý theo gu 65/35 (cần ≥ 8–10 bài mỗi cảm xúc — thêm nhạc vào `setup.sql`), cải thiện AI (macro-F1 làm mốc → dữ liệu → giảm overfit → gộp nhiều khung hình + ngưỡng tin cậy), sửa lỗi nhỏ (xu hướng chỉ đếm `sad`, frontend chưa dùng `/feed-back` và `/request-song`).
-
----
-
-# Nhật ký các phiên trước
 
 > Phiên 30/09 – 02/10/2026 (laptop cũ, hostname `vinh`): OLED + 2 nút chạm TTP223 chạy trọn vòng với web; PIR code xong nhưng cảm biến không đáng tin. Các mục "Chạy demo trên Pi", "Checklist linh kiện", "Sơ đồ nối dây" bên dưới **vẫn còn đúng** (riêng lệnh DB cũ `schema.sql`/`seed.sql` nay thay bằng `npm run db:setup`).
 
