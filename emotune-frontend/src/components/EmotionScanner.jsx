@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
-import { API_URL } from '../config';
+import api from '../api';
 const EmotionScanner = (props) => {
     const { onResult } = props;
     const videoRef = useRef(null);
@@ -37,7 +36,7 @@ const EmotionScanner = (props) => {
 
             const base64Image = canvas.toDataURL("image/jpeg", 0.8);
 
-            axios.post(`${API_URL}/scan-and-suggest`, {
+            api.post('/scan-and-suggest', {
                 image: base64Image
             })
                 .then((response) => {

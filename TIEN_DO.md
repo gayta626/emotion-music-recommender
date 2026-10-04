@@ -6,8 +6,8 @@
 
 ## 📍 Đang ở đâu
 
-**Giai đoạn A — Task 6:** `resolveUser` — hộp nhạc mượn tài khoản người đang giữ hộp (Bạn).
-Task 5 xong nhưng **chưa commit**. ⚠ Web quét nhạc đang báo 401 cho tới khi làm F6 (`api.js` gắn token) — đúng thiết kế.
+**Giai đoạn F — F7:** trang Đăng nhập / Đăng ký + chặn route khi chưa đăng nhập (JSX Bạn, SCSS Claude).
+F6 xong (chưa commit): web chạy lại được khi có token trong Local storage; chưa có token thì về `/login` (trang trống, F7 làm). Task 6 + 7 (hộp nhạc) **để sau** (quyết định 04/10); dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan
 
@@ -15,7 +15,7 @@ Task 5 xong nhưng **chưa commit**. ⚠ Web quét nhạc đang báo 401 cho t�
 |---|---|---|
 | 0. Nền tảng (trước 04/10) | — | ✅ 10 / 10 |
 | A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 6 / 11 |
-| F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 4 / 17 |
+| F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 5 / 17 |
 | B. Hoàn thiện phần cứng + demo HIC | **15/10/2026** | ⬜ 0 / 8 |
 | C. Môn Xây dựng hệ thống thông minh | chưa biết | ⬜ 0 / 11 |
 
@@ -59,8 +59,8 @@ Task 5 xong nhưng **chưa commit**. ⚠ Web quét nhạc đang báo 401 cho t�
 | | ↳ 5.3 Từ chối bài + xin bài: `POST /feed-back`, `POST /request-song` (`feedBackModel` dùng chung) | Claude | ✅ 04/10 |
 | | ↳ 5.4 Lịch sử cảm xúc: `GET /mood-history` | Claude | ✅ 04/10 |
 | | ↳ 5.5 Thử 2 tài khoản A/B (preferences tách riêng) + commit | Claude | ✅ 04/10 (chờ commit) |
-| 6 ⭐ | `resolveUser`: hộp nhạc mượn tài khoản người đang giữ hộp (tự nhả sau 30 phút) | Bạn | 🔄 |
-| 7 ⭐ | API hộp nhạc: `claim` / `release` / `current` | Bạn | ⬜ |
+| 6 ⭐ | `resolveUser`: hộp nhạc mượn tài khoản người đang giữ hộp (tự nhả sau 30 phút) | Bạn | ⬜ để sau (04/10) |
+| 7 ⭐ | API hộp nhạc: `claim` / `release` / `current` | Bạn | ⬜ để sau (04/10) |
 | 8 | `GET /genres`, `GET/POST /profile` (khảo sát gu theo từng người) | Bạn | ⬜ |
 | 13 | OLED màn chờ đăng nhập | Claude | ⏸ |
 | 14 ⭐ | Đưa lên Pi + thử thật: laptop A + điện thoại B qua hotspot | Bạn + Claude | ⬜ |
@@ -79,8 +79,8 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 | F3 | Sidebar "Your Library": danh sách ca sĩ lấy từ `GET /artists` | Bạn + Claude | ✅ 04/10 |
 | F4 | Figma: thiết kế form khảo sát gu (`255:5`, `257:114`) | Claude | ✅ 04/10 |
 | F5 ⭐ | Figma: sửa Sign in / Sign up (Email → Tên đăng nhập, bỏ ngày sinh + Apple/Facebook) | Claude | ⬜ (Figma MCP đang hết lượt gọi) |
-| F6 ⭐ | `config.js` đọc `VITE_*` (Claude) + `src/api.js` tự gắn token, 401 → về trang đăng nhập (Bạn) — *plan Task 9* | Claude + Bạn | ⬜ |
-| F7 ⭐ | Trang **Đăng nhập** + **Đăng ký**, chặn route khi chưa đăng nhập — *plan Task 10* | Bạn + Claude | ⬜ |
+| F6 ⭐ | `config.js` đọc `VITE_*` + `src/api.js` tự gắn token, 401 → về trang đăng nhập; 3 component dùng `api` — *plan Task 9* | Claude | ✅ 04/10 |
+| F7 ⭐ | Trang **Đăng nhập** + **Đăng ký**, chặn route khi chưa đăng nhập — *plan Task 10* | Bạn + Claude | 🔄 |
 | F8 ⭐ | Header: hiện tên người dùng + nút đăng xuất — *plan Task 10* | Bạn + Claude | ⬜ |
 | F9 ⭐ | **Trang chủ — phần giữa** theo Figma: nút Bắt đầu, khung camera đang quét, thông báo "không thấy mặt" (hiện chỉ là nút + chữ trần) | Bạn + Claude | ⬜ |
 | F10 ⭐ | **Trình phát nhạc** theo Figma: tên bài, ca sĩ, cảm xúc + lời nhắn, "bài động viên", nút bài tiếp / tạm dừng, thanh thời gian (hiện chỉ là `<audio>` trần) | Bạn + Claude | ⬜ |
@@ -133,4 +133,4 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 | Ngày | Xong |
 |---|---|
-| 04/10 | A-0 commit việc dở · A-1 DB nhiều tài khoản · A-2 `authValidation` · A-3 đăng ký + đăng nhập (`userModel`, `authService`, `authController`, route) · A-4 `requireAuth` + `GET /auth/me` · A-5 gợi ý, chấm điểm, từ chối/xin bài, lịch sử theo từng người |
+| 04/10 | A-0 commit việc dở · A-1 DB nhiều tài khoản · A-2 `authValidation` · A-3 đăng ký + đăng nhập (`userModel`, `authService`, `authController`, route) · A-4 `requireAuth` + `GET /auth/me` · A-5 gợi ý, chấm điểm, từ chối/xin bài, lịch sử theo từng người · F6 `api.js` gắn token |

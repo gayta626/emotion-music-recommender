@@ -1,5 +1,6 @@
+// API_URL van can cho the <audio> (trinh duyet tu tai file nhac, khong qua axios)
 import { API_URL } from '../config'
-import axios from 'axios'
+import api from '../api'
 import { useRef } from 'react'
 import { useHardwareButtons } from '../hardware'
 
@@ -21,7 +22,7 @@ const MusicPlayer = (props) => {
         console.log("Da nghe duoc :", listened, "giay")
 
         const finishPercent = audio.duration ? Math.min(listened / audio.duration, 1) : 0;
-        axios.post(`${API_URL}/listen-report`,
+        api.post('/listen-report',
             {
                 emotion: data.emotion,
                 songId: data.song.id,

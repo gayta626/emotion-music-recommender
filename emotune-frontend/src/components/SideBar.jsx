@@ -5,7 +5,8 @@ import AddIcon from '../assets/icons/add_icon.svg?react'
 import SearchIcon from '../assets/icons/search_icon.svg?react'
 import BarsIcon from '../assets/icons/bars_icon.svg?react'
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api'
+// API_URL van can cho the <img> anh ca si (trinh duyet tu tai, khong qua axios)
 import { API_URL } from '../config'
 
 const SideBar = () => {
@@ -13,7 +14,7 @@ const SideBar = () => {
     const [artists, setArtists] = useState([])
 
     useEffect(() => {
-        axios.get(`${API_URL}/artists`)
+        api.get('/artists')
             .then(res => setArtists(res.data))
             .catch(() => { })
     }, [])
