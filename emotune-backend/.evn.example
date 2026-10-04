@@ -4,3 +4,6 @@ DB_PORT =
 DB_USER = 
 DB_PASSWORD = 
 DB_NAME = 
+# chuoi ngau nhien: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+JWT_SECRET = 
+JWT_EXPIRES_IN = 7d

@@ -98,15 +98,16 @@ git commit -m "DB setup.sql 9 bang, GET /artists, giao dien NYX, spec + plan nhi
 **Files:**
 - Modify: `emotune-backend/db/setup.sql`, `emotune-backend/package.json`, `emotune-backend/.env`, `emotune-backend/.evn.example`
 
-**Interfaces — Produces:** bảng `users(id, username, password_hash, role, survey_done_at, created_at)`, `devices(id, name, current_user_id, claimed_at, last_active_at)`; cột `user_id` ở 5 bảng; tài khoản `demo`/`demo1234` (id = 1); dòng `devices` id `'box'`; `npm test` chạy `node --test test/`.
+**Interfaces — Produces:** bảng `users(id, username, password_hash, role, survey_done_at, created_at)`, `devices(id, name, current_user_id, claimed_at, last_active_at)`; cột `user_id` ở 5 bảng; tài khoản `demo`/`demo1234` (id = 1); dòng `devices` id `'box'`; `npm test` chạy mọi file `test/**/*.test.js`.
 
 - [ ] **Step 1: Cài thư viện + script test**
 
 ```bash
 cd emotune-backend
 npm install bcryptjs jsonwebtoken
-npm pkg set scripts.test="node --test test/"
+npm pkg set scripts.test="node --test \"test/**/*.test.js\""
 ```
+(Node 24: `node --test test/` coi `test/` là tên file → lỗi; phải dùng glob.)
 
 - [ ] **Step 2: Tạo hash cho tài khoản demo**
 

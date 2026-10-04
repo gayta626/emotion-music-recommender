@@ -3,13 +3,35 @@
 -- Chay: npm run db:setup   (doc thong tin DB tu emotune-backend/.env)
 -- Khi DB da co du lieu that: KHONG chay lai file nay, viet file migrate_xxx.sql rieng.
 
+-- user_profile: bang cu (truoc khi co tai khoan), van xoa de DB cu khong con sot lai
 DROP TABLE IF EXISTS
-    survey_genres, survey_artists, user_profile,
+    devices, survey_genres, survey_artists, user_profile,
     recently_played, mood_history, preferences,
-    songs, genres, artists
+    songs, genres, artists, users
 CASCADE;
 
 -- ============================ BANG ============================
+
+-- Tai khoan nguoi dung. username: chu thuong, so, gach duoi (backend da trim + chuyen chu thuong truoc khi luu)
+-- role: chuan bi cho trang admin, chua dung. survey_done_at NULL = chua lam / chua bo qua khao sat gu
+CREATE TABLE users (
+    id              SERIAL PRIMARY KEY,
+    username        TEXT NOT NULL UNIQUE CHECK (username ~ '^[a-z0-9_]{3,30}$'),
+    password_hash   TEXT NOT NULL,
+    role            TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    survey_done_at  TIMESTAMP,
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Hop nhac: moi hop 1 dong (hien chi co 'box'). current_user_id NULL = hop trong.
+-- last_active_at cu hon 30 phut -> backend coi nhu hop trong (tu nha)
+CREATE TABLE devices (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    current_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    claimed_at      TIMESTAMP,
+    last_active_at  TIMESTAMP
+);
 
 -- Nghe si. avatar la ten file trong emotune-backend/avatars/ (NULL = chua co anh)
 CREATE TABLE artists (
@@ -36,15 +58,18 @@ CREATE TABLE songs (
     energy      REAL CHECK (energy BETWEEN 0 AND 1)
 );
 
--- Diem "so thich" cua nguoi dung voi tung bai, tach theo cam xuc.
+-- ===== Du lieu ca nhan: 5 bang duoi deu co user_id -> moi cau SQL dung toi phai loc / ghi user_id =====
+
+-- Diem "so thich" cua TUNG NGUOI voi tung bai, tach theo cam xuc.
 -- score la REAL vi delta co the la 0.3 (neutral)
 CREATE TABLE preferences (
     id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     emotion     TEXT NOT NULL,
     song_id     INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
     score       REAL NOT NULL DEFAULT 0,
     updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),
-    UNIQUE (emotion, song_id)
+    UNIQUE (user_id, emotion, song_id)
 );
 
 -- Nhat ky moi lan goi y / phan hoi.
@@ -52,6 +77,7 @@ CREATE TABLE preferences (
 -- good/neutral/bad: ket qua sau khi nghe (theo finishPercent)
 CREATE TABLE mood_history (
     id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     emotion     TEXT NOT NULL,
     confidence  REAL,
     song_id     INTEGER REFERENCES songs(id) ON DELETE SET NULL,
@@ -59,31 +85,29 @@ CREATE TABLE mood_history (
     created_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Cac bai vua nghe, dung de tranh goi y lap lai 3 bai gan nhat
+-- Cac bai vua nghe, dung de tranh goi y lap lai 3 bai gan nhat (cua chinh nguoi do)
 CREATE TABLE recently_played (
     id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     song_id     INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
     played_at   TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Ho so nguoi dung: he thong chi co 1 nguoi dung (hop nhac dung chung) -> dung 1 dong id = 1.
--- survey_done_at NULL = chua lam / chua bo qua khao sat -> lan dau vao web thi hien form khao sat
-CREATE TABLE user_profile (
-    id              SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    survey_done_at  TIMESTAMP
-);
-
--- Ket qua khao sat: ca si va the loai nguoi dung chon (moi muc 1 dong)
+-- Ket qua khao sat gu: ca si va the loai moi nguoi chon (moi muc 1 dong)
 CREATE TABLE survey_artists (
-    artist_id   INTEGER PRIMARY KEY REFERENCES artists(id) ON DELETE CASCADE
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    artist_id   INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, artist_id)
 );
 
 CREATE TABLE survey_genres (
-    genre_id    INTEGER PRIMARY KEY REFERENCES genres(id) ON DELETE CASCADE
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    genre_id    INTEGER NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, genre_id)
 );
 
-CREATE INDEX idx_mood_history_created_at ON mood_history (created_at);
-CREATE INDEX idx_recently_played_played_at ON recently_played (played_at);
+CREATE INDEX idx_mood_history_user_created ON mood_history (user_id, created_at);
+CREATE INDEX idx_recently_played_user_played ON recently_played (user_id, played_at);
 
 -- ========================== DU LIEU ==========================
 
@@ -129,5 +153,9 @@ LEFT JOIN genres  g ON g.name = v.genre_name
 -- giu dung thu tu trong danh sach -> id 1..10 on dinh moi lan chay
 ORDER BY v.ord;
 
--- Dong ho so duy nhat, chua lam khao sat
-INSERT INTO user_profile (id, survey_done_at) VALUES (1, NULL);
+-- Tai khoan demo de thu khi chua co trang dang ky: demo / demo1234 (hash bcrypt, cost 10)
+INSERT INTO users (username, password_hash)
+VALUES ('demo', '$2b$10$IQUuTw9A3.qaN5E1qQ024uOSK9kx.ULm7PDx2NMjRJDtPuVPdGk/.');
+
+-- Hop nhac duy nhat, chua ai dung
+INSERT INTO devices (id, name) VALUES ('box', 'Hộp nhạc EmoTune');
