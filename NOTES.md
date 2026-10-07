@@ -1,10 +1,50 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **07/10/2026 (chiều–tối)**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: web có đăng nhập / đăng ký / đăng xuất; backend có khảo sát gu (`/genres`, `/profile`) và playlist (`/playlists`); **trình phát đã làm lại theo Figma** (frame `92:301`, nền đổi màu theo vibe bài). Máy này có đủ 10 mp3 → **nhạc phát được**. Việc tiếp: **P3–P5 playlist** trên giao diện. Hộp nhạc (Task 6–7) vẫn để sau. ⚠ Phần F10b **chưa commit**.
+> Phiên gần nhất: **07/10/2026 (khuya)**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: **phần mềm gần xong** — đăng nhập, khảo sát gu (+điểm thưởng), trình phát theo Figma + sóng âm, chọn cảm xúc bằng tay, playlist đầy đủ (trang riêng, hàng đợi, Up next), 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại. Còn: hộp nhạc (Task 6–7, F11) + toàn bộ phần cứng (giai đoạn B). ⚠ Phần làm đêm 07/10 **chưa commit**.
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Quy tắc cũ "người dùng tự code, Claude hướng dẫn" đã bỏ. Không commit khi chưa được yêu cầu.
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# Phiên 07/10/2026 (khuya) — hoàn thiện phần mềm
+
+## 1. Mục tiêu
+Người dùng: "làm xong phần mềm trước" (Pi để sau). Làm lần lượt: F13 → F12+C1 → trang playlist → F15 → F16 → C9/C10 → F17 → F14.
+
+## 2. Việc đã làm (chưa commit; commit trước đó: `89a0a7c`)
+| Việc | File |
+|---|---|
+| **F13** chữ viết tắt cho ca sĩ không có ảnh (style Figma: nền #2A2533, chữ tím) | `components/ArtistAvatar.jsx/.scss` (dùng chung), `SideBar` |
+| **F12** trang khảo sát gu `/survey` theo Figma `255:5` (tìm không dấu, Show more, Skip/Done). Người chưa làm bị `MainLayout` chuyển tới; `AuthProvider.markSurveyDone()` | `pages/SurveyPage.jsx/.scss`, `App.jsx`, `contexts/AuthProvider.jsx`, `authContext.js`, icon `check_icon.svg`, `chevron_down_icon.svg`; `index.html` thêm DM Sans 500/700 |
+| **C1** điểm thưởng khảo sát: `TASTE_BONUS` trong SQL (+0.5 ca sĩ, +0.5 thể loại), xếp theo `score + taste_bonus` | `emotune-backend/src/model/suggestModel.js` |
+| **Trang playlist** `/playlist/:id`: đổi tên (bấm tên), xoá playlist (⋯), xoá bài, tìm + thêm bài, **Recommended** (cùng ca sĩ +2, thể loại +1, vibe +0.5), dòng đang phát tô tím. Nút + sidebar tạo playlist ("My Playlist #N") | `pages/PlaylistPage.jsx/.scss`, `SideBar`; backend `POST/PATCH/DELETE /playlists`, `GET /songs` (`songModel/Service/Controller`), `playlistModel` (+genre, added_at) |
+| **Nhạc không tắt khi đổi trang**: `MainLayout` luôn vẽ `<HomePage visible>` (route `/` = null); trang khác chỉ ẩn khung lớn, giữ thanh phát. Nút Home trên header chạy | `layouts/MainLayout.jsx`, `App.jsx`, `pages/HomePage.jsx/.scss`, `components/Header.jsx` |
+| **F15** 👎 "Not for me" (`/feed-back` −1, chuyển bài) + ☰ "Request a song" (`/request-song` +1, phát luôn) | `MusicPlayer.jsx`, `PlayerOverlays.jsx`, icon `dislike_icon.svg` |
+| **F16** trang `/mood` (bấm biểu tượng AI giữa header): 3 ô tóm tắt + **Cheer-up mode On/Off kèm lý do**, biểu đồ cột chồng 7 ngày (màu đã kiểm tra mù màu), Show table | `pages/MoodPage.jsx/.scss` |
+| **C9** xu hướng đếm buồn + giận; tách `decideTarget` + 7 unit test (`npm test` 9/9) | `services/suggestService.js`, `test/moodTrend.test.js` |
+| **C10** quét mặt chờ AI trả lời mới gửi tiếp (hết ghi `mood_history` 2 lần); lint frontend **sạch** (tách `aiAssistantStore.js`) | `components/EmotionScanner.jsx`, `contexts/AIAssistantContext.jsx` |
+| **F17** ô tìm kiếm header: không dấu, ↑↓ Enter, bấm là phát (`PlaybackProvider.playSong`) | `components/HeaderSearch.jsx/.scss`, `contexts/playbackContext.js`, `PlaybackProvider.jsx` |
+| **F14** điện thoại 390px + màn 1100px: header 2 hàng, thư viện cuộn ngang, thanh phát 2 hàng | `Header.scss`, `MainLayout.scss`, `SideBar.scss`, `MusicPlayer.scss`, `HomePage.scss` |
+| Hàm tìm không dấu dùng chung | `src/utils/text.js` (`plain`) |
+
+Đã thử: lint sạch, build OK, `npm test` 9/9; curl các API playlist mới (409 trùng tên, 400 tên rỗng, 404 xoá lại); Playwright cho từng tính năng với tài khoản tạm `tmp_*` (đã xoá hết). Tài khoản `demo` **chưa làm khảo sát** → lần đầu đăng nhập sẽ vào `/survey`.
+
+## 3. Quyết định
+| Quyết định | Lý do |
+|---|---|
+| HomePage luôn được giữ trong MainLayout | Trước đó rời trang chủ là mất trình phát → nhạc tắt |
+| Recommended trong trang playlist tính ở frontend | 10 bài, không cần API riêng; lý do gợi ý hiện cạnh bài ("Same artist"...) |
+| Trang Your mood dùng **cùng quy tắc** với backend để giải thích Cheer-up mode | Thể hiện "thông minh" có giải thích được cho môn HTTM |
+| Chữ giao diện mới bằng tiếng Anh (Figma khảo sát là tiếng Việt) | Thống nhất với phần còn lại của web (đã chốt UI tiếng Anh) |
+| Phát từ ô tìm kiếm: chế độ cảm xúc, cảm xúc = vibe của bài | Vẫn chấm điểm khi nghe hết (gắn với vibe bài) |
+
+## 4. Lỗi / lưu ý
+- ⚠ **Vite hay giữ bản cũ** sau nhiều lần sửa liên tiếp (lỗi kiểu `X is not defined` trỏ tới `?t=...` cũ) → tắt hẳn `npm run dev` (kiểm tra cổng 5173 không còn tiến trình node) rồi chạy lại.
+- Sửa file bằng `node -e` trong Git Bash: dấu gạch ngược trong regex (`\s`) dễ bị mất, file CRLF không khớp chuỗi → viết script ra file riêng hoặc dùng Edit, rồi kiểm tra lại.
+- `requestSong` cộng điểm theo cảm xúc hiện tại kể cả khi bài khác vibe (logic cũ, giữ nguyên).
+- Phần mềm còn: F11 + Task 6–7 (hộp nhạc), F5 (sửa Figma Sign in/up).
 
 ---
 

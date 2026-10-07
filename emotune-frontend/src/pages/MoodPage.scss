@@ -1,0 +1,361 @@
+// Trang lịch sử cảm xúc 7 ngày
+.mood-page {
+  // màu theo cảm xúc — đã chạy kiểm tra (độ sáng, độ đậm, mù màu, tương phản) trên nền tối
+  --mood-happy: #c9842a;
+  --mood-surprise: #9b6fd0;
+  --mood-neutral: #2f9c8a;
+  --mood-sad: #4c7bd0;
+  --mood-angry: #d14b4b;
+  --card: #141218;
+  --grid: rgba(255, 255, 255, 0.07);
+
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #fff;
+  text-align: left;
+
+  .mood-muted {
+    color: var(--muted);
+  }
+
+  .mood-head {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    h1 {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      max-width: 62ch;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  }
+
+  .mood-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  // ---- 3 ô tóm tắt ----
+  .mood-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 16px;
+  }
+
+  .mood-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+
+    .tile-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .tile-value {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tile-note {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--search-text);
+    }
+
+    // chế độ động viên đang bật: viền + chữ màu nhấn để nhìn là biết
+    &.status.on {
+      border-color: var(--accent);
+
+      .tile-value {
+        color: var(--accent);
+      }
+    }
+  }
+
+  // ---- biểu đồ ----
+  .mood-chart-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px 18px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+  }
+
+  .chart-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    h2 {
+      font-size: 17px;
+      font-weight: 700;
+    }
+  }
+
+  .table-toggle {
+    padding: 6px 14px;
+    border: 1px solid var(--chip);
+    border-radius: 999px;
+    background: none;
+    color: var(--search-text);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--accent);
+    }
+  }
+
+  .chart-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-size: 13px;
+    color: var(--search-text);
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+
+    &.happy { background: var(--mood-happy); }
+    &.surprise { background: var(--mood-surprise); }
+    &.neutral { background: var(--mood-neutral); }
+    &.sad { background: var(--mood-sad); }
+    &.angry { background: var(--mood-angry); }
+  }
+
+  .chart-empty {
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  .chart {
+    position: relative;
+    padding-left: 30px;
+  }
+
+  .chart-grid {
+    position: absolute;
+    left: 30px;
+    right: 0;
+    top: 0;
+    height: 260px;
+    pointer-events: none;
+
+    .grid-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 1px solid var(--grid);
+
+      span {
+        position: absolute;
+        left: -30px;
+        top: -8px;
+        width: 22px;
+        text-align: right;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+      }
+    }
+  }
+
+  .chart-cols {
+    position: relative;
+    height: 260px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  // cả cột là vùng rê chuột (lớn hơn thanh màu)
+  .chart-col {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 6px;
+    outline: none;
+
+    &.hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  .stack {
+    width: min(44px, 70%);
+    display: flex;
+    flex-direction: column-reverse; // cảm xúc đầu danh sách nằm dưới cùng
+    gap: 2px;                       // khe 2px giữa các đoạn màu
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+  }
+
+  .seg {
+    min-height: 3px;
+
+    &.happy { background: var(--mood-happy); }
+    &.surprise { background: var(--mood-surprise); }
+    &.neutral { background: var(--mood-neutral); }
+    &.sad { background: var(--mood-sad); }
+    &.angry { background: var(--mood-angry); }
+  }
+
+  .chart-tip {
+    position: absolute;
+    bottom: calc(100% - 8px);
+    left: 50%;
+    z-index: 5;
+    transform: translate(-50%, -8px);
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #2a2533;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    font-size: 12px;
+    color: var(--search-text);
+    pointer-events: none;
+    white-space: nowrap;
+
+    strong {
+      margin-bottom: 2px;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      b {
+        margin-left: auto;
+        padding-left: 12px;
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+
+    .tip-total {
+      margin-top: 2px;
+      padding-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  // hover vào cột thì tooltip nằm phía trên đỉnh vùng vẽ
+  .chart-col .chart-tip {
+    bottom: auto;
+    top: 0;
+    transform: translate(-50%, -100%);
+  }
+
+  .chart-x {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+
+    span {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+
+      b {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--search-text);
+      }
+    }
+  }
+
+  // ---- bảng ----
+  .mood-table-wrap {
+    overflow-x: auto;
+  }
+
+  .mood-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+
+    th,
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--grid);
+      text-align: right;
+      white-space: nowrap;
+
+      &:first-child {
+        text-align: left;
+      }
+    }
+
+    th {
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    td {
+      color: var(--search-text);
+    }
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 800px) {
+  .mood-page .mood-tiles {
+    grid-template-columns: 1fr 1fr;
+
+    .status {
+      grid-column: 1 / -1;
+    }
+  }
+}

@@ -52,4 +52,51 @@ const removeSong = async (userId, rawPlaylistId, rawSongId) => {
     return { playlistId: info.id, songId, removed: true };
 }
 
-module.exports = { getPlaylists, getPlaylist, addSong, removeSong }
+// Ten playlist: bo khoang trang thua, 1-50 ky tu
+const cleanName = (raw) => {
+    const name = typeof raw === "string" ? raw.trim().replace(/\s+/g, " ") : "";
+    if (!name || name.length > 50) throw fail(400, "Playlist name must be 1-50 characters");
+    return name;
+}
+
+const duplicateName = (err) => {
+    if (err.code === "23505") return fail(409, "You already have a playlist with this name");
+    return err;
+}
+
+// Khong gui ten -> tu dat "My Playlist #2", "#3"... (so dau tien chua dung)
+const createPlaylist = async (userId, rawName) => {
+    let name;
+    if (rawName === undefined || rawName === null || rawName === "") {
+        const taken = new Set((await playlistModel.getPlaylists(userId)).map((p) => p.name));
+        let n = taken.size + 1;
+        while (taken.has(`My Playlist #${n}`)) n++;
+        name = `My Playlist #${n}`;
+    } else {
+        name = cleanName(rawName);
+    }
+    try {
+        const created = await playlistModel.createPlaylist(userId, name);
+        return { ...created, songCount: 0 };
+    } catch (err) {
+        throw duplicateName(err);
+    }
+}
+
+const renamePlaylist = async (userId, rawPlaylistId, rawName) => {
+    const info = await requireOwnPlaylist(userId, rawPlaylistId);
+    const name = cleanName(rawName);
+    try {
+        return await playlistModel.renamePlaylist(userId, info.id, name);
+    } catch (err) {
+        throw duplicateName(err);
+    }
+}
+
+const deletePlaylist = async (userId, rawPlaylistId) => {
+    const info = await requireOwnPlaylist(userId, rawPlaylistId);
+    await playlistModel.deletePlaylist(userId, info.id);
+    return { id: info.id, deleted: true };
+}
+
+module.exports = { getPlaylists, getPlaylist, addSong, removeSong, createPlaylist, renamePlaylist, deletePlaylist }

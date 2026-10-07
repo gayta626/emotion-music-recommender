@@ -30,9 +30,17 @@ const EmotionScanner = (props) => {
             });
     }
 
+    // luon goi ban onResult moi nhat ma khong phai khoi dong lai camera moi lan HomePage render
+    const onResultRef = useRef(onResult);
+    useEffect(() => {
+        onResultRef.current = onResult;
+    });
+
     useEffect(() => {
         let stream;
         let cancelled = false
+        // dang cho AI tra loi thi khong gui anh moi (AI cham hon 3s -> truoc day gui chong len nhau, ghi mood_history 2 lan)
+        let waiting = false
         navigator.mediaDevices.getUserMedia({ video: true })
             .then((mediaStream) => {
                 if (cancelled) {
@@ -51,7 +59,7 @@ const EmotionScanner = (props) => {
 
         const captureAndSend = () => {
             // camera chua mo (hoac khong co) -> khong gui anh den
-            if (!videoRef.current?.srcObject || !canvasRef.current) return;
+            if (waiting || !videoRef.current?.srcObject || !canvasRef.current) return;
 
             const canvas = canvasRef.current;
             const video = videoRef.current;
@@ -62,15 +70,18 @@ const EmotionScanner = (props) => {
 
             const base64Image = canvas.toDataURL("image/jpeg", 0.8);
 
+            waiting = true;
             api.post('/scan-and-suggest', {
                 image: base64Image
             })
                 .then((response) => {
-                    onResult(response.data);
-
+                    if (!cancelled) onResultRef.current(response.data);
                 })
                 .catch((err) => {
                     console.error("Loi goi API:", err);
+                })
+                .finally(() => {
+                    waiting = false;
                 });
         }
 

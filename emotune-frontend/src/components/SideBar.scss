@@ -129,12 +129,21 @@
                 background-color: rgba(255, 255, 255, 0.05);
             }
 
+            &.active {
+                background-color: rgba(201, 169, 245, 0.12);
+            }
+
             .cover {
                 width: 42px;
                 height: 42px;
                 flex-shrink: 0;
                 border-radius: 50%;
                 object-fit: cover;
+            }
+
+            // chữ viết tắt khi ca sĩ chưa có ảnh (màu nền/chữ ở ArtistAvatar.scss)
+            .initials {
+                font-size: 14px;
             }
 
             // playlist chưa có ảnh bìa -> ô vuông gradient có nốt nhạc
@@ -167,6 +176,68 @@
                     color: white;
                     font-weight: 400;
                     white-space: nowrap;
+                }
+            }
+        }
+    }
+}
+
+// điện thoại: thư viện thành 1 dải ngang (tab + các mục cuộn ngang), không chiếm cả cột
+@media (max-width: 768px) {
+    .side-bar-container {
+        width: auto;
+        border-radius: 14px;
+
+        .action-container {
+            padding: 12px 14px 0;
+
+            .toggle-title .toggle {
+                display: none;
+            }
+        }
+
+        .filter-tabs {
+            padding: 10px 14px 0;
+        }
+
+        .search-row {
+            display: none;
+        }
+
+        .playlist-list {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 8px 12px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--chip) transparent;
+
+            .playlist-item {
+                flex-shrink: 0;
+                flex-direction: column;
+                width: 76px;
+                padding: 6px 4px;
+                border-radius: 8px;
+
+                .cover {
+                    width: 52px;
+                    height: 52px;
+                }
+
+                .info {
+                    width: 100%;
+                    align-items: center;
+                    text-align: center;
+
+                    .name {
+                        max-width: 100%;
+                        font-size: 11px;
+                    }
+
+                    .subtitle {
+                        display: none;
+                    }
                 }
             }
         }

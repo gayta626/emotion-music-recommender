@@ -1,7 +1,7 @@
-import { createContext, useContext, useState } from 'react';
+import { useState } from 'react';
+import { AIAssistantContext } from './aiAssistantStore';
 
-const AIAssistantContext = createContext();
-
+// Hook useAIAssistant() nằm ở ./aiAssistantStore.js
 export const AIAssistantProvider = ({ children }) => {
     const [status, setStatus] = useState("idle");
     const [result, setResult] = useState(null);
@@ -13,8 +13,4 @@ export const AIAssistantProvider = ({ children }) => {
             {children}
         </AIAssistantContext.Provider>
     )
-}
-
-export const useAIAssistant = () => {
-    return useContext(AIAssistantContext);
 }

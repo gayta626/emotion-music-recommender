@@ -1,38 +1,33 @@
 const suggestModel = require("../model/suggestModel")
 const { getRandomMessage } = require("../messages")
 
+const NEGATIVE_EMOTIONS = ["sad", "angry"];
+
+// Ham thuan (de viet unit test): tu so lan moi cam xuc gan day -> co nen doi sang bai vui de dong vien khong.
+// trend: [{ emotion, cnt }]. Dong vien khi: >= 4 lan quet, hon nua la buon/gian, VA luc nay cung dang buon/gian.
+let decideTarget = (trend, emotion) => {
+    const totalCount = trend.reduce((sum, row) => sum + parseInt(row.cnt), 0);
+    const negativeCount = trend
+        .filter((row) => NEGATIVE_EMOTIONS.includes(row.emotion))
+        .reduce((sum, row) => sum + parseInt(row.cnt), 0);
+    const negativeRatio = totalCount > 0 ? negativeCount / totalCount : 0;
+
+    if (negativeRatio > 0.5 && totalCount >= 4 && NEGATIVE_EMOTIONS.includes(emotion)) {
+        return { targetEmotion: "happy", isEncourage: true };
+    }
+    return { targetEmotion: emotion, isEncourage: false };
+}
+
 // xu huong cam xuc 1-3 ngay cua CHINH nguoi dung nay
 let checkMoodTrend = async (userId, emotion) => {
-    const NEGATIVE_EMOTIONS = ["sad", "angry"];
     let trend1Day = await suggestModel.getMoodTrend(userId, 1);
     let totalCount1Day = trend1Day.reduce((sum, row) => {
         return sum + parseInt(row.cnt);
     }, 0);
 
-    let trend, totalCount;
-    // neu nguoi dung su dung web 4/ngay thi lay du lieu ngay hom do de quyet dinh emtion
-    if (totalCount1Day >= 4) {
-        trend = trend1Day;
-        totalCount = totalCount1Day;
-    } else {
-        trend = await suggestModel.getMoodTrend(userId, 3);
-        totalCount = trend.reduce((sum, row) => {
-            return sum + parseInt(row.cnt);
-        }, 0);
-
-    }
-    const sadRow = trend.find((row) => row.emotion === "sad")
-    const sadRatio = totalCount > 0 && sadRow ? parseInt(sadRow.cnt) / totalCount : 0;
-
-    let targetEmotion = emotion;
-    let isEncourage = false;
-
-
-    if (sadRatio > 0.5 && totalCount >= 4 && NEGATIVE_EMOTIONS.includes(emotion)) {
-        targetEmotion = "happy";
-        isEncourage = true;
-    }
-    return { targetEmotion: targetEmotion, isEncourage: isEncourage }
+    // neu nguoi dung su dung web >= 4 lan/ngay thi lay du lieu ngay hom do, khong thi lay 3 ngay
+    const trend = totalCount1Day >= 4 ? trend1Day : await suggestModel.getMoodTrend(userId, 3);
+    return decideTarget(trend, emotion);
 }
 
 
@@ -60,6 +55,7 @@ let generateSuggestion = async (userId, emotion, confidence) => {
 }
 
 module.exports = {
+    decideTarget: decideTarget,
     checkMoodTrend: checkMoodTrend,
     generateSuggestion: generateSuggestion
 }

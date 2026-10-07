@@ -1,0 +1,18 @@
+// Ảnh ca sĩ tròn; kích thước do nơi dùng đặt (width/height + font-size cho chữ viết tắt)
+.artist-avatar {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+
+  // chưa có ảnh: nền #2A2533 + chữ tím (Figma "Artist card", Show initials)
+  &.initials {
+    display: grid;
+    place-items: center;
+    background: #2a2533;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    line-height: 1;
+  }
+}

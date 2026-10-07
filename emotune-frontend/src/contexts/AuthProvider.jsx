@@ -20,8 +20,11 @@ const AuthProvider = ({ children }) => {
         navigate("/login", { replace: true });
     };
 
+    // làm/bỏ qua khảo sát gu xong -> không bị đưa về /survey nữa (không cần gọi lại /auth/me)
+    const markSurveyDone = () => setUser((u) => (u ? { ...u, surveyDone: true } : u));
+
     return (
-        <AuthContext.Provider value={{ user, logout }}>
+        <AuthContext.Provider value={{ user, logout, markSurveyDone }}>
             {children}
         </AuthContext.Provider>
     );

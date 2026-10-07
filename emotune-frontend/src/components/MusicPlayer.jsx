@@ -12,6 +12,7 @@ import RepeatIcon from '../assets/icons/player_repeat.svg?react'
 import MicIcon from '../assets/icons/player_mic.svg?react'
 import QueueIcon from '../assets/icons/player_queue.svg?react'
 import VolumeIcon from '../assets/icons/player_volume.svg?react'
+import DislikeIcon from '../assets/icons/dislike_icon.svg?react'
 import AudioVisualizer from './AudioVisualizer'
 import { Cover, QueueMenu, QueuePanel, UpNextCard } from './PlayerOverlays'
 import './MusicPlayer.scss'
@@ -28,7 +29,7 @@ const formatTime = (seconds) => {
 
 const MusicPlayer = (props) => {
     // playlist: { name, songs, index } khi dang phat playlist, null o che do cam xuc
-    const { data, onFinish, playlist, onJump } = props;
+    const { data, onFinish, playlist, onJump, onRequest } = props;
     const audioRef = useRef(null);
     // het bai va bam Next co the xay ra cung luc -> chi gui report 1 lan
     const reportedRef = useRef(false);
@@ -81,6 +82,23 @@ const MusicPlayer = (props) => {
             .finally(() => {
                 onFinish()
             })
+    }
+
+    // 👎 "Not for me": tru 1 diem bai nay voi cam xuc hien tai (POST /feed-back) roi chuyen bai.
+    // Khong gui /listen-report nua (da cham diem bang tay roi)
+    const dislike = () => {
+        if (reportedRef.current) return;
+        reportedRef.current = true;
+        api.post('/feed-back', { emotion: data.emotion, songId: data.song.id, action: "declined" })
+            .catch((err) => console.log("Loi goi API feed-back:", err))
+            .finally(() => onFinish());
+    }
+
+    // xin bai tu menu ☰: bai cu bo qua (khong cham diem), HomePage phat bai vua xin
+    const handleRequest = (result) => {
+        reportedRef.current = true;
+        setMenuOpen(false);
+        onRequest(result);
     }
 
     // khong phat duoc file (sai ten / thieu mp3) -> bo qua bai, khong cham diem
@@ -191,6 +209,12 @@ const MusicPlayer = (props) => {
                         <div className="bar-title">{data.song.title}</div>
                         <div className="bar-artist">{artist}</div>
                     </div>
+                    {/* che do playlist khong cham diem -> khong co nut nay */}
+                    {!playlist && (
+                        <button className="icon-btn small dislike" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
+                            <DislikeIcon />
+                        </button>
+                    )}
                 </div>
 
                 <div className="bar-center">
@@ -239,6 +263,8 @@ const MusicPlayer = (props) => {
                             <QueueMenu
                                 inPlaylist={!!playlist}
                                 songId={data.song.id}
+                                emotion={data.emotion}
+                                onRequest={handleRequest}
                                 onViewPlaylist={() => { setMenuOpen(false); setQueueOpen(true); }}
                                 onClose={closeMenu}
                             />

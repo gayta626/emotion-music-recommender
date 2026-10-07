@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import api from '../api'
 import { API_URL } from '../config'
 import { usePlayback } from '../contexts/playbackContext'
+import { plain } from '../utils/text'
 
 const UP_NEXT_SECONDS = 15;   // con bao nhieu giay thi the "Up next" bat dau hien
 const RING_R = 30;
@@ -106,9 +107,11 @@ export const QueuePanel = ({ playlist, onJump, onClose }) => {
     )
 }
 
-// Menu nut ☰: dang phat playlist -> "View playlist"; khong -> "Add to playlist"
-export const QueueMenu = ({ inPlaylist, songId, onViewPlaylist, onClose }) => {
-    const [step, setStep] = useState("main");     // main -> pick (chon playlist de them)
+// Menu nut ☰: dang phat playlist -> "View playlist"; khong -> "Add to playlist" + "Request a song"
+export const QueueMenu = ({ inPlaylist, songId, emotion, onViewPlaylist, onRequest, onClose }) => {
+    const [step, setStep] = useState("main");     // main -> pick (chon playlist de them) | request (xin bai)
+    const [allSongs, setAllSongs] = useState([]);
+    const [query, setQuery] = useState("");
     const [playlists, setPlaylists] = useState([]);
     const [status, setStatus] = useState("");
     const [busy, setBusy] = useState(false);
@@ -150,6 +153,25 @@ export const QueueMenu = ({ inPlaylist, songId, onViewPlaylist, onClose }) => {
             .finally(() => setBusy(false));
     }
 
+    const openRequest = () => {
+        setStep("request");
+        setStatus("");
+        api.get("/songs").then((res) => setAllSongs(res.data)).catch(() => setStatus("Couldn't load songs."));
+    }
+
+    // xin bai: backend cong +1 diem cho bai nay voi cam xuc hien tai roi tra ve bai -> phat ngay
+    const requestSong = (song) => {
+        setBusy(true);
+        api.post("/request-song", { emotion, songName: song.title })
+            .then((res) => onRequest({ ...res.data, emotion }))
+            .catch(() => { setStatus("Couldn't play this song. Try again."); setBusy(false); });
+    }
+
+    const q = plain(query.trim());
+    const matches = q
+        ? allSongs.filter((s) => s.id !== songId && plain(`${s.title} ${s.artist || ""}`).includes(q)).slice(0, 5)
+        : [];
+
     return (
         <div className="queue-menu" ref={menuRef} role="menu">
             {step === "main" && inPlaylist && (
@@ -158,9 +180,36 @@ export const QueueMenu = ({ inPlaylist, songId, onViewPlaylist, onClose }) => {
                 </button>
             )}
             {step === "main" && !inPlaylist && (
-                <button className="menu-item" role="menuitem" onClick={openPicker}>
-                    <span aria-hidden="true">＋</span> Add to playlist
-                </button>
+                <>
+                    <button className="menu-item" role="menuitem" onClick={openPicker}>
+                        <span aria-hidden="true">＋</span> Add to playlist
+                    </button>
+                    <button className="menu-item" role="menuitem" onClick={openRequest}>
+                        <span aria-hidden="true">♫</span> Request a song
+                    </button>
+                </>
+            )}
+
+            {step === "request" && (
+                <>
+                    <div className="menu-title">Request a song</div>
+                    <input
+                        id="request-song"
+                        className="menu-input"
+                        autoFocus
+                        placeholder="Song or artist name"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                    />
+                    {matches.map((s) => (
+                        <button className="menu-item" role="menuitem" key={s.id} disabled={busy} onClick={() => requestSong(s)}>
+                            <Cover className="menu-cover" src={avatarUrl(s)} />
+                            <span className="menu-text">{s.title}<small>{s.artist || "Unknown artist"}</small></span>
+                        </button>
+                    ))}
+                    {q && matches.length === 0 && <div className="menu-status muted">No song matches "{query}".</div>}
+                    {status && <div className="menu-status" role="status">{status}</div>}
+                </>
             )}
 
             {step === "pick" && (

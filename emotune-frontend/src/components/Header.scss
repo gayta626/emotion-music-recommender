@@ -80,9 +80,18 @@
         }
     }
 
-    .ai-icon {
+    .ai-btn {
         justify-self: center;
+        display: flex;
+        padding: 0;
+        border: none;
+        background: none;
         cursor: pointer;
+        transition: transform 0.15s;
+
+        &:hover {
+            transform: scale(1.08);
+        }
     }
 
     .action-container {
@@ -149,6 +158,104 @@
 
                 &:hover {
                     background-color: var(--chip);
+                }
+            }
+        }
+    }
+}
+
+// ---------- màn vừa (laptop nhỏ, máy tính bảng ngang) ----------
+@media (max-width: 1200px) {
+    .header-container {
+        .app-name-container .home-search-group .search-bar .search-input {
+            width: 240px;
+        }
+
+        .action-container .explore-premium-btn {
+            display: none;
+        }
+    }
+}
+
+// ---------- điện thoại: header 2 hàng (logo + nút | ô tìm kiếm rộng hết màn) ----------
+@media (max-width: 768px) {
+    :root {
+        --header-h: 112px;
+    }
+
+    .header-container {
+        grid-template-columns: auto auto 1fr auto auto;
+        grid-template-areas:
+            "logo home . ai actions"
+            "search search search search search";
+        row-gap: 10px;
+        column-gap: 12px;
+        height: auto;
+        min-height: var(--header-h);
+        padding: 10px 16px;
+
+        // "trải phẳng" 2 lớp bọc để các phần con xếp thẳng vào lưới
+        .app-name-container,
+        .app-name-container .home-search-group {
+            display: contents;
+        }
+
+        .app-name-container .logo-group {
+            grid-area: logo;
+            width: auto;
+
+            .web-name {
+                display: none;
+            }
+        }
+
+        .app-name-container .home-search-group .home-btn {
+            grid-area: home;
+
+            svg {
+                width: 24px;
+                height: 24px;
+            }
+        }
+
+        .app-name-container .home-search-group .search-bar {
+            grid-area: search;
+
+            .search-input {
+                width: 100%;
+            }
+        }
+
+        .ai-btn {
+            grid-area: ai;
+
+            svg {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
+        .action-container {
+            grid-area: actions;
+            gap: 10px;
+
+            .setting-and-notification-container {
+                gap: 10px;
+
+                .notification-btn,
+                .user-info svg {
+                    display: none;
+                }
+
+                .user-info .username {
+                    max-width: 80px;
+                    font-size: 13px;
+                }
+
+                .logout-btn {
+                    height: 30px;
+                    padding: 0 10px;
+                    font-size: 12px;
                 }
             }
         }

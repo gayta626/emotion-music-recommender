@@ -5,17 +5,20 @@ import AddIcon from '../assets/icons/add_icon.svg?react'
 import SearchIcon from '../assets/icons/search_icon.svg?react'
 import BarsIcon from '../assets/icons/bars_icon.svg?react'
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { usePlayback } from '../contexts/playbackContext'
-// API_URL van can cho the <img> anh ca si (trinh duyet tu tai, khong qua axios)
-import { API_URL } from '../config'
+import ArtistAvatar from './ArtistAvatar'
 
 const SideBar = () => {
     const [collapsed, setCollapsed] = useState(false)
-    const [tab, setTab] = useState('artists')
+    const { pathname } = useLocation()
+    const navigate = useNavigate()
+    // dang mo trang playlist thi tab Playlists duoc chon san
+    const [tab, setTab] = useState(pathname.startsWith('/playlist/') ? 'playlists' : 'artists')
     const [artists, setArtists] = useState([])
     const [playlists, setPlaylists] = useState([])
-    const { playPlaylist, playlistsVersion } = usePlayback()
+    const { playlistsVersion, refreshPlaylists } = usePlayback()
 
     useEffect(() => {
         api.get('/artists')
@@ -31,6 +34,17 @@ const SideBar = () => {
             .catch(() => { })
     }, [tab, playlistsVersion])
 
+    // nut +: tao playlist moi (ten tu dat "My Playlist #2"...) roi mo trang cua no
+    const createPlaylist = () => {
+        api.post('/playlists', {})
+            .then((res) => {
+                setTab('playlists')
+                refreshPlaylists()
+                navigate(`/playlist/${res.data.id}`)
+            })
+            .catch(() => { })
+    }
+
     return (
         <div className={`side-bar-container ${collapsed ? 'collapse' : ''}`}>
             <div className="action-container">
@@ -41,7 +55,7 @@ const SideBar = () => {
                     {!collapsed && <span className='title'>Your Library</span>}
                 </div>
 
-                {!collapsed && <button className="add-btn">
+                {!collapsed && <button className="add-btn" onClick={createPlaylist} title="Create playlist" aria-label="Create playlist">
                     <AddIcon />
                 </button>}
             </div>
@@ -64,7 +78,7 @@ const SideBar = () => {
             <div className="playlist-list">
                 {tab === 'artists' && artists.map((item) => (
                     <div className="playlist-item" key={item.id}>
-                        <img className="cover" src={`${API_URL}/avatars/${item.avatar}`} alt={item.name} />
+                        <ArtistAvatar className="cover" name={item.name} avatar={item.avatar} />
                         {!collapsed && <div className="info">
                             <span className="name">{item.name}</span>
                             <span className="subtitle">Artist</span>
@@ -72,13 +86,13 @@ const SideBar = () => {
                     </div>
                 ))}
 
-                {/* bam vao playlist -> phat ngay tu bai 1 (khong quet mat) */}
+                {/* bam vao playlist -> mo trang playlist (nut Play o do moi phat) */}
                 {tab === 'playlists' && playlists.map((item) => (
                     <button
-                        className="playlist-item"
+                        className={`playlist-item ${pathname === `/playlist/${item.id}` ? 'active' : ''}`}
                         key={item.id}
-                        onClick={() => playPlaylist(item.id)}
-                        title={`Play ${item.name}`}
+                        onClick={() => navigate(`/playlist/${item.id}`)}
+                        title={item.name}
                     >
                         <span className="cover playlist-cover" aria-hidden="true">♪</span>
                         {!collapsed && <div className="info">

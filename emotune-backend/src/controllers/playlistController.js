@@ -23,4 +23,10 @@ const addSong = handle(
 
 const removeSong = handle((req) => playlistService.removeSong(req.userId, req.params.id, req.params.songId));
 
-module.exports = { getPlaylists, getPlaylist, addSong, removeSong }
+const createPlaylist = handle((req) => playlistService.createPlaylist(req.userId, req.body?.name), 201);
+
+const renamePlaylist = handle((req) => playlistService.renamePlaylist(req.userId, req.params.id, req.body?.name));
+
+const deletePlaylist = handle((req) => playlistService.deletePlaylist(req.userId, req.params.id));
+
+module.exports = { getPlaylists, getPlaylist, addSong, removeSong, createPlaylist, renamePlaylist, deletePlaylist }

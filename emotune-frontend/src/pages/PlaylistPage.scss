@@ -1,0 +1,493 @@
+// Trang playlist — bố cục theo Figma "Page playlist khi đã có nhạc"
+.playlist-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #fff;
+  text-align: left;
+
+  .pl-loading,
+  .pl-error {
+    padding: 40px 0;
+    color: var(--muted);
+  }
+
+  .pl-error.inline {
+    padding: 0;
+    color: #ff9d9d;
+  }
+
+  // ---- đầu trang ----
+  .pl-hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 28px;
+    padding: 28px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #4a3d5c 0%, #2a2433 60%, var(--surface) 100%);
+  }
+
+  .pl-cover {
+    flex-shrink: 0;
+    width: 180px;
+    height: 180px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #8a74ad, #2f2640);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    font-size: 72px;
+  }
+
+  .pl-heading {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .pl-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .pl-name {
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+    cursor: text;
+  }
+
+  .pl-rename {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    input {
+      width: min(560px, 100%);
+      padding: 4px 10px;
+      border: 1.5px solid var(--accent);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      outline: none;
+    }
+  }
+
+  .pl-name-error {
+    font-size: 13px;
+    color: #ff9d9d;
+  }
+
+  .pl-meta {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  // ---- nút Play + ⋯ ----
+  .pl-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 8px;
+  }
+
+  .pl-play {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    padding-left: 4px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--on-premium);
+    font-size: 20px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+
+    &:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 0 28px rgba(201, 169, 245, 0.45);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .pl-more {
+    position: relative;
+  }
+
+  .pl-more-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--muted);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  .pl-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 10;
+    width: 190px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    border-radius: 10px;
+    background: #242029;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &.danger {
+        color: #ff9d9d;
+      }
+    }
+  }
+
+  // ---- bảng bài hát ----
+  .pl-table-wrap {
+    overflow-x: auto;
+  }
+
+  .pl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    th {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--chip);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: left;
+      color: var(--muted);
+    }
+
+    td {
+      padding: 8px 10px;
+      color: var(--muted);
+    }
+
+    tbody tr {
+      transition: background 0.12s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+
+        .num { display: none; }
+        .row-play { display: inline-block; }
+        .row-remove { opacity: 1; }
+      }
+
+      td:first-child { border-radius: 6px 0 0 6px; }
+      td:last-child { border-radius: 0 6px 6px 0; }
+
+      &.now {
+        .song-title,
+        .num { color: var(--accent); }
+      }
+    }
+
+    .col-num {
+      width: 44px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .col-date {
+      white-space: nowrap;
+    }
+
+    .col-act {
+      width: 44px;
+      text-align: center;
+    }
+  }
+
+  .row-play {
+    display: none;
+    border: none;
+    background: none;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .row-remove {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--muted);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.12s;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  // biểu tượng "đang phát": 3 cột nhảy
+  .eq {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+
+    i {
+      width: 3px;
+      height: 100%;
+      border-radius: 1px;
+      background: var(--accent);
+      animation: eq-bounce 0.8s ease-in-out infinite alternate;
+
+      &:nth-child(2) { animation-delay: -0.3s; }
+      &:nth-child(3) { animation-delay: -0.6s; }
+    }
+  }
+
+  .song-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .song-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  .song-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .song-title {
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .song-artist {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  // ---- tìm bài + gợi ý ----
+  .pl-find,
+  .pl-recommend {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--surface);
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+  }
+
+  .pl-sub {
+    margin-top: -8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .pl-search {
+    width: min(420px, 100%);
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    border-radius: 6px;
+    background: var(--surface);
+    cursor: text;
+
+    svg {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+
+      &::placeholder {
+        color: var(--muted);
+      }
+    }
+
+    &:focus-within {
+      box-shadow: 0 0 0 1.5px var(--accent);
+    }
+  }
+
+  .pl-results {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pl-result {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 10px;
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .song-cell {
+      flex: 1;
+    }
+  }
+
+  .pl-reason {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--chip);
+    font-size: 12px;
+    color: var(--search-text);
+    white-space: nowrap;
+  }
+
+  .pl-add {
+    padding: 6px 18px;
+    border: 1px solid #fff;
+    border-radius: 999px;
+    background: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      background: #fff;
+      color: var(--on-premium);
+    }
+  }
+
+  .added {
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  .pl-empty {
+    padding: 8px 10px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes eq-bounce {
+  from { transform: scaleY(0.3); }
+  to { transform: scaleY(1); }
+}
+
+@media (max-width: 700px) {
+  .playlist-page {
+    .pl-hero {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+    }
+
+    .pl-cover {
+      width: 120px;
+      height: 120px;
+      font-size: 48px;
+    }
+
+    .col-genre,
+    .col-date,
+    .pl-reason {
+      display: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playlist-page .eq i {
+    animation: none;
+  }
+}

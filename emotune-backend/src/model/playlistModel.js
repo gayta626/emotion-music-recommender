@@ -37,10 +37,12 @@ const getPlaylistInfo = async (userId, playlistId) => {
 // Các bài theo đúng thứ tự phát; cùng dạng với `song` của /scan-and-suggest (id, title, artist, file_path, emotion)
 const getPlaylistSongs = async (playlistId) => {
     const result = await db.query(
-        `SELECT s.id, s.title, a.name AS artist, a.avatar AS artist_avatar, s.file_path, s.emotion, ps.position
+        `SELECT s.id, s.title, a.name AS artist, a.avatar AS artist_avatar, s.file_path, s.emotion,
+                s.artist_id, s.genre_id, g.name AS genre, ps.position, ps.added_at
          FROM playlist_songs ps
          JOIN songs s ON s.id = ps.song_id
          LEFT JOIN artists a ON a.id = s.artist_id
+         LEFT JOIN genres g ON g.id = s.genre_id
          WHERE ps.playlist_id = $1
          ORDER BY ps.position`,
         [playlistId]
@@ -68,6 +70,33 @@ const removeSong = async (playlistId, songId) => {
     return result.rowCount === 1;
 }
 
+// Ten trung voi playlist khac cua cung nguoi -> Postgres bao loi 23505 (UNIQUE user_id, name)
+const createPlaylist = async (userId, name) => {
+    const result = await db.query(
+        `INSERT INTO playlists (user_id, name) VALUES ($1, $2) RETURNING id, name`,
+        [userId, name]
+    );
+    return result.rows[0];
+}
+
+const renamePlaylist = async (userId, playlistId, name) => {
+    const result = await db.query(
+        `UPDATE playlists SET name = $3 WHERE id = $2 AND user_id = $1 RETURNING id, name`,
+        [userId, playlistId, name]
+    );
+    return result.rows[0];
+}
+
+// playlist_songs co ON DELETE CASCADE -> cac bai trong playlist tu xoa theo
+const deletePlaylist = async (userId, playlistId) => {
+    const result = await db.query(
+        `DELETE FROM playlists WHERE id = $2 AND user_id = $1`,
+        [userId, playlistId]
+    );
+    return result.rowCount === 1;
+}
+
 module.exports = {
-    ensureDefaultPlaylist, getPlaylists, getPlaylistInfo, getPlaylistSongs, addSong, removeSong
+    ensureDefaultPlaylist, getPlaylists, getPlaylistInfo, getPlaylistSongs, addSong, removeSong,
+    createPlaylist, renamePlaylist, deletePlaylist
 }

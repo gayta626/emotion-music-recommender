@@ -1,0 +1,378 @@
+// Khảo sát gu lần đầu — theo Figma "survey gu âm nhạc (lần đầu)" (255:5)
+.survey-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 28px 32px 72px;
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+
+  .survey-logo {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-weight: 600;
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      letter-spacing: 0.48px;
+      color: var(--accent);
+    }
+
+    .web-name {
+      font-size: 10px;
+      letter-spacing: 0.2px;
+      color: var(--muted);
+    }
+  }
+
+  .survey-content {
+    width: 100%;
+    max-width: 1008px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .survey-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.44px;
+      color: var(--muted);
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 44px);
+      font-weight: 700;
+      line-height: 1.15;
+      color: #fff;
+    }
+
+    p {
+      max-width: 620px;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+  }
+
+  .survey-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+  }
+
+  // ô tìm kiếm (Figma "Search field" 257:98)
+  .survey-search {
+    width: min(320px, 100%);
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px 0 18px;
+    border-radius: 20px;
+    background: var(--surface);
+    cursor: text;
+
+    svg {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: none;
+      color: var(--search-text);
+      font-family: inherit;
+      font-size: 13px;
+      letter-spacing: 0.26px;
+
+      &::placeholder {
+        color: var(--search-text);
+        opacity: 0.8;
+      }
+    }
+
+    &:focus-within {
+      box-shadow: 0 0 0 1.5px var(--accent);
+    }
+  }
+
+  // chip thể loại (Figma "Genre chip" 254:11)
+  .genre-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .genre-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border: 1px solid var(--chip);
+    border-radius: 999px;
+    background: var(--surface);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+
+    &:hover {
+      border-color: var(--accent);
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &.selected {
+      padding-left: 16px;
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--on-premium);
+      font-weight: 600;
+    }
+  }
+
+  // lưới ca sĩ (Figma "Artist card" 254:30)
+  .artist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+    gap: 32px 28px;
+  }
+
+  .artist-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #fff;
+    font-family: inherit;
+    text-align: center;
+    cursor: pointer;
+
+    .artist-photo {
+      position: relative;
+      width: 128px;
+      height: 128px;
+      margin-bottom: 8px;
+      padding: 4px;
+      border-radius: 50%;
+      // vòng tím 3px khi được chọn
+      box-shadow: inset 0 0 0 3px transparent;
+      transition: box-shadow 0.15s, transform 0.15s;
+
+      .artist-avatar {
+        width: 120px;
+        height: 120px;
+        font-size: 34px;
+      }
+    }
+
+    &:hover .artist-photo {
+      transform: scale(1.03);
+    }
+
+    .artist-badge {
+      position: absolute;
+      left: 92px;
+      top: 92px;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--bg);
+      border-radius: 16px;
+      background: var(--accent);
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .artist-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .artist-role {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    &.selected {
+      .artist-photo {
+        box-shadow: inset 0 0 0 3px var(--accent);
+      }
+
+      .artist-name {
+        color: var(--accent);
+      }
+    }
+  }
+
+  .empty {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .show-more {
+    display: flex;
+    justify-content: center;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border: 1px solid var(--chip);
+      border-radius: 999px;
+      background: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        border-color: var(--accent);
+      }
+    }
+  }
+
+  // thanh dưới: số đã chọn + Bỏ qua / Xong
+  .survey-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 28px;
+    border-top: 1px solid var(--surface);
+
+    .picked-count {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 16px;
+    }
+
+    button {
+      height: 40px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.56px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-skip {
+      padding: 0 28px;
+      border: 1.5px solid #fff;
+      background: none;
+      color: #fff;
+      font-family: inherit;
+    }
+
+    .btn-done {
+      padding: 0 40px;
+      border: none;
+      background: #fff;
+      color: var(--on-premium);
+      font-family: 'Inter', sans-serif;
+    }
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+}
+
+@media (max-width: 640px) {
+  .survey-page {
+    padding: 20px 16px 48px;
+
+    .artist-grid {
+      grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      gap: 24px 12px;
+    }
+
+    .artist-card .artist-photo {
+      width: 104px;
+      height: 104px;
+
+      .artist-avatar {
+        width: 96px;
+        height: 96px;
+        font-size: 28px;
+      }
+
+      .artist-badge {
+        left: 72px;
+        top: 72px;
+      }
+    }
+  }
+}

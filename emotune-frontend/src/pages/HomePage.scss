@@ -58,3 +58,20 @@
     }
   }
 }
+
+// đang ở trang khác (vd trang playlist): ẩn khung lớn, chỉ còn thanh phát cố định ở dưới
+.home-page.is-hidden {
+  min-height: 0;
+  display: block;
+
+  .player-stage {
+    display: none;
+  }
+}
+
+// đang phát: khung phát tự tính chiều cao vừa màn hình -> không căn giữa theo chiều dọc nữa
+// (căn giữa sẽ đẩy khung xuống, chui dưới thanh phát)
+.home-page:has(.player) {
+  min-height: 0;
+  justify-content: flex-start;
+}

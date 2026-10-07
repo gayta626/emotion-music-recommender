@@ -6,7 +6,7 @@
 
 ## 📍 Đang ở đâu
 
-**Playlist (P1–P5) xong 07/10:** thêm bài bằng nút ☰, phát từ tab Playlists ở sidebar, hàng đợi, thẻ "Up next" mờ dần như YouTube. Tiếp theo: **commit**, rồi chuẩn bị demo HIC trên Pi (giai đoạn B) hoặc trang playlist theo Figma / F12 form khảo sát gu.
+**Phần mềm gần xong (07/10 tối):** playlist đầy đủ, khảo sát gu + điểm thưởng, 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại, sửa C9/C10. Còn lại phía phần mềm: F11 + Task 6–7 (hộp nhạc), F5 (sửa Figma). Tiếp theo: **commit**, rồi giai đoạn B (Pi).
 Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan
@@ -15,8 +15,8 @@ Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng c
 |---|---|---|
 | 0. Nền tảng (trước 04/10) | — | ✅ 10 / 10 |
 | A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 8 / 11 |
-| F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 12 / 20 |
-| P. Playlist cá nhân (chế độ không quét) | trước 15/10 nếu kịp | ✅ 5 / 5 (còn trang playlist theo Figma) |
+| F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 18 / 20 (còn F5 Figma, F11 hộp nhạc) |
+| P. Playlist cá nhân (chế độ không quét) | trước 15/10 nếu kịp | ✅ 6 / 6 |
 | B. Hoàn thiện phần cứng + demo HIC | **15/10/2026** | ⬜ 0 / 8 |
 | C. Môn Xây dựng hệ thống thông minh | chưa biết | ⬜ 0 / 11 |
 
@@ -90,12 +90,12 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 | F10c ⭐ | **Chọn cảm xúc bằng tay** khi không có camera (5 nút Happy/Sad/Angry/Surprised/Neutral → `POST /suggest`), có camera thì hiện link "Pick my mood instead". Không gửi ảnh rỗng khi camera chưa mở (một nửa lỗi C10). `/suggest` nhận thêm `surprise` | Claude | ✅ 07/10 (Playwright: không camera → chọn Surprised → phát bài vibe surprise) |
 | F10d ⭐ | **Sóng âm** giữa trình phát thay ảnh bìa (nhấp nhô theo nhạc thật, đập theo bass); bỏ huy hiệu cảm xúc, chỉ còn lời gợi ý; tên ca sĩ nhỏ + mờ hơn tên bài | Claude | ✅ 07/10 (Playwright: bài sad + happy đều nhảy rõ, có tiếng) |
 | F11 ⭐ | Nút **"Dùng hộp nhạc" / "Rời hộp nhạc"** + **màn chờ trên Pi** ("Xin chào, {tên}") — *plan Task 12* | Bạn + Claude | ⬜ |
-| F12 | **Form khảo sát gu** lần đầu (tìm ca sĩ/thể loại không dấu, "Xem thêm", "Bỏ qua") — *plan Task 11* | Bạn + Claude | ⬜ |
-| F13 | Sidebar: ca sĩ không có ảnh → hiện chữ viết tắt (5 ca sĩ đang hiện ảnh lỗi) | Bạn + Claude | ⬜ |
-| F14 | Co giãn cho **điện thoại** (360px, không cuộn ngang) — cần để đăng nhập + bấm "Dùng hộp nhạc" trên điện thoại | Claude | ⬜ |
-| F15 | Nút **từ chối bài** (`/feed-back`) và **xin bài** (`/request-song`) — API có sẵn, chưa có giao diện | Bạn + Claude | ⬜ |
-| F16 | Trang **lịch sử cảm xúc 7 ngày** (biểu đồ từ `GET /mood-history`) — thể hiện "thông minh" cho môn HTTM; chưa có thiết kế Figma | Bạn + Claude | ⏸ |
-| F17 | Ô tìm kiếm trên header chạy thật (tìm bài / ca sĩ) — hiện chỉ là giao diện | Bạn | ⏸ |
+| F12 | **Form khảo sát gu** lần đầu theo Figma `255:5` (`/survey`): người chưa làm tự được chuyển tới; tìm thể loại/ca sĩ không dấu, "Show more artists", Skip / Done | Claude | ✅ 07/10 (Playwright: đăng ký → /survey → chọn → về trang chủ) |
+| F13 | Ca sĩ không có ảnh → chữ viết tắt (NP, GU, TS, DL, RM) theo style Figma, dùng chung `ArtistAvatar` cho sidebar + khảo sát | Claude | ✅ 07/10 |
+| F14 | Co giãn cho **điện thoại** (390px) + màn vừa (1100px): header 2 hàng, thư viện thành dải cuộn ngang, thanh phát 2 hàng (giữ nút ☰, 👎), trang playlist/mood/khảo sát xếp lại; không tràn ngang | Claude | ✅ 07/10 (Playwright đo 390 / 1100 / 1440px) |
+| F15 | Nút 👎 **"Not for me"** cạnh tên bài (`/feed-back`, −1 điểm rồi chuyển bài) + menu ☰ **"Request a song"** (gõ không dấu, gợi ý ngay, `/request-song` +1 điểm rồi phát) | Claude | ✅ 07/10 (Playwright + kiểm tra điểm trong DB) |
+| F16 | Trang **Your mood** (`/mood`, bấm biểu tượng AI giữa header): 3 ô tóm tắt (số lần quét, cảm xúc nhiều nhất, **Cheer-up mode On/Off + giải thích vì sao**), biểu đồ cột chồng 7 ngày (màu đã kiểm tra mù màu, rê chuột xem chi tiết, nút Show table) | Claude | ✅ 07/10 (Playwright với dữ liệu mẫu) |
+| F17 | Ô tìm kiếm trên header chạy thật (`HeaderSearch`): tìm bài/ca sĩ không dấu, phím ↑↓ + Enter, bấm là phát ngay | Claude | ✅ 07/10 |
 
 > Khi Figma MCP dùng lại được: Claude đối chiếu file Figma để bổ sung màn hình còn thiếu vào bảng (vd Figma đã có thiết kế cho trình phát nhạc / trang chủ chưa).
 
@@ -113,6 +113,7 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 | P3 | Frontend: nút ☰ trên thanh phát → menu: chế độ cảm xúc = **"Add to playlist"** (chọn playlist, báo Added / Already in); chế độ playlist = **"View playlist"** | Claude | ✅ 07/10 |
 | P4 | Sidebar tab **Playlists** (bấm là phát) + **cột hàng đợi** (Now playing / Next from…, bấm bài để nhảy tới). Còn thiếu: trang playlist riêng theo Figma "Page playlist khi đã có nhạc" (cần link frame) | Claude | ✅ 07/10 (phần sidebar + hàng đợi) |
 | P5 | `HomePage`: chế độ playlist (không quét, không `/listen-report`), hết playlist → về chế độ cảm xúc. **Thẻ "Up next" kiểu YouTube**: 15 giây cuối mờ dần hiện, vòng đếm ngược, bấm để phát luôn, ✕ để ẩn; bài cuối báo "End of playlist" | Claude | ✅ 07/10 (Playwright: thêm 2 bài, phát, tự chuyển bài, hàng đợi, hết playlist → màn chọn cảm xúc) |
+| P6 | **Trang playlist** `/playlist/:id` (theo ảnh Figma "Page playlist khi đã có nhạc"): bảng bài (đang phát tô tím), bấm tên để đổi tên, ⋯ xoá playlist, xoá bài, tìm bài để thêm, **Recommended** (cùng ca sĩ +2, cùng thể loại +1, cùng vibe +0.5). Nút + ở sidebar tạo playlist. API mới: `POST/PATCH/DELETE /playlists`, `GET /songs`. **Nhạc không tắt khi đổi trang** (HomePage luôn giữ trong MainLayout); nút Home trên header chạy | Claude | ✅ 07/10 (curl + Playwright, nhạc chạy liên tục 64s→66s→67s qua 2 lần đổi trang) |
 
 ---
 
@@ -135,7 +136,7 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 | # | Việc | Ai | Trạng thái |
 |---|---|---|---|
-| C1 | Điểm thưởng khảo sát gu (+0.5 cùng ca sĩ, +0.5 cùng thể loại) trong `suggestService` | Bạn | ⬜ |
+| C1 | Điểm thưởng khảo sát gu (+0.5 cùng ca sĩ, +0.5 cùng thể loại) — tính trong SQL `suggestModel` (`taste_bonus`), xếp hạng theo `score + taste_bonus` | Claude | ✅ 07/10 (curl: chọn GUrbane + ballad → "Khó Giữ Chân Thành" lên đầu) |
 | C2 | Thêm nhạc: ≥ 8–10 bài mỗi cảm xúc trong `setup.sql` | Bạn + Claude | ⬜ |
 | C3 | Gợi ý theo gu 65/35 (plan có sẵn: `docs/superpowers/plans/2026-09-27-taste-based-recommendation.md`, thêm `user_id`) | Bạn | ⬜ |
 | C4 | AI — đo mốc: macro-F1 + confusion matrix theo từng người lạ | Bạn + Claude | ⬜ |
@@ -143,8 +144,8 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 | C6 | AI — huấn luyện: augmentation, label smoothing, early stopping, sửa nạp checkpoint tốt nhất, GroupKFold theo người | Bạn + Claude | ⬜ |
 | C7 | AI — suy luận thông minh: gộp N khung hình + ngưỡng tin cậy ("chưa chắc") + lật ngang | Bạn | ⬜ |
 | C8 | Cập nhật `AI_NOTES.md` với số liệu mới | Bạn + Claude | ⬜ |
-| C9 | Sửa xu hướng cảm xúc: hiện chỉ đếm `sad` (bỏ sót `angry`) | Bạn | ⬜ |
-| C10 | Sửa lỗi cũ: `EmotionScanner` gửi ảnh khi camera chưa mở; `mood_history` có thể ghi `suggested` 2 lần | Bạn | ⬜ |
+| C9 | Xu hướng cảm xúc đếm cả **buồn + giận** (trước chỉ đếm buồn). Tách hàm thuần `decideTarget` + 7 unit test (`test/moodTrend.test.js`, `npm test` 9/9 pass) | Claude | ✅ 07/10 |
+| C10 | `EmotionScanner`: không gửi ảnh khi camera chưa mở; **chờ AI trả lời xong mới gửi ảnh tiếp** (trước đây AI chậm > 3s thì gửi chồng → `mood_history` ghi 2 lần); hết cảnh báo lint cũ. Lint frontend giờ **sạch** (tách hook `AIAssistantContext` ra `aiAssistantStore.js`) | Claude | ✅ 07/10 |
 | C11 | (Tuỳ chọn) kênh thứ hai: giọng nói hoặc văn bản, hợp nhất với khuôn mặt | Bạn | ⏸ |
 
 ---
@@ -153,6 +154,7 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 | Ngày | Xong |
 |---|---|
+| 07/10 (khuya) | F12 khảo sát gu + C1 điểm thưởng · F13 chữ viết tắt ca sĩ · P6 trang playlist (tạo/đổi tên/xoá, Recommended, nhạc không tắt khi đổi trang) · F15 👎 + xin bài · F16 trang Your mood · C9 buồn+giận · C10 quét không chồng lệnh · F17 tìm kiếm · F14 điện thoại · lint sạch |
 | 07/10 (tối) | F10b trình phát theo Figma, nền đổi màu theo vibe bài · F10c chọn cảm xúc bằng tay khi không có camera · F10d sóng âm theo nhạc · P3–P5 playlist trên giao diện (menu ☰, tab Playlists, hàng đợi, thẻ Up next) · A-15 mp3 có đủ trên máy này |
 | 07/10 | P1 bảng playlist + P2 API playlist · (chốt thiết kế chế độ Playlist — mục P) · F9 trang chủ + khung quét · F10 trình phát (tự dựng, Figma không có thiết kế) · A-8 `GET /genres`, `GET/POST /profile` · F8 header tên người dùng + Log out (`AuthContext`) · F7 trang Đăng nhập + Đăng ký + `RequireAuth` (Claude viết; đổi thông báo lỗi `authService` sang tiếng Việt) |
 | 04/10 | A-0 commit việc dở · A-1 DB nhiều tài khoản · A-2 `authValidation` · A-3 đăng ký + đăng nhập (`userModel`, `authService`, `authController`, route) · A-4 `requireAuth` + `GET /auth/me` · A-5 gợi ý, chấm điểm, từ chối/xin bài, lịch sử theo từng người · F6 `api.js` gắn token |

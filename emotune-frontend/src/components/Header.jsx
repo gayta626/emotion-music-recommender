@@ -1,13 +1,15 @@
 import './Header.scss'
 import HomeIcon from '../assets/icons/home_icon.svg?react'
-import SearchIcon from '../assets/icons/search_icon.svg?react'
+import HeaderSearch from './HeaderSearch'
 import AIIcon from '../assets/icons/ai_icon.svg?react'
 import NotificationIcon from '../assets/icons/notification_icon.svg?react'
 import UserIcon from '../assets/icons/user_icon.svg?react'
 import { useAuth } from '../contexts/authContext'
+import { useNavigate } from 'react-router-dom'
 
 const Header = () => {
     const { user, logout } = useAuth()
+    const navigate = useNavigate()
     return (
         <>
             <div className="header-container">
@@ -21,22 +23,19 @@ const Header = () => {
                         </div>
                     </div>
                     <div className="home-search-group">
-                        <button className="home-btn">
+                        {/* ve trang chu: chuyen trang trong app (khong tai lai) nen nhac dang phat khong bi tat */}
+                        <button className="home-btn" onClick={() => navigate('/')} aria-label="Home">
                             <HomeIcon />
                         </button>
-                        <div className="search-bar">
-                            <SearchIcon className="search-icon" />
-                            <input
-                                type="text"
-                                placeholder="Search music, artists, albums..."
-                                className="search-input"
-                            />
-                        </div>
+                        <HeaderSearch />
                     </div>
 
                 </div>
 
-                <AIIcon className="ai-icon" />
+                {/* bieu tuong AI: mo trang lich su cam xuc (NYX giai thich vi sao chon bai) */}
+                <button className="ai-btn" onClick={() => navigate('/mood')} title="Your mood" aria-label="Your mood history">
+                    <AIIcon className="ai-icon" />
+                </button>
 
                 <div className="action-container">
                     <button className="explore-premium-btn">

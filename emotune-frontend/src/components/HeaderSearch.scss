@@ -1,0 +1,90 @@
+// Danh sách kết quả của ô tìm kiếm trên header (khung ô tìm giữ style .search-bar trong Header.scss)
+.header-search {
+  position: relative;
+
+  .search-input::-webkit-search-cancel-button {
+    filter: invert(0.7);
+    cursor: pointer;
+  }
+
+  .search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    min-width: 300px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 12px;
+    background: #242029;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  }
+
+  .search-empty {
+    padding: 10px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .search-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: #fff;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &.active {
+      background: rgba(255, 255, 255, 0.08);
+
+      .search-play {
+        opacity: 1;
+      }
+    }
+  }
+
+  .search-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .search-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .search-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .search-artist {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .search-play {
+    font-size: 12px;
+    color: var(--accent);
+    opacity: 0;
+  }
+}
