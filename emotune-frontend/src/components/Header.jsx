@@ -4,8 +4,10 @@ import SearchIcon from '../assets/icons/search_icon.svg?react'
 import AIIcon from '../assets/icons/ai_icon.svg?react'
 import NotificationIcon from '../assets/icons/notification_icon.svg?react'
 import UserIcon from '../assets/icons/user_icon.svg?react'
+import { useAuth } from '../contexts/authContext'
 
 const Header = () => {
+    const { user, logout } = useAuth()
     return (
         <>
             <div className="header-container">
@@ -44,8 +46,12 @@ const Header = () => {
                         <button className="notification-btn">
                             <NotificationIcon />
                         </button>
-                        <button className="user-btn">
+                        <div className="user-info">
                             <UserIcon />
+                            <span className="username">{user?.username}</span>
+                        </div>
+                        <button className="logout-btn" onClick={logout}>
+                            Log out
                         </button>
                     </div>
 

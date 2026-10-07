@@ -1,0 +1,180 @@
+// Trình phát nhạc: màu nhấn đổi theo cảm xúc (data-emotion trên .player)
+.player {
+  --emo: var(--accent);
+
+  &[data-emotion="happy"] { --emo: #ffd166; }
+  &[data-emotion="sad"] { --emo: #7aa7e0; }
+  &[data-emotion="angry"] { --emo: #ff7a7a; }
+  &[data-emotion="surprise"] { --emo: #ff9ff3; }
+  &[data-emotion="neutral"] { --emo: var(--accent); }
+
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+
+  .player-emotion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: var(--chip);
+
+    .emotion-emoji {
+      font-size: 20px;
+    }
+
+    .emotion-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--emo);
+    }
+  }
+
+  .player-message {
+    max-width: 360px;
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    line-height: 1.35;
+    color: #fff;
+  }
+
+  .player-encourage {
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    background: rgba(255, 209, 102, 0.15);
+    font-size: 13px;
+    color: #ffd166;
+  }
+
+  .player-card {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 28px 24px 24px;
+    border-radius: 28px;
+    background: var(--surface);
+    box-shadow: 0 0 60px color-mix(in srgb, var(--emo) 18%, transparent);
+  }
+
+  .player-disc {
+    width: 160px;
+    height: 160px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--chip), var(--bg) 75%);
+    border: 3px solid var(--emo);
+    font-size: 56px;
+    color: var(--emo);
+
+    &.spinning {
+      animation: player-spin 8s linear infinite;
+    }
+  }
+
+  .player-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .player-artist {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .player-progress {
+    width: 100%;
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .time {
+      min-width: 36px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+
+    .seek {
+      flex: 1;
+      height: 4px;
+      appearance: none;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      // phần đã phát tô màu cảm xúc, phần còn lại màu chip
+      background: linear-gradient(to right, var(--emo) var(--progress, 0%), var(--chip) var(--progress, 0%));
+
+      &::-webkit-slider-thumb {
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+      }
+
+      &::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border: none;
+        border-radius: 50%;
+        background: #fff;
+      }
+    }
+  }
+
+  .player-controls {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    .ctrl-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+
+      &:hover {
+        transform: scale(1.06);
+      }
+
+      &.play {
+        width: 64px;
+        height: 64px;
+        background: var(--emo);
+        color: var(--on-premium);
+        font-size: 22px;
+      }
+
+      &.next {
+        width: 48px;
+        height: 48px;
+        background: var(--chip);
+        color: #fff;
+        font-size: 18px;
+      }
+    }
+  }
+}
+
+@keyframes player-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

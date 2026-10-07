@@ -5,6 +5,7 @@
 
 -- user_profile: bang cu (truoc khi co tai khoan), van xoa de DB cu khong con sot lai
 DROP TABLE IF EXISTS
+    playlist_songs, playlists,
     devices, survey_genres, survey_artists, user_profile,
     recently_played, mood_history, preferences,
     songs, genres, artists, users
@@ -106,6 +107,24 @@ CREATE TABLE survey_genres (
     PRIMARY KEY (user_id, genre_id)
 );
 
+-- Playlist ca nhan: moi playlist thuoc 1 nguoi; position = thu tu phat (giong db/migrate_playlists.sql)
+CREATE TABLE playlists (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, name)
+);
+
+CREATE TABLE playlist_songs (
+    playlist_id INTEGER NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+    song_id     INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+    position    INTEGER NOT NULL,
+    added_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (playlist_id, song_id)
+);
+
+CREATE INDEX idx_playlist_songs_order ON playlist_songs (playlist_id, position);
 CREATE INDEX idx_mood_history_user_created ON mood_history (user_id, created_at);
 CREATE INDEX idx_recently_played_user_played ON recently_played (user_id, played_at);
 

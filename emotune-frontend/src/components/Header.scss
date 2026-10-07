@@ -110,12 +110,46 @@
             align-items: center;
             gap: 20px;
 
-            .notification-btn,
-            .user-btn {
+            .notification-btn {
                 display: flex;
                 background: none;
                 border: none;
                 cursor: pointer;
+            }
+
+            .user-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+
+                .username {
+                    max-width: 120px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-family: 'DM Sans', sans-serif;
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: var(--search-text);
+                }
+            }
+
+            .logout-btn {
+                height: 32px;
+                padding: 0 16px;
+                border: 1px solid var(--accent);
+                border-radius: var(--radius);
+                background: none;
+                color: var(--accent);
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                font-size: 13px;
+                cursor: pointer;
+                transition: background-color 0.15s;
+
+                &:hover {
+                    background-color: var(--chip);
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ const TOKEN_KEY = "emotune_token";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
 
 // baseURL: component chi viet duong dan ("/artists"), khong phai ghi lai dia chi backend
 const api = axios.create({ baseURL: API_URL });

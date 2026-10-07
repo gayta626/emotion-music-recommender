@@ -30,7 +30,7 @@ const register = async (rawUsername, password) => {
         row = await createUser(validData.username, passwordHash)
     } catch (err) {
         if (err.code === "23505") {
-            const err = new Error("Username have been used")
+            const err = new Error("Username is already taken")
             err.status = 409;
             throw err;
         }
@@ -43,13 +43,13 @@ const login = async (rawUsername, password) => {
     const checkUsername = normalizeUsername(rawUsername)
     const row = await findUserByUsername(checkUsername);
     if (!row || typeof (password) !== 'string') {
-        const err = new Error("Wrong username or password.Please check again")
+        const err = new Error("Wrong username or password")
         err.status = 401;
         throw err;
     }
     const checkPassword = await bcrypt.compare(password, row.password_hash)
     if (!checkPassword) {
-        const err = new Error("Wrong username or password.Please check again")
+        const err = new Error("Wrong username or password")
         err.status = 401;
         throw err;
     }

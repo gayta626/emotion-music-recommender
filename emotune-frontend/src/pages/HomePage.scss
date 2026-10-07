@@ -1,0 +1,60 @@
+// Trang chủ: màn chào (chưa bắt đầu) + vùng chứa khung quét / trình phát
+.home-page {
+  min-height: calc(100vh - var(--header-h) - 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  &.home-intro {
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .intro-eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: var(--muted);
+  }
+
+  .intro-title {
+    max-width: 640px;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 600;
+    line-height: 1.15;
+    color: #fff;
+  }
+
+  .intro-subtitle {
+    max-width: 480px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--search-text);
+  }
+
+  .start-btn {
+    margin-top: 16px;
+    height: 56px;
+    padding: 0 48px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-premium);
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 0 40px rgba(201, 169, 245, 0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 56px rgba(201, 169, 245, 0.5);
+    }
+  }
+}

@@ -1,0 +1,125 @@
+// Trang Đăng nhập / Đăng ký (dùng chung). Màu lấy từ :root trong index.css
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px 16px;
+  background: var(--bg);
+
+  .logo-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 56px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--accent);
+  }
+
+  .web-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--muted);
+  }
+
+  .welcome-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    color: #fff;
+    text-align: center;
+  }
+
+  .input-form-container {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--search-text);
+    }
+  }
+
+  .input-box {
+    height: 48px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: #fff;
+    font-family: inherit;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.15s;
+
+    &::placeholder {
+      color: var(--muted);
+    }
+
+    &:focus {
+      border-color: var(--accent);
+    }
+  }
+
+  .error-text {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #ff7a8a;
+  }
+
+  .btn-login {
+    margin-top: 16px;
+    height: 48px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-premium);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .action-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .small-title {
+    color: var(--muted);
+  }
+
+  .btn-sign-up {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

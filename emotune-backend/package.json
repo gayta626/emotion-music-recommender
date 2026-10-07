@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "rename-music": "node scripts/rename-music.js",
     "db:setup": "node scripts/db-setup.js",
+    "db:migrate": "node scripts/db-migrate.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [

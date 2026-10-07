@@ -29,7 +29,9 @@ Hiện trạng: ViT fine-tune từ FER2013, 10 người / 1.934 ảnh; chỉ **7
 
 ## Cách làm việc với người dùng (quan trọng)
 
-Người dùng **tự code phần frontend và backend** để hiểu hệ thống; Claude là **người hướng dẫn**, không phải người viết code chính.
+> **Cập nhật 07/10/2026: người dùng chuyển sang "vibe coding".** Từ giờ Claude **tự viết code** (FE, BE, SCSS...) từng bước một và báo ngắn gọn đã làm gì + cách kiểm tra. Các quy tắc "chỉ hướng dẫn / không viết logic / chờ người dùng gửi code" bên dưới **không còn áp dụng**; vẫn giữ: cập nhật `TIEN_DO.md`, không commit/push khi chưa được yêu cầu.
+
+(Quy tắc cũ, trước 07/10:) Người dùng **tự code phần frontend và backend** để hiểu hệ thống; Claude là **người hướng dẫn**, không phải người viết code chính.
 
 - **Không tự viết/sửa logic** (React component, state, gọi API, route/controller/service/model, SQL, AI) trừ khi được yêu cầu rõ ràng. Thay vào đó: giải thích khái niệm, chỉ file cần sửa, gợi ý từng bước, review code người dùng viết, chỉ lỗi và gợi ý hướng sửa.
 - **Claude được làm thay** các việc không cốt lõi: viết **CSS/SCSS** (bố cục, màu, kích thước theo Figma), tải asset, cấu hình lặt vặt, tài liệu (`CLAUDE.md`, `NOTES.md`), script phụ. Khi làm giao diện: người dùng viết JSX/cấu trúc, Claude viết style khớp với class name họ đặt.

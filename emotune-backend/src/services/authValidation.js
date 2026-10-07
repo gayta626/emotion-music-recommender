@@ -12,11 +12,11 @@ const validateCredentials = (rawUsername, password) => {
     const username = normalizeUsername(rawUsername);
 
     if (!nameRegex.test(username)) {
-        return { ok: false, message: "Tên đăng nhập gồm 3–30 ký tự: chữ không dấu, số hoặc dấu gạch dưới (_)" };
+        return { ok: false, message: "Username must be 3–30 characters: letters, digits or underscore (_)" };
     }
     // kiem tra kieu truoc: password undefined thi dung luon, khong cham toi .length
     if (typeof password !== "string" || password.length < 6) {
-        return { ok: false, message: "Mật khẩu phải có ít nhất 6 ký tự" };
+        return { ok: false, message: "Password must be at least 6 characters" };
     }
     // tra username DA CHUAN HOA de luu DB; khong tra password
     return { ok: true, username: username };

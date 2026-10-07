@@ -1,9 +1,90 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **04/10/2026 (chiều–tối)** trên máy mới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: **backend nhiều tài khoản xong phần web** (đăng ký / đăng nhập / JWT / mọi API cá nhân lọc theo `user_id`); frontend đã gắn token (`src/api.js`) nhưng **chưa có trang đăng nhập** → vào web phải dán token tay. Hộp nhạc (Task 6–7) **để sau**. Mọi thứ **đã commit** (trừ `.claude/settings.json`).
+> Phiên gần nhất: **07/10/2026** trên máy mới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: web có **đăng nhập / đăng ký / đăng xuất**, backend có **khảo sát gu (`/genres`, `/profile`) và playlist (`/playlists`)**; trang chủ + trình phát đã dựng nhưng **trình phát phải làm lại theo Figma** (trang "homepage signup"). **Nhạc chưa phát được vì `emotune-backend/music/` trống.** Hộp nhạc (Task 6–7) vẫn **để sau**. ⚠ **Mọi việc phiên 07/10 CHƯA commit.**
+> **Từ 07/10 người dùng chuyển sang "vibe coding": Claude tự viết code** (ghi trong `CLAUDE.md` + memory `vibe-coding-mode.md`), không còn chỉ hướng dẫn.
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Cách làm việc (ghi trong `CLAUDE.md`): người dùng tự code FE/BE, Claude hướng dẫn **từng file** (chú thích 📌), **cần đến đâu viết đến đó**; khi người dùng nói "bạn làm luôn" (do gấp) thì Claude làm rồi giải thích. Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# Phiên 07/10/2026 — vibe coding: đăng nhập web, khảo sát gu, trang chủ/trình phát, playlist
+
+## 1. Mục tiêu
+1. Đọc `NOTES.md` + `TIEN_DO.md` để nắm tình trạng; người dùng chuyển sang **vibe coding** (Claude tự code từng bước).
+2. Xong **F7** (trang Đăng nhập/Đăng ký), **F8** (tên người dùng + Log out), **Task 8** (khảo sát gu phía backend).
+3. Đổi tài khoản Figma MCP (hết lượt) và dựng **F9/F10** (trang chủ + trình phát).
+4. Chốt thiết kế **chế độ Playlist** và làm phần DB + backend của nó (P1, P2).
+
+## 2. Việc đã làm xong (tất cả **chưa commit**)
+| Việc | File |
+|---|---|
+| Quy tắc làm việc mới (vibe coding) | `CLAUDE.md` (mục "Cách làm việc"), memory `vibe-coding-mode.md` + `MEMORY.md` |
+| **F7** đăng nhập/đăng ký: form gọi `POST /auth/login`, `/auth/register`, lưu token rồi về `/`; ô nhập lại mật khẩu; `/` và `/settings` bọc `RequireAuth` | `emotune-frontend/src/pages/LoginPage.jsx`, `RegisterPage.jsx`, `AuthPage.scss`, `src/components/RequireAuth.jsx`, `src/App.jsx`, `src/api.js` (sửa `setToken` thiếu key) |
+| Chữ giao diện auth + thông báo lỗi backend đổi sang **tiếng Anh** | 2 trang trên + `emotune-backend/src/services/authService.js`, `authValidation.js`, `src/controllers/authController.js` |
+| **Sửa lỗi 500 khi đăng ký**: `.env` thiếu `JWT_SECRET`, `JWT_EXPIRES_IN=7d` → đã thêm | `emotune-backend/.env` (không vào git) |
+| **F8**: `GET /auth/me` khi vào web; Header hiện tên + nút **Log out** | `src/contexts/authContext.js` (`useAuth`), `src/contexts/AuthProvider.jsx`, `src/components/Header.jsx`, `Header.scss` |
+| **Task 8**: `GET /genres`, `GET /profile`, `POST /profile` (ghi đè trong 1 transaction, mảng rỗng = bỏ qua, id lạ → 400) | `src/model/genreModel.js`, `profileModel.js` (viết lại), `src/services/genreService.js`, `profileService.js`, `src/controllers/genreController.js`, `profileController.js`, `src/routes/web.js` |
+| **F9 + F10 (bản tự dựng, sẽ làm lại)**: màn chào + nút Start; khung camera tròn; trình phát có huy hiệu cảm xúc, lời nhắn, đĩa xoay, thanh thời gian, Play/Next, màu theo cảm xúc. Logic chấm điểm + nút chạm + PIR giữ nguyên | `src/pages/HomePage.jsx/.scss`, `src/components/EmotionScanner.jsx/.scss`, `MusicPlayer.jsx/.scss` |
+| **P1** bảng `playlists`, `playlist_songs`; lệnh migrate | `emotune-backend/db/migrate_playlists.sql` (đã chạy lên DB đang dùng), `db/setup.sql`, `scripts/db-migrate.js`, `package.json` (`npm run db:migrate`) |
+| **P2** `GET /playlists` (tự tạo "My Playlist"), `GET /playlists/:id`, `POST /playlists/:id/songs` (201 mới / 200 đã có), `DELETE /playlists/:id/songs/:songId`; người khác → 404 | `src/model/playlistModel.js`, `src/services/playlistService.js`, `src/controllers/playlistController.js`, `src/routes/web.js` |
+| Bảng tiến độ cập nhật: F7–F10 ✅, Task 8 ✅, thêm F10b, mục **P** (P1–P5), A-15 (mp3) | `TIEN_DO.md` |
+
+Đã thử: lint + build frontend OK; curl 2 tài khoản cho `/profile` và `/playlists` (đúng cả 15 trường hợp, tài khoản thử đã xoá). **Chưa thử trên trình duyệt**: F8, F9, F10 (người dùng đã thử F7: gặp lỗi 500 → đã sửa).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| **Vibe coding** từ 07/10 | Gấp deadline HIC 15/10; người dùng bỏ quy tắc tự code |
+| `AuthProvider` bọc trong `RequireAuth` (không bọc cả `App`) | Chỉ gọi `/auth/me` khi đã có token; mọi trang con dùng `useAuth()` |
+| Hook + context tách file `authContext.js` | Tránh cảnh báo react-refresh khi export không phải component |
+| UI và lỗi auth bằng **tiếng Anh** (người dùng yêu cầu) | `message` do `suggestService` trả vẫn là tiếng Việt — chưa đổi |
+| **Chế độ Playlist** (chốt cùng người dùng): chọn playlist + Play → **không quét camera**, phát lần lượt; **hết playlist → quét 1 lần → AI chọn bài → sang chế độ cảm xúc**; chế độ playlist **không gọi `/listen-report`** | Điểm sở thích gắn với cảm xúc, playlist không có cảm xúc → tránh làm bẩn dữ liệu; phần "thông minh" giữ nguyên |
+| Thêm bài bằng nút **⋯ (3 gạch)** trên trình phát → "Add to playlist" (ban đầu chỉ có "My Playlist" mặc định) | Người dùng yêu cầu; đơn giản cho kịp 15/10 |
+| `queue-screen` trong Figma = bài còn lại của playlist; **không có hàng đợi ở chế độ cảm xúc** (AI chọn bài kế tiếp) | Hệ thống chọn bài theo cảm xúc từng lần |
+| Migrate bằng file riêng (`migrate_playlists.sql`), **không chạy `db:setup`** | `setup.sql` xoá sạch dữ liệu (đã có 3 tài khoản + điểm) |
+| Playlist/bài không phải của mình → **404** (không phải 403) | Không lộ playlist người khác có tồn tại |
+| **Figma MCP**: người dùng đăng nhập bằng **tài khoản Figma mới** (email `nguyenducvinh0601@gmail.com`, gói Starter, ghế View); tài khoản đầu là email khác và đã hết lượt | MCP tính lượt theo tài khoản. Tài liệu Figma hôm nay ghi **20 lượt/tháng** (tìm kiếm ban đầu ghi 6) — chưa chắc con số nào đúng; đã dùng **3 lượt** (2×`get_metadata`, 1×`get_design_context`); `whoami`, `create_new_file`, `add_code_connect_map` được miễn |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/) — ⚠ cuối phiên backend KHÔNG chạy, tự bật:
+npm run dev                                   # :8080 (nodemon không nạp lại .env → sau khi sửa .env phải restart, hoặc `touch src/server.js`)
+npm run db:migrate -- db/migrate_playlists.sql   # thêm bảng playlist lên DB đang có (an toàn chạy lại)
+npm run db:setup                              # XOÁ + tạo lại toàn bộ DB (có sẵn bảng playlist) — đừng chạy khi đã có dữ liệu
+# .env cần: PORT, DB_*, JWT_SECRET, JWT_EXPIRES_IN=7d  (phiên này đã bổ sung 2 biến JWT)
+
+# Frontend (emotune-frontend/)
+npm run dev        # :5173 ; đăng nhập demo/demo1234 hoặc tạo tài khoản ở /register
+npx eslint src && npm run build
+
+# Thử API bằng curl (Git Bash)
+TOKEN=$(curl -s -X POST localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"demo","password":"demo1234"}' | node -pe "JSON.parse(require('fs').readFileSync(0)).token")
+curl -s localhost:8080/playlists -H "Authorization: Bearer $TOKEN"
+
+# Đổi tài khoản Figma MCP: đăng xuất figma.com trên trình duyệt → /mcp → figma → xoá xác thực → Authenticate bằng tài khoản mới
+# Figma file key: lycGTr71v02BpzYgjmZZS3 (3 trang: "homepage ch signup", "signup, signin, admin", "homepage signup")
+```
+
+## 5. Lỗi đang gặp / việc còn dở
+- **`emotune-backend/music/` trống** (không có mp3 nào trên máy; DB có 10 bài: `co_chac_yeu_la_day.mp3`, `gia_nhu.mp3`, `meditation.mp3`, `cilu.mp3`...). `GET /music/<file>` → 404 → trình phát **bỏ qua bài ngay và quay lại quét** (vòng lặp liên tục). Cần chép lại mp3 (từ Pi: `scp "vinh@raspberrypi.local:~/emotion-music-recommender/emotune-backend/music/*.mp3" emotune-backend/music/`; hoặc tên khác thì `npm run rename-music -- --apply`). Việc này người dùng nói "fix sau". Có thể thêm: file thiếu thì báo lỗi thay vì quét lại liền.
+- **F10 phải làm lại (F10b)**: Figma trang **"homepage signup"** có sẵn thiết kế `screen play nhạc` (ảnh bìa lớn + thanh phát nhạc dưới cùng: tên bài/ca sĩ, shuffle/prev/play/next/repeat, thanh thời gian, âm lượng), `queue-screen` (sidebar có thẻ bài đang phát ở đáy), `lyrics`, `Page playlist`, `Page playlist khi đã có nhạc`. Mình từng kết luận sai "Figma không có thiết kế" vì `get_metadata` không có nodeId chỉ liệt kê **1 trang** → bản F9/F10 hiện tại là tự dựng, **không khớp Figma**. Chưa có node id; URL người dùng mở có `node-id=58-2` (có thể là id trang). Cần **link frame** (chuột phải frame → Copy link) hoặc `get_metadata` với `58:2`.
+- Form khảo sát gu `255:5` / `257:114` cũng nằm ở trang "homepage signup" (không thấy qua listing mặc định).
+- Backend `message` (lời nhắn cảm xúc) còn tiếng Việt, UI còn lẫn Anh/Việt.
+- Chưa thử trên trình duyệt: F8 (tên + Log out), F9, F10. Chưa có camera/mp3 để thử trọn vòng quét → phát → chấm điểm.
+- Console có nhiều lỗi `:5001/buttons` `/led` `ERR_CONNECTION_REFUSED` — **bình thường** khi không chạy `gpio-service` (đã `.catch`).
+- Lint có sẵn: 1 lỗi `AIAssistantContext.jsx`, 1 cảnh báo `EmotionScanner.jsx` (`onResult`).
+- Các việc cũ vẫn dở: Task 6–7 hộp nhạc; Pi chưa dùng được với backend mới (cần `db:setup`/migrate + token); LD2410C chưa lắp; Pi còn code bản `scp`; slide/kịch bản còn "đèn LED"; AI 72.5% (xem mục các phiên trước); VS Code từng ghi đè file Claude sửa → lưu hết (Ctrl+K S) trước khi nhờ sửa, tab có ● thì Revert File.
+- Còn tài khoản tạo khi thử: `demo`/`demo1234`, `gayta625` (người dùng tự tạo); tài khoản `probe_user1`, `t8_*`, `pl_*` đã xoá.
+
+## 6. Bước tiếp theo
+1. Người dùng gửi **link frame `screen play nhạc`** (và `queue-screen` nếu cần) → Claude gọi `get_design_context` (1 lượt/frame) → **F10b**: làm lại trình phát theo Figma, giữ huy hiệu cảm xúc + lời nhắn + "bài động viên"; bỏ/mờ shuffle, prev, repeat; ảnh bìa = ảnh ca sĩ hoặc gradient theo cảm xúc; ca sĩ `null` → "Unknown artist".
+2. **P3** nút ⋯ → "Add to playlist" · **P4** sidebar tab Playlists, bấm Play → chế độ playlist (+ `queue-screen`) · **P5** `HomePage` chuyển chế độ (playlist không quét, không `listen-report`; hết playlist → quét 1 lần → chế độ cảm xúc).
+3. Chép lại **mp3** vào `emotune-backend/music/` rồi thử trọn vòng (cần camera).
+4. **F12** form khảo sát gu (backend đã sẵn) · F14 co giãn điện thoại · C1 điểm thưởng khảo sát trong `suggestService`.
+5. **Commit** (nhiều việc chưa commit; `.env` và `.claude/settings.json` không đưa vào git).
+6. Phần cứng HIC (hạn 15/10): lắp LD2410C, đồng bộ Pi qua git + chạy `db:migrate`/`db:setup`, vỏ hộp, systemd + kiosk, sửa slide (chi tiết ở các phiên bên dưới + `TIEN_DO.md` mục B).
+7. Hỏi người dùng yêu cầu nộp của môn *Xây dựng hệ thống thông minh* (hạn chưa biết).
 
 ---
 

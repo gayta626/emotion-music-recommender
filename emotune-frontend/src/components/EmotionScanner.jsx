@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../api';
+import './EmotionScanner.scss';
+
 const EmotionScanner = (props) => {
-    const { onResult } = props;
+    const { onResult, notice } = props;
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [isActive, setIsActive] = useState(false);
+    const [cameraError, setCameraError] = useState(false);
 
     useEffect(() => {
         let stream;
@@ -22,6 +25,7 @@ const EmotionScanner = (props) => {
             })
             .catch((err) => {
                 console.error("Loi :" + err)
+                setCameraError(true);
             })
 
         const captureAndSend = () => {
@@ -61,11 +65,17 @@ const EmotionScanner = (props) => {
     }, [])
 
     return (
-        <>
-            {isActive && <span>Đang quét cảm xúc</span>}
-            <video ref={videoRef} autoPlay style={{ display: "none" }} />
+        <div className="scanner">
+            <div className={`scanner-frame ${isActive ? "active" : ""}`}>
+                <video ref={videoRef} autoPlay muted playsInline className="scanner-video" />
+                {!isActive && !cameraError && <div className="scanner-placeholder">Starting camera...</div>}
+                {cameraError && <div className="scanner-placeholder">Camera unavailable. Allow camera access and reload.</div>}
+            </div>
             <canvas ref={canvasRef} style={{ display: "none" }} />
-        </>
+            {isActive && <div className="scanner-status">Reading your mood...</div>}
+            {isActive && !notice && <div className="scanner-hint">Look at the camera and keep your face in the frame</div>}
+            {notice && <div className="scanner-notice">{notice}</div>}
+        </div>
     )
 }
 

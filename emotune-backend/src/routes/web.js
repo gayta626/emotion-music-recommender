@@ -7,6 +7,9 @@ const requestSongController = require("../controllers/requestSongController")
 const artistController = require("../controllers/artistController")
 const scanController = require("../controllers/scanController")
 const authController = require('../controllers/authController')
+const genreController = require('../controllers/genreController')
+const profileController = require('../controllers/profileController')
+const playlistController = require('../controllers/playlistController')
 const { requireAuth } = require('../middleware/auth')
 
 let router = express.Router()
@@ -17,6 +20,13 @@ let initWebRoutes = (app) => {
     });
 
     router.get('/artists', artistController.getArtists);
+    router.get('/genres', genreController.getGenres);
+    router.get('/profile', requireAuth, profileController.getProfile);
+    router.post('/profile', requireAuth, profileController.saveProfile);
+    router.get('/playlists', requireAuth, playlistController.getPlaylists);
+    router.get('/playlists/:id', requireAuth, playlistController.getPlaylist);
+    router.post('/playlists/:id/songs', requireAuth, playlistController.addSong);
+    router.delete('/playlists/:id/songs/:songId', requireAuth, playlistController.removeSong);
     router.get('/mood-history', requireAuth, moodHistoryController.getMoodHistory);
 
     router.post('/feed-back', requireAuth, feedBackController.submitFeedBack);
