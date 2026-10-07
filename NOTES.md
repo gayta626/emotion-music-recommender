@@ -1,7 +1,7 @@
 # NOTES.md — EmoTune Project Session Log
 
 > Phiên gần nhất: **07/10/2026 (khuya)**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: **phần mềm gần xong** — đăng nhập, khảo sát gu (+điểm thưởng), trình phát theo Figma + sóng âm, chọn cảm xúc bằng tay, playlist đầy đủ (trang riêng, hàng đợi, Up next), 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại. Còn: hộp nhạc (Task 6–7, F11) + toàn bộ phần cứng (giai đoạn B). ⚠ Phần làm đêm 07/10 **chưa commit**.
+> Trạng thái: **phần mềm gần xong** — đăng nhập, khảo sát gu (+điểm thưởng), trình phát theo Figma + sóng âm, chọn cảm xúc bằng tay, playlist đầy đủ (trang riêng, hàng đợi, Up next), 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại. Còn: hộp nhạc (Task 6–7, F11) + toàn bộ phần cứng (giai đoạn B). Đã commit (`89a0a7c`, `c5d0ac3`), chưa push.
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Quy tắc cũ "người dùng tự code, Claude hướng dẫn" đã bỏ. Không commit khi chưa được yêu cầu.
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
@@ -13,7 +13,7 @@
 ## 1. Mục tiêu
 Người dùng: "làm xong phần mềm trước" (Pi để sau). Làm lần lượt: F13 → F12+C1 → trang playlist → F15 → F16 → C9/C10 → F17 → F14.
 
-## 2. Việc đã làm (chưa commit; commit trước đó: `89a0a7c`)
+## 2. Việc đã làm (commit `c5d0ac3`)
 | Việc | File |
 |---|---|
 | **F13** chữ viết tắt cho ca sĩ không có ảnh (style Figma: nền #2A2533, chữ tím) | `components/ArtistAvatar.jsx/.scss` (dùng chung), `SideBar` |

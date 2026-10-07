@@ -6,7 +6,7 @@
 
 ## 📍 Đang ở đâu
 
-**Phần mềm gần xong (07/10 tối):** playlist đầy đủ, khảo sát gu + điểm thưởng, 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại, sửa C9/C10. Còn lại phía phần mềm: F11 + Task 6–7 (hộp nhạc), F5 (sửa Figma). Tiếp theo: **commit**, rồi giai đoạn B (Pi).
+**Phần mềm gần xong (07/10 tối):** playlist đầy đủ, khảo sát gu + điểm thưởng, 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại, sửa C9/C10. Còn lại phía phần mềm: F11 + Task 6–7 (hộp nhạc), F5 (sửa Figma). Đã commit `c5d0ac3` (chưa push). Tiếp theo: giai đoạn B (Pi) hoặc hộp nhạc (Task 6–7, F11).
 Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan
