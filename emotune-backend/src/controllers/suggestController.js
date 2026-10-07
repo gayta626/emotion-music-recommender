@@ -10,14 +10,15 @@ const VALID_EMOTIONS = [
 
 
 let getSuggest = async (req, res) => {
-    const { emotion, confidence } = req.body;
+    // auto = true: web tu chon bai tiep (khong phai lan quet/chon cam xuc moi) -> khong ghi lich su
+    const { emotion, confidence, auto } = req.body;
     if (!VALID_EMOTIONS.includes(emotion)) {
         return res.status(400).json({
             error: "Loi truyen sai du lieu emotion"
         })
     }
     try {
-        const result = await suggestService.generateSuggestion(req.userId, emotion, confidence);
+        const result = await suggestService.generateSuggestion(req.userId, emotion, confidence, { log: auto !== true });
         if (!result) {
             return res.status(404).json({
                 error: "Loi : Khong tim thay"

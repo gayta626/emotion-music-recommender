@@ -1,19 +1,24 @@
 import { createContext, useContext } from "react";
 
-// Kho dung chung giua SideBar / PlaylistPage (chon playlist) va HomePage (phat nhac):
-// - playPlaylist(id, startIndex): bao HomePage phat playlist tu bai startIndex
+// Kho dung chung giua cac trang (chon nhac) va PlayerHost (phat nhac, luon song trong MainLayout):
+// - playScanResult(result): quet xong (hoac chon cam xuc) -> phat bai AI chon
+// - playPlaylist(id, start) / playQueue({ name, songs, playlistId }, start) / playSong(song)
+// - registerPlayer(fn): PlayerHost dang ky ham nhan lenh (goi thang, khong qua state -> bai va chuyen trang cap nhat cung luc)
+// - lastMood { emotion, at }: cam xuc quet gan nhat (icon quet tren header, chon bai tiep khi dang luot)
+// - nowPlaying { songId, playlistId }: trang playlist to sang dong dang phat
 // - playlistsVersion / refreshPlaylists(): them/xoa bai, tao/xoa playlist xong -> noi khac tai lai
-// - playSong(song): phat ngay 1 bai (o tim kiem tren header)
-// - nowPlaying { songId, playlistId }: bai dang phat (PlaylistPage to sang dong dang phat)
 export const PlaybackContext = createContext({
-    playlistRequest: null,
+    playScanResult: () => {},
     playPlaylist: () => {},
-    songRequest: null,
+    playQueue: () => {},
     playSong: () => {},
-    playlistsVersion: 0,
-    refreshPlaylists: () => {},
+    registerPlayer: () => () => {},
+    lastMood: null,
+    setLastMood: () => {},
     nowPlaying: null,
     setNowPlaying: () => {},
+    playlistsVersion: 0,
+    refreshPlaylists: () => {},
 });
 
 export const usePlayback = () => useContext(PlaybackContext);

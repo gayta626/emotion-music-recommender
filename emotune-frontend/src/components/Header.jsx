@@ -1,6 +1,7 @@
 import './Header.scss'
 import HomeIcon from '../assets/icons/home_icon.svg?react'
 import HeaderSearch from './HeaderSearch'
+import MoodButton from './MoodButton'
 import AIIcon from '../assets/icons/ai_icon.svg?react'
 import NotificationIcon from '../assets/icons/notification_icon.svg?react'
 import UserIcon from '../assets/icons/user_icon.svg?react'
@@ -32,23 +33,26 @@ const Header = () => {
 
                 </div>
 
-                {/* bieu tuong AI: mo trang lich su cam xuc (NYX giai thich vi sao chon bai) */}
-                <button className="ai-btn" onClick={() => navigate('/mood')} title="Your mood" aria-label="Your mood history">
+                {/* bieu tuong AI: tro ly giong noi (phan 2, chua lam) */}
+                <button className="ai-btn" title="Voice assistant (coming soon)" aria-label="Voice assistant (coming soon)">
                     <AIIcon className="ai-icon" />
                 </button>
 
                 <div className="action-container">
+                    {/* man quet thu gon thanh icon: bam -> /scan */}
+                    <MoodButton />
                     <button className="explore-premium-btn">
                         Explore Premium
                     </button>
                     <div className="setting-and-notification-container">
-                        <button className="notification-btn">
+                        <button className="notification-btn" aria-label="Notifications">
                             <NotificationIcon />
                         </button>
-                        <div className="user-info">
+                        {/* bam ten tai khoan -> trang thong ke cam xuc */}
+                        <button className="user-info" onClick={() => navigate('/stats')} title="Your stats">
                             <UserIcon />
                             <span className="username">{user?.username}</span>
-                        </div>
+                        </button>
                         <button className="logout-btn" onClick={logout}>
                             Log out
                         </button>

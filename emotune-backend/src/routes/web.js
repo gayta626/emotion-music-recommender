@@ -24,6 +24,7 @@ let initWebRoutes = (app) => {
     router.get('/genres', genreController.getGenres);
     router.get('/profile', requireAuth, profileController.getProfile);
     router.post('/profile', requireAuth, profileController.saveProfile);
+    router.get('/songs/for-you', requireAuth, songController.getForYou);
     router.get('/songs', songController.getSongs);
     router.get('/playlists', requireAuth, playlistController.getPlaylists);
     router.post('/playlists', requireAuth, playlistController.createPlaylist);

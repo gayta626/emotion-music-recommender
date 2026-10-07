@@ -31,7 +31,9 @@ let checkMoodTrend = async (userId, emotion) => {
 }
 
 
-let generateSuggestion = async (userId, emotion, confidence) => {
+// options.log = false: web tu chon bai tiep theo cam xuc cu (nguoi dung dang luot, khong quet moi)
+// -> KHONG ghi mood_history, neu khong thong ke + xu huong cam xuc bi 1 lan quet nhan len nhieu lan
+let generateSuggestion = async (userId, emotion, confidence, options = {}) => {
     const trendResult = await checkMoodTrend(userId, emotion);
     const songSuggested = await suggestModel.getSongsByEmotion(userId, trendResult.targetEmotion);
     //kiem tra xem con bai hat de goi y khong
@@ -44,10 +46,14 @@ let generateSuggestion = async (userId, emotion, confidence) => {
 
     const suggestMessage = getRandomMessage(trendResult.targetEmotion, trendResult.isEncourage);
 
-    await suggestModel.logSuggestion(userId, emotion, confidence, chosenSong.id)
+    if (options.log !== false) {
+        await suggestModel.logSuggestion(userId, emotion, confidence, chosenSong.id)
+    }
     return {
         song: chosenSong,
         emotion: trendResult.targetEmotion,
+        // cam xuc THAT cua nguoi dung (emotion o tren co the da doi sang "happy" de dong vien)
+        detectedEmotion: emotion,
         message: suggestMessage,
         isEncourage: trendResult.isEncourage
     }

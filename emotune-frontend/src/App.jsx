@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { AIAssistantProvider } from './contexts/AIAssistantContext'
 import MainLayout from './layouts/MainLayout'
 import RequireAuth from './components/RequireAuth'
@@ -8,6 +8,8 @@ import MoodPage from './pages/MoodPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SurveyPage from './pages/SurveyPage'
+import HomeRoute from './pages/HomeRoute'
+import ScanPage from './pages/ScanPage'
 import './App.css'
 
 const App = () => {
@@ -20,10 +22,14 @@ const App = () => {
               {/* khảo sát gu: cần đăng nhập nhưng không có header/sidebar (theo Figma 255:5) */}
               <Route path='/survey' element={<SurveyPage />} />
               <Route element={<MainLayout />}>
-                {/* trang chủ (HomePage) do MainLayout tự vẽ và luôn giữ, để nhạc không tắt khi đổi trang */}
-                <Route path='/' element={null} />
+                {/* "/": lần đầu trong phiên = màn quét, sau đó = trang chủ duyệt nhạc */}
+                <Route path='/' element={<HomeRoute />} />
+                <Route path='/scan' element={<ScanPage />} />
+                {/* khung phát lớn do PlayerHost (luôn sống trong MainLayout) tự vẽ */}
+                <Route path='/now-playing' element={null} />
                 <Route path='/playlist/:id' element={<PlaylistPage />} />
-                <Route path='/mood' element={<MoodPage />} />
+                <Route path='/stats' element={<MoodPage />} />
+                <Route path='/mood' element={<Navigate to='/stats' replace />} />
                 <Route path='/settings' element={<Setting />} />
               </Route>
             </Route>

@@ -137,6 +137,31 @@ body:has(.player-bar) {
     margin-left: 4px;
   }
 
+  // nút trong suốt bọc ảnh + tên bài (bấm -> /now-playing)
+  .bar-open {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: inherit;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover .bar-title {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+      border-radius: 10px;
+    }
+  }
+
   .bar-cover {
     flex-shrink: 0;
     width: 80px;

@@ -6,7 +6,7 @@
 
 ## 📍 Đang ở đâu
 
-**Phần mềm gần xong (07/10 tối):** playlist đầy đủ, khảo sát gu + điểm thưởng, 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại, sửa C9/C10. Còn lại phía phần mềm: F11 + Task 6–7 (hộp nhạc), F5 (sửa Figma). Đã commit `c5d0ac3` (chưa push). Tiếp theo: giai đoạn B (Pi) hoặc hộp nhạc (Task 6–7, F11).
+**Trang chủ mới đã chạy (07/10 khuya) nhưng người dùng thấy CHƯA SÁT DESIGN** → việc kế tiếp là **H7: làm lại trang chủ** theo Figma `58:112` + kiểu Spotify (ghi chú chi tiết ở NOTES.md mục "🧭 TỔNG KẾT NGÀY 07/10"). Sau đó H6 trợ lý giọng nói, rồi giai đoạn B (Pi). Mục H **chưa commit** (35 file).
 Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan
@@ -17,6 +17,7 @@ Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng c
 | A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 8 / 11 |
 | F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 18 / 20 (còn F5 Figma, F11 hộp nhạc) |
 | P. Playlist cá nhân (chế độ không quét) | trước 15/10 nếu kịp | ✅ 6 / 6 |
+| H. Trang chủ duyệt nhạc + luồng quét mới | trước 15/10 | 🔄 5 / 7 (còn làm lại trang chủ cho sát design, trợ lý giọng nói) |
 | B. Hoàn thiện phần cứng + demo HIC | **15/10/2026** | ⬜ 0 / 8 |
 | C. Môn Xây dựng hệ thống thông minh | chưa biết | ⬜ 0 / 11 |
 
@@ -117,6 +118,22 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 ---
 
+## H. Trang chủ duyệt nhạc + luồng quét mới (chốt 07/10)
+
+Spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` · plan `docs/superpowers/plans/2026-10-07-browse-home-and-scan-flow.md`
+
+| # | Việc | Ai | Trạng thái |
+|---|---|---|---|
+| H1 | Backend `GET /songs/for-you` (điểm nghe thật + thưởng khảo sát, hàm thuần `rankForYou` + 4 test); `/suggest`, `/scan-and-suggest` trả `detectedEmotion`; `/suggest` nhận `auto: true` → không ghi lịch sử | Claude | ✅ 07/10 (`npm test` 13/13) |
+| H2 | `utils/moodSession` (phiên đã quét, cảm xúc gần nhất), `hooks/useIdle` (rảnh 60s), `utils/moodStats` (dùng chung trang chủ + /stats) | Claude | ✅ 07/10 |
+| H3 | Tách `HomePage` → `PlayerHost` (luôn sống, thanh phát + khung lớn ở `/now-playing`) + `ScanPage` (`/` lần đầu phiên, `/scan`). Hết bài: đang lướt → bài theo cảm xúc gần nhất, không bật camera; **rảnh ≥ 60s → tự quét lại**. `/mood` → `/stats` | Claude | ✅ 07/10 (Playwright đủ 7 luồng) |
+| H4 | Header: icon **record-circle** (viền màu cảm xúc, "Mood: Sad · 12 min ago", nhấp nháy sau 30 phút, bấm → `/scan`); thứ tự icon mới; bấm tên tài khoản → `/stats`; logo AI chờ phần 2 | Claude | ✅ 07/10 |
+| H5 | **Trang chủ duyệt nhạc** theo Figma `58:112`: chip thể loại, banner Create your own playlist, Made for you, Popular artists (bấm = phát bài của ca sĩ), Recently added, Your playlists, thẻ Your mood this week | Claude | ✅ 07/10 (1440 + 390px) |
+| H6 | **Phần 2: trợ lý giọng nói** (bấm logo AI, Figma `284:120`): nói để chọn/đổi bài, chuyển trang | Claude | ⬜ chưa thiết kế |
+| H7 | **Làm lại trang chủ cho giống thiết kế** (người dùng: "chưa sát design"; tham khảo Spotify web + Figma `58:112`) — chi tiết các điểm khác biệt ở NOTES.md mục "🧭 TỔNG KẾT NGÀY 07/10" → 5 | Claude | ⬜ (yêu cầu cuối phiên 07/10) |
+
+---
+
 ## B. Hoàn thiện phần cứng + demo HIC (hạn 15/10)
 
 | # | Việc | Ai | Trạng thái |
@@ -154,6 +171,7 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 | Ngày | Xong |
 |---|---|
+| 07/10 (khuya 2) | H1–H5: trang chủ duyệt nhạc (Figma 58:112), /now-playing, /scan, icon record-circle, tự quét lại khi rảnh 60s, /songs/for-you, /stats |
 | 07/10 (khuya) | F12 khảo sát gu + C1 điểm thưởng · F13 chữ viết tắt ca sĩ · P6 trang playlist (tạo/đổi tên/xoá, Recommended, nhạc không tắt khi đổi trang) · F15 👎 + xin bài · F16 trang Your mood · C9 buồn+giận · C10 quét không chồng lệnh · F17 tìm kiếm · F14 điện thoại · lint sạch |
 | 07/10 (tối) | F10b trình phát theo Figma, nền đổi màu theo vibe bài · F10c chọn cảm xúc bằng tay khi không có camera · F10d sóng âm theo nhạc · P3–P5 playlist trên giao diện (menu ☰, tab Playlists, hàng đợi, thẻ Up next) · A-15 mp3 có đủ trên máy này |
 | 07/10 | P1 bảng playlist + P2 API playlist · (chốt thiết kế chế độ Playlist — mục P) · F9 trang chủ + khung quét · F10 trình phát (tự dựng, Figma không có thiết kế) · A-8 `GET /genres`, `GET/POST /profile` · F8 header tên người dùng + Log out (`AuthContext`) · F7 trang Đăng nhập + Đăng ký + `RequireAuth` (Claude viết; đổi thông báo lỗi `authService` sang tiếng Việt) |

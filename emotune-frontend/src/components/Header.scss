@@ -126,10 +126,21 @@
                 cursor: pointer;
             }
 
+            // nút (bấm -> /stats): bỏ nền/viền mặc định của button
             .user-info {
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                padding: 4px 6px;
+                border: none;
+                border-radius: 8px;
+                background: none;
+                font: inherit;
+                cursor: pointer;
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                }
 
                 .username {
                     max-width: 120px;
@@ -242,20 +253,26 @@
             .setting-and-notification-container {
                 gap: 10px;
 
+                // điện thoại: chỉ giữ icon tài khoản (bấm -> /stats), bỏ chuông + tên cho vừa 1 hàng
                 .notification-btn,
-                .user-info svg {
+                .user-info .username {
                     display: none;
                 }
 
-                .user-info .username {
-                    max-width: 80px;
-                    font-size: 13px;
+                .user-info {
+                    padding: 4px;
+
+                    svg {
+                        width: 26px;
+                        height: 26px;
+                    }
                 }
 
                 .logout-btn {
                     height: 30px;
                     padding: 0 10px;
                     font-size: 12px;
+                    white-space: nowrap;
                 }
             }
         }

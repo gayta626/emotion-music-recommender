@@ -1,10 +1,113 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **07/10/2026 (khuya)**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: **phần mềm gần xong** — đăng nhập, khảo sát gu (+điểm thưởng), trình phát theo Figma + sóng âm, chọn cảm xúc bằng tay, playlist đầy đủ (trang riêng, hàng đợi, Up next), 👎/xin bài, trang Your mood, tìm kiếm, giao diện điện thoại. Còn: hộp nhạc (Task 6–7, F11) + toàn bộ phần cứng (giai đoạn B). Đã commit (`89a0a7c`, `c5d0ac3`), chưa push.
+> Phiên gần nhất: **07/10/2026** — xem **"🧭 TỔNG KẾT NGÀY 07/10/2026"** ngay bên dưới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: phần mềm gần xong + **trang chủ duyệt nhạc mới** (Home kiểu Spotify, màn quét chỉ hiện khi mở web / bấm icon record-circle / rảnh 60s, khung phát lớn ở `/now-playing`, thống kê ở `/stats`). Còn: **trợ lý giọng nói** (bấm logo AI — phần 2), hộp nhạc + phần cứng (giai đoạn B). Phần trang chủ mới **chưa commit**.
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Quy tắc cũ "người dùng tự code, Claude hướng dẫn" đã bỏ. Không commit khi chưa được yêu cầu.
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# 🧭 TỔNG KẾT NGÀY 07/10/2026 — đọc phần này trước
+
+> Chi tiết từng chặng ở các mục "Phiên 07/10/2026 (…)" ngay bên dưới. Bảng tiến độ: `TIEN_DO.md`.
+
+## 1. Mục tiêu của phiên
+1. Đọc NOTES/TIEN_DO, `git pull` code phiên sáng (máy khác).
+2. Chuyển sang **vibe coding** (Claude tự viết code — người dùng xác nhận trực tiếp trong chat).
+3. Hoàn thiện **phần mềm** trước (Pi/phần cứng để sau): trình phát theo Figma, playlist, khảo sát gu, thống kê, tìm kiếm, điện thoại.
+4. Đổi cấu trúc: **Home = trang chủ duyệt nhạc kiểu Spotify**, màn quét chỉ hiện khi mở web / bấm icon / rảnh 60s; logo AI = **trợ lý giọng nói** (chưa làm).
+
+## 2. Việc đã làm xong
+- **Đã commit** (`master`, chưa push): `89a0a7c` trình phát Figma + sóng âm + chọn cảm xúc tay + playlist UI · `c5d0ac3` khảo sát gu, trang playlist, Your mood, tìm kiếm, điện thoại · `40531a3` ghi chú.
+- **Chưa commit (35 file)** — trang chủ duyệt nhạc + luồng quét mới (mục H trong `TIEN_DO.md`):
+  - Backend: `GET /songs/for-you` (`src/model/songModel.js`, `services/songService.js` + `rankForYou`, `controllers/songController.js`, `routes/web.js`), `detectedEmotion` + `auto: true` (`services/suggestService.js`, `controllers/suggestController.js`), test `test/forYou.test.js`.
+  - Frontend: `components/PlayerHost.jsx` (thay `pages/HomePage.jsx` đã xoá), `pages/ScanPage.jsx`, `pages/HomeRoute.jsx`, `pages/BrowsePage.jsx/.scss`, `components/MoodButton.jsx/.scss`, `assets/icons/record_circle_icon.svg`, `assets/images/create_playlist_banner.png`, `utils/moodSession.js`, `utils/moodStats.js`, `hooks/useIdle.js`; sửa `App.jsx`, `layouts/MainLayout.jsx`, `contexts/playbackContext.js`, `contexts/PlaybackProvider.jsx`, `components/MusicPlayer.jsx/.scss`, `components/Header.jsx/.scss`, `pages/MoodPage.jsx`, `index.html` (font Jomolhari).
+  - Tài liệu: spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md`, plan `docs/superpowers/plans/2026-10-07-browse-home-and-scan-flow.md`, `CLAUDE.md`, `TIEN_DO.md`.
+- Kiểm chứng cuối: `npm test` 13/13, `npx eslint src` sạch, `npm run build` OK, Playwright đủ luồng (mở web → quét → `/now-playing`; Home → trang chủ, nhạc không tắt; lướt → bài theo cảm xúc gần nhất; rảnh 62s → `/scan`; 390px không tràn).
+
+## 3. Quyết định quan trọng (và lý do)
+| Quyết định | Lý do |
+|---|---|
+| Vibe coding; không commit/push khi chưa được bảo | Người dùng yêu cầu; gấp deadline 15/10 |
+| `PlayerHost` luôn sống trong `MainLayout`, khung lớn chỉ ở `/now-playing` | Đổi trang không tắt nhạc (kiểu Spotify) |
+| Màn quét: mỗi **phiên** (`sessionStorage`) quét 1 lần; sau đó icon **record-circle**; đang lướt không bật camera; **rảnh ≥ 60s** → tự quét lại khi hết bài | Người dùng chốt (đáp án A + yêu cầu rảnh) |
+| `/suggest` có `auto: true` → không ghi `mood_history` | Tránh thống kê/xu hướng bị 1 lần quét nhân lên |
+| Nền trình phát đổi màu theo **vibe của bài** (`songs.emotion`), không theo cảm xúc AI đoán | Người dùng yêu cầu |
+| UI tiếng Anh; câu gợi ý (backend) tiếng Việt | Đã chốt từ trước |
+| Xu hướng "động viên" đếm buồn **+ giận** (`decideTarget`, có unit test) | Sửa lỗi cũ C9 |
+| Playlist không chấm điểm `/listen-report` | Điểm gắn với cảm xúc, playlist không có cảm xúc |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/): .env cần PORT=8080, DB_*, JWT_SECRET, JWT_EXPIRES_IN=7d
+npm run dev                                         # :8080
+npm run db:migrate -- db/migrate_playlists.sql      # DB cũ thiếu bảng playlist (đã chạy trên máy này)
+npm test                                            # 13 test
+# Frontend (emotune-frontend/)
+npm run dev                                         # :5173 — nếu thấy lỗi lạ "X is not defined" trỏ tới ?t=… cũ: tắt hẳn rồi chạy lại
+npx eslint src && npm run build
+# AI (emotion-scanner/) — máy này không có camera: dùng 5 nút chọn cảm xúc trên web
+venv\Scripts\activate && python 3_backend_server.py # :5000
+```
+Tài khoản: `demo`/`demo1234` (chưa làm khảo sát → sẽ vào `/survey`), `gayta626`. Tài khoản thử `tmp_*` đã xoá hết.
+Figma file `lycGTr71v02BpzYgjmZZS3`: trình phát `92:301`, khảo sát `255:5`, khung trang chủ `58:14`, nội dung trang chủ `58:112`, màn trợ lý giọng nói `284:120`. Figma MCP có giới hạn lượt → xin link frame cụ thể, mỗi frame gọi 1 lần.
+
+## 5. Lỗi đang gặp / việc còn dở
+- ⚠ **YÊU CẦU MỚI (cuối phiên, chưa làm): trang chủ chưa giống thiết kế** — người dùng: *"chưa làm sát với giao diện của mình design lắm, làm cho giống với web của mình đi, nhìn qua Spotify với những phần mình làm trùng lặp ở Figma để biết mình muốn gì"*. Người dùng gửi 3 ảnh Spotify web (open.spotify.com, trang chủ). Những điểm Spotify khác bản hiện tại:
+  - Chip **All / Music / Podcasts** ở trên cùng (nền xám, chip đang chọn nền trắng chữ đen).
+  - Hàng đầu: **"Getting started"** (thẻ màu ~360×170, chữ "1. Start playing", nút xanh "Search" + "Show more tips", có mũi tên ‹ › cạnh tiêu đề) **đứng cùng hàng** với **"Popular albums and singles"** ở bên phải.
+  - Tiêu đề mục **to, đậm (~24px)**, bên phải có link **"Show all"** nhỏ màu xám.
+  - Thẻ bài **nhỏ (~134px)**, **ảnh bìa thật**, bo 4–6px, ~7–8 thẻ/hàng ở màn 1440; tên 14px trắng (2 dòng), phụ đề 13px xám; rê chuột: nền thẻ sáng lên + nút ▶ **tròn xanh lá** ở góc dưới phải ảnh; có nút › cuộn hàng.
+  - **Popular artists**: ảnh tròn ~134px, tên + "Artist".
+  - **Popular radio**: thẻ vuông nền màu (tím/hồng/xanh/cam…), nhãn "RADIO", ghép ảnh ca sĩ, tên ca sĩ chữ to ở đáy, mô tả "With … and more".
+  - Hàng chủ đề có **câu mô tả 2 dòng** thay vì tên ca sĩ (vd "Một chút nhạc, một chút đêm — đủ để thả trôi", "Discover the world of Jazz"); **"New releases for you"** có dòng nhỏ phía trên tiêu đề "Brand new music from artists you love."
+  - Cuối trang: các **thẻ lớn nền màu** (~350px, 4 thẻ/hàng) "Videos you might like / Episodes to try" — tương ứng **thẻ podcast `#471824` + 3 khung xám** trong Figma `58:112`.
+  - Nền vùng nội dung `#121212`-ish, sidebar "Your Library" có nút "+ Create", chip "Playlists".
+  → Việc cần làm: **làm lại `BrowsePage` bám Figma `58:112` + bố cục/mật độ của Spotify** (ảnh trong Figma: banner tím, album "Until You", "It's Not Goodbye", "MOIEM", "FALLEN ANGEL", ca sĩ tròn, thẻ podcast "#12: Ngày ta thôi tò mò về nỗi buồn của nhau"). Trước khi code nên hỏi người dùng 1–2 điều: (a) ưu tiên **giống Figma của họ** hay **giống Spotify** khi hai cái khác nhau (vd cỡ thẻ 200px Figma vs ~134px Spotify, tiêu đề 12–16px Figma vs 24px Spotify); (b) có thêm "Show all" / mũi tên cuộn / hàng "radio" không; (c) kho chỉ có 10 bài, nhiều bài không có ảnh bìa → dùng ảnh ca sĩ hay cần thêm ảnh bìa bài hát (thêm cột `songs.cover` + file ảnh).
+- **Phần 2 — trợ lý giọng nói** (bấm logo AI, Figma `284:120`: nền `#261925`, logo AI, micro lớn, sóng âm): chưa thiết kế. Câu hỏi đầu: dùng Web Speech API của Chrome (miễn phí, cần mạng, không chạy trên Chromium của Pi) hay cách khác; hiểu lệnh bằng luật từ khoá hay gọi LLM.
+- Hộp nhạc Pi (Task 6–7, F11, `IS_BOX` chưa xử lý riêng trong luồng mới) + toàn bộ giai đoạn B (LD2410C, systemd/kiosk, slide) — hạn HIC **15/10/2026**.
+- F5: sửa Figma Sign in/up (không phải code).
+
+## 6. Bước tiếp theo nên làm
+1. Hỏi người dùng có **commit** 35 file của mục H không (đã kiểm tra đủ, có thể commit ngay).
+2. **Làm lại trang chủ** theo yêu cầu mới ở mục 5 (brainstorming ngắn: hỏi (a)(b)(c) → chỉnh spec `2026-10-07-browse-home-and-scan-flow-design.md` mục 4 → code `pages/BrowsePage.jsx/.scss`). Nếu cần số đo Figma: `get_design_context` node `58:112` (đã gọi 1 lần, nội dung ở mục "Phiên 07/10 (khuya, phần 2)").
+3. Thiết kế + làm **trợ lý giọng nói** (H6).
+4. Giai đoạn B (Pi) trước 15/10.
+
+---
+
+# Phiên 07/10/2026 (khuya, phần 2) — trang chủ duyệt nhạc + luồng quét mới
+
+## 1. Mục tiêu
+Người dùng chỉ ra hiểu nhầm: logo AI = **trợ lý giọng nói** (phần 2, chưa làm), trang thống kê là trang riêng; nút Home = **trang chủ kiểu Spotify** (Figma `58:112`). Màn quét: hiện khi **mở web (mỗi phiên)**, sau đó thu thành icon **record-circle**; đang lướt không bật camera; **không đụng chuột 60s** thì tự quét lại khi hết bài.
+Quy trình: brainstorming → spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` (người dùng duyệt) → plan `docs/superpowers/plans/2026-10-07-browse-home-and-scan-flow.md` → làm inline (executing-plans), **không commit từng task** (quy tắc người dùng).
+
+## 2. Việc đã làm (chưa commit)
+| Việc | File |
+|---|---|
+| `GET /songs/for-you` + `rankForYou` (4 test); `detectedEmotion` trong kết quả gợi ý; `/suggest` `auto: true` không ghi `mood_history` | `emotune-backend/src/{model/songModel,services/songService,controllers/songController,services/suggestService,controllers/suggestController,routes/web}.js`, `test/forYou.test.js` |
+| Phiên đã quét / cảm xúc gần nhất (`sessionStorage`), hook rảnh 60s, tính thống kê dùng chung | `src/utils/moodSession.js`, `src/hooks/useIdle.js`, `src/utils/moodStats.js` |
+| `PlayerHost` (thay `HomePage`, nhận lệnh qua `registerPlayer`), `ScanPage`, `HomeRoute`, routes `/scan`, `/now-playing`, `/stats` (`/mood` chuyển hướng) | `src/components/PlayerHost.jsx`, `src/pages/{ScanPage,HomeRoute}.jsx`, `src/contexts/{playbackContext.js,PlaybackProvider.jsx}`, `src/layouts/MainLayout.jsx`, `src/App.jsx`; xoá `pages/HomePage.jsx` |
+| Thanh phát: bấm ảnh/tên bài → `/now-playing` | `MusicPlayer.jsx/.scss` |
+| Header: `MoodButton` (record-circle), thứ tự icon, tên tài khoản → `/stats`, logo AI tạm không làm gì; điện thoại chỉ còn icon tài khoản | `components/MoodButton.jsx/.scss`, `assets/icons/record_circle_icon.svg`, `Header.jsx/.scss` |
+| Trang chủ duyệt nhạc | `pages/BrowsePage.jsx/.scss`, `assets/images/create_playlist_banner.png` (ảnh từ Figma), `index.html` (font Jomolhari) |
+
+Đã thử: `npm test` 13/13, lint sạch, build OK; Playwright: mở web → màn chào → chọn cảm xúc → `/now-playing`; Home → trang chủ (nhạc vẫn chạy); bấm thanh phát → `/now-playing`; hết bài khi đang lướt → `/suggest` với cảm xúc gần nhất, không quét; **rảnh 62s → `/scan`**; F5 ở `/now-playing` → `/`; `/mood` → `/stats`; chip thể loại, bấm ca sĩ, bấm thẻ bài; 390px không tràn ở `/`, `/stats`, `/scan`. Tài khoản thử đã xoá.
+
+## 3. Quyết định trong lúc làm (rulings)
+| Quyết định | Lý do | Nếu sai thì tốn |
+|---|---|---|
+| Lệnh phát gọi thẳng qua `registerPlayer` (không qua state + effect) | Tránh `/now-playing` bị đẩy về `/` vì bài chưa kịp vào state | Chỉ là cách nối dây |
+| Giữ class `is-hidden` thay vì prop `showStage` | Dùng lại CSS có sẵn | Đổi tên class |
+| `/suggest` thêm `auto: true` | Tự chọn bài khi đang lướt từng ghi lịch sử như một lần quét → thống kê + xu hướng cảm xúc bị thổi phồng | 1 tham số API |
+| Điện thoại: ẩn tên tài khoản + chuông, giữ icon tài khoản | Header 390px tràn 13px sau khi thêm icon quét | Người dùng điện thoại không thấy tên mình |
+| Rà soát cuối do Claude tự làm, không gọi agent riêng | Chưa được yêu cầu dùng agent | Ít "mắt thứ hai" hơn |
+
+## 4. Lưu ý
+- Hộp nhạc Pi (`IS_BOX`) chưa xử lý riêng trong luồng mới — để giai đoạn B.
+- Trang chủ: 3 khung xám trong Figma bỏ qua; ảnh ca sĩ tròn (PNG nền trong) nằm giữa thẻ vuông màu vibe.
+- Vite vẫn hay giữ bản cũ (gặp lần 3) → tắt hẳn `npm run dev` rồi chạy lại.
 
 ---
 

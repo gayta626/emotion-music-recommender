@@ -2,6 +2,7 @@
 import { API_URL } from '../config'
 import api from '../api'
 import { useCallback, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useHardwareButtons } from '../hardware'
 import ShuffleIcon from '../assets/icons/player_shuffle.svg?react'
 import PrevIcon from '../assets/icons/player_prev.svg?react'
@@ -31,6 +32,7 @@ const MusicPlayer = (props) => {
     // playlist: { name, songs, index } khi dang phat playlist, null o che do cam xuc
     const { data, onFinish, playlist, onJump, onRequest } = props;
     const audioRef = useRef(null);
+    const navigate = useNavigate();
     // het bai va bam Next co the xay ra cung luc -> chi gui report 1 lan
     const reportedRef = useRef(false);
 
@@ -204,11 +206,14 @@ const MusicPlayer = (props) => {
             {/* thanh phat nhac co dinh duoi cung man hinh */}
             <footer className="player-bar">
                 <div className="bar-song">
-                    <Cover className="bar-cover" src={coverSrc} />
-                    <div className="bar-text">
-                        <div className="bar-title">{data.song.title}</div>
-                        <div className="bar-artist">{artist}</div>
-                    </div>
+                    {/* bam anh / ten bai -> mo khung phat lon */}
+                    <button className="bar-open" onClick={() => navigate('/now-playing')} aria-label="Open now playing" title="Open now playing">
+                        <Cover className="bar-cover" src={coverSrc} />
+                        <span className="bar-text">
+                            <span className="bar-title">{data.song.title}</span>
+                            <span className="bar-artist">{artist}</span>
+                        </span>
+                    </button>
                     {/* che do playlist khong cham diem -> khong co nut nay */}
                     {!playlist && (
                         <button className="icon-btn small dislike" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
