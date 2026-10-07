@@ -37,7 +37,7 @@ const getPlaylistInfo = async (userId, playlistId) => {
 // Các bài theo đúng thứ tự phát; cùng dạng với `song` của /scan-and-suggest (id, title, artist, file_path, emotion)
 const getPlaylistSongs = async (playlistId) => {
     const result = await db.query(
-        `SELECT s.id, s.title, a.name AS artist, s.file_path, s.emotion, ps.position
+        `SELECT s.id, s.title, a.name AS artist, a.avatar AS artist_avatar, s.file_path, s.emotion, ps.position
          FROM playlist_songs ps
          JOIN songs s ON s.id = ps.song_id
          LEFT JOIN artists a ON a.id = s.artist_id

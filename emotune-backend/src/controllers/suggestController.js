@@ -4,6 +4,7 @@ const VALID_EMOTIONS = [
     "happy",
     "sad",
     "angry",
+    "surprise",
     "neutral"
 ];
 

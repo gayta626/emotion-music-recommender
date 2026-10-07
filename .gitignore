@@ -1,3 +1,6 @@
 node_modules
 .env
 __pycache__/
+
+# log/snapshot cua Playwright MCP (Claude thu giao dien)
+.playwright-mcp/

@@ -58,6 +58,73 @@
     font-size: 14px;
     color: var(--search-text);
   }
+
+  // chọn cảm xúc bằng tay (không có camera)
+  .mood-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mood-picker-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: #fff;
+  }
+
+  .mood-picker-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    max-width: 560px;
+  }
+
+  .mood-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--chip);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+
+    .mood-chip-emoji {
+      font-size: 20px;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+  }
+
+  .mood-picker-toggle {
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
 }
 
 @keyframes scanner-pulse {

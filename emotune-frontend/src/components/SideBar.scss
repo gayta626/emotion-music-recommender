@@ -59,6 +59,8 @@
     }
 
     .filter-tabs {
+        display: flex;
+        gap: 8px;
         padding: 18px 20px 0;
 
         .tab {
@@ -73,6 +75,11 @@
             font-weight: 600;
             letter-spacing: 0.02em;
             cursor: pointer;
+
+            &.active {
+                background-color: var(--accent);
+                color: var(--on-premium);
+            }
         }
     }
 
@@ -109,7 +116,13 @@
             display: flex;
             align-items: center;
             gap: 7px;
+            width: 100%;
             padding: 5px 19px;
+            border: none;
+            background: none;
+            color: inherit;
+            font-family: inherit;
+            text-align: left;
             cursor: pointer;
 
             &:hover {
@@ -122,6 +135,16 @@
                 flex-shrink: 0;
                 border-radius: 50%;
                 object-fit: cover;
+            }
+
+            // playlist chưa có ảnh bìa -> ô vuông gradient có nốt nhạc
+            .playlist-cover {
+                display: grid;
+                place-items: center;
+                border-radius: 6px;
+                background: linear-gradient(135deg, #8a74ad, #2f2640);
+                color: #fff;
+                font-size: 18px;
             }
 
             .info {
@@ -143,6 +166,7 @@
                 .subtitle {
                     color: white;
                     font-weight: 400;
+                    white-space: nowrap;
                 }
             }
         }

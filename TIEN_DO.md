@@ -6,17 +6,17 @@
 
 ## 📍 Đang ở đâu
 
-**Giai đoạn F — F11/F12:** F9 + F10 (trang chủ, trình phát) xong 07/10. Còn thiếu mp3 trong `music/` để thử phát thật (A-15). (Từ 07/10 chuyển sang vibe coding: Claude tự viết code.)
-F7 xong 07/10: `/login`, `/register`, `RequireAuth` chặn trang chủ khi chưa có token. Task 6 + 7 (hộp nhạc) **để sau** (quyết định 04/10); dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
+**Playlist (P1–P5) xong 07/10:** thêm bài bằng nút ☰, phát từ tab Playlists ở sidebar, hàng đợi, thẻ "Up next" mờ dần như YouTube. Tiếp theo: **commit**, rồi chuẩn bị demo HIC trên Pi (giai đoạn B) hoặc trang playlist theo Figma / F12 form khảo sát gu.
+Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan
 
 | Giai đoạn | Hạn | Tiến độ |
 |---|---|---|
 | 0. Nền tảng (trước 04/10) | — | ✅ 10 / 10 |
-| A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 7 / 11 |
-| F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 9 / 17 |
-| P. Playlist cá nhân (chế độ không quét) | trước 15/10 nếu kịp | 🔄 2 / 5 |
+| A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 8 / 11 |
+| F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 12 / 20 |
+| P. Playlist cá nhân (chế độ không quét) | trước 15/10 nếu kịp | ✅ 5 / 5 (còn trang playlist theo Figma) |
 | B. Hoàn thiện phần cứng + demo HIC | **15/10/2026** | ⬜ 0 / 8 |
 | C. Môn Xây dựng hệ thống thông minh | chưa biết | ⬜ 0 / 11 |
 
@@ -64,7 +64,7 @@ F7 xong 07/10: `/login`, `/register`, `RequireAuth` chặn trang chủ khi chưa
 | 7 ⭐ | API hộp nhạc: `claim` / `release` / `current` | Bạn | ⬜ để sau (04/10) |
 | 8 | `GET /genres`, `GET/POST /profile` (khảo sát gu theo từng người) | Claude | ✅ 07/10 (đã thử curl 2 tài khoản, chưa commit) |
 | 13 | OLED màn chờ đăng nhập | Claude | ⏸ |
-| 15 ⭐ | **Chép lại 10 file mp3 vào `emotune-backend/music/`** (đang trống → nhạc không phát, `/music/<file>` trả 404). Lấy từ Pi bằng `scp` rồi `npm run rename-music -- --apply` nếu cần | Bạn | ⬜ (phát hiện 07/10) |
+| 15 ⭐ | **Chép lại 10 file mp3 vào `emotune-backend/music/`** (máy khác bị trống → `/music/<file>` 404). Lấy từ Pi bằng `scp` rồi `npm run rename-music -- --apply` nếu cần | Bạn | ✅ 07/10 (máy này đã có đủ 10 bài, phát thử OK) |
 | 14 ⭐ | Đưa lên Pi + thử thật: laptop A + điện thoại B qua hotspot | Bạn + Claude | ⬜ |
 
 ---
@@ -86,7 +86,9 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 | F8 ⭐ | Header: hiện tên người dùng + nút đăng xuất — *plan Task 10* | Claude | ✅ 07/10 (`AuthContext` gọi `GET /auth/me`; chờ bạn thử trên trình duyệt) |
 | F9 ⭐ | **Trang chủ — phần giữa**: màn chào + nút Start, khung camera tròn khi quét, thông báo "không thấy mặt". *Figma không có thiết kế phần này (frame `58:14` chỉ có header + sidebar) → Claude tự dựng theo style NYX* | Claude | ✅ 07/10 (lint + build OK; chờ bạn xem trên trình duyệt) |
 | F10 ⭐ | **Trình phát nhạc**: huy hiệu cảm xúc + lời nhắn, "bài động viên", đĩa xoay, tên bài / ca sĩ, thanh thời gian tua được, nút Play/Pause + Next (màu theo cảm xúc). Tự dựng như F9 | Claude | ✅ 07/10 (chưa thử phát thật vì thiếu mp3) |
-| F10b ⭐ | **Làm lại trình phát theo Figma** (trang `homepage signup`, frame `screen play nhạc`): ảnh bìa lớn ở giữa + thanh phát nhạc cố định ở dưới (tên bài/ca sĩ, Play/Next, thanh thời gian, âm lượng) + huy hiệu cảm xúc/lời nhắn. Cần **link frame** từ bạn (chuột phải frame → Copy link) | Claude | ⬜ chờ link Figma |
+| F10b ⭐ | **Làm lại trình phát theo Figma** (frame `92:301` "screen play nhạc"): khung gradient lớn **đổi màu theo vibe bài** + ảnh bìa (ảnh ca sĩ) + thanh phát cố định dưới (tên bài/ca sĩ, Play/Next, thanh thời gian, âm lượng) + huy hiệu cảm xúc/lời nhắn. Shuffle/prev/repeat/mic/queue hiện mờ (chưa có chức năng) | Claude | ✅ 07/10 (lint + build + Playwright 3 vibe; chưa commit) |
+| F10c ⭐ | **Chọn cảm xúc bằng tay** khi không có camera (5 nút Happy/Sad/Angry/Surprised/Neutral → `POST /suggest`), có camera thì hiện link "Pick my mood instead". Không gửi ảnh rỗng khi camera chưa mở (một nửa lỗi C10). `/suggest` nhận thêm `surprise` | Claude | ✅ 07/10 (Playwright: không camera → chọn Surprised → phát bài vibe surprise) |
+| F10d ⭐ | **Sóng âm** giữa trình phát thay ảnh bìa (nhấp nhô theo nhạc thật, đập theo bass); bỏ huy hiệu cảm xúc, chỉ còn lời gợi ý; tên ca sĩ nhỏ + mờ hơn tên bài | Claude | ✅ 07/10 (Playwright: bài sad + happy đều nhảy rõ, có tiếng) |
 | F11 ⭐ | Nút **"Dùng hộp nhạc" / "Rời hộp nhạc"** + **màn chờ trên Pi** ("Xin chào, {tên}") — *plan Task 12* | Bạn + Claude | ⬜ |
 | F12 | **Form khảo sát gu** lần đầu (tìm ca sĩ/thể loại không dấu, "Xem thêm", "Bỏ qua") — *plan Task 11* | Bạn + Claude | ⬜ |
 | F13 | Sidebar: ca sĩ không có ảnh → hiện chữ viết tắt (5 ca sĩ đang hiện ảnh lỗi) | Bạn + Claude | ⬜ |
@@ -108,9 +110,9 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 |---|---|---|---|
 | P1 | DB: bảng `playlists` (`id`, `user_id`, `name`) + `playlist_songs` (`playlist_id`, `song_id`, `position`); viết `db/migrate_playlists.sql` + cập nhật `setup.sql` | Claude | ✅ 07/10 (đã chạy migrate lên DB đang dùng; thêm `npm run db:migrate`) |
 | P2 | Backend: `GET /playlists`, `GET /playlists/:id`, `POST /playlists/:id/songs`, `DELETE /playlists/:id/songs/:songId` (mọi câu SQL lọc `user_id`; tự tạo "My Playlist" cho người chưa có) | Claude | ✅ 07/10 (thử curl 15 trường hợp, 2 tài khoản; chưa commit) |
-| P3 | Frontend: nút ⋯ trên trình phát → menu "Add to playlist" | Claude | ⬜ |
-| P4 | Frontend: sidebar tab Playlists hiện playlist của mình, bấm Play → vào chế độ playlist (+ `queue-screen` nếu muốn) | Claude | ⬜ |
-| P5 | `HomePage`: state chế độ; phát playlist không quét; hết playlist → quét 1 lần → chuyển sang chế độ cảm xúc | Claude | ⬜ |
+| P3 | Frontend: nút ☰ trên thanh phát → menu: chế độ cảm xúc = **"Add to playlist"** (chọn playlist, báo Added / Already in); chế độ playlist = **"View playlist"** | Claude | ✅ 07/10 |
+| P4 | Sidebar tab **Playlists** (bấm là phát) + **cột hàng đợi** (Now playing / Next from…, bấm bài để nhảy tới). Còn thiếu: trang playlist riêng theo Figma "Page playlist khi đã có nhạc" (cần link frame) | Claude | ✅ 07/10 (phần sidebar + hàng đợi) |
+| P5 | `HomePage`: chế độ playlist (không quét, không `/listen-report`), hết playlist → về chế độ cảm xúc. **Thẻ "Up next" kiểu YouTube**: 15 giây cuối mờ dần hiện, vòng đếm ngược, bấm để phát luôn, ✕ để ẩn; bài cuối báo "End of playlist" | Claude | ✅ 07/10 (Playwright: thêm 2 bài, phát, tự chuyển bài, hàng đợi, hết playlist → màn chọn cảm xúc) |
 
 ---
 
@@ -151,5 +153,6 @@ Cách làm: **Bạn** viết JSX + state + gọi API · **Claude** viết SCSS t
 
 | Ngày | Xong |
 |---|---|
+| 07/10 (tối) | F10b trình phát theo Figma, nền đổi màu theo vibe bài · F10c chọn cảm xúc bằng tay khi không có camera · F10d sóng âm theo nhạc · P3–P5 playlist trên giao diện (menu ☰, tab Playlists, hàng đợi, thẻ Up next) · A-15 mp3 có đủ trên máy này |
 | 07/10 | P1 bảng playlist + P2 API playlist · (chốt thiết kế chế độ Playlist — mục P) · F9 trang chủ + khung quét · F10 trình phát (tự dựng, Figma không có thiết kế) · A-8 `GET /genres`, `GET/POST /profile` · F8 header tên người dùng + Log out (`AuthContext`) · F7 trang Đăng nhập + Đăng ký + `RequireAuth` (Claude viết; đổi thông báo lỗi `authService` sang tiếng Việt) |
 | 04/10 | A-0 commit việc dở · A-1 DB nhiều tài khoản · A-2 `authValidation` · A-3 đăng ký + đăng nhập (`userModel`, `authService`, `authController`, route) · A-4 `requireAuth` + `GET /auth/me` · A-5 gợi ý, chấm điểm, từ chối/xin bài, lịch sử theo từng người · F6 `api.js` gắn token |

@@ -1,14 +1,64 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **07/10/2026** trên máy mới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: web có **đăng nhập / đăng ký / đăng xuất**, backend có **khảo sát gu (`/genres`, `/profile`) và playlist (`/playlists`)**; trang chủ + trình phát đã dựng nhưng **trình phát phải làm lại theo Figma** (trang "homepage signup"). **Nhạc chưa phát được vì `emotune-backend/music/` trống.** Hộp nhạc (Task 6–7) vẫn **để sau**. ⚠ **Mọi việc phiên 07/10 CHƯA commit.**
-> **Từ 07/10 người dùng chuyển sang "vibe coding": Claude tự viết code** (ghi trong `CLAUDE.md` + memory `vibe-coding-mode.md`), không còn chỉ hướng dẫn.
+> Phiên gần nhất: **07/10/2026 (chiều–tối)**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: web có đăng nhập / đăng ký / đăng xuất; backend có khảo sát gu (`/genres`, `/profile`) và playlist (`/playlists`); **trình phát đã làm lại theo Figma** (frame `92:301`, nền đổi màu theo vibe bài). Máy này có đủ 10 mp3 → **nhạc phát được**. Việc tiếp: **P3–P5 playlist** trên giao diện. Hộp nhạc (Task 6–7) vẫn để sau. ⚠ Phần F10b **chưa commit**.
+> **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Quy tắc cũ "người dùng tự code, Claude hướng dẫn" đã bỏ. Không commit khi chưa được yêu cầu.
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
-> Cách làm việc (ghi trong `CLAUDE.md`): người dùng tự code FE/BE, Claude hướng dẫn **từng file** (chú thích 📌), **cần đến đâu viết đến đó**; khi người dùng nói "bạn làm luôn" (do gấp) thì Claude làm rồi giải thích. Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+> Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
 
 ---
 
-# Phiên 07/10/2026 — vibe coding: đăng nhập web, khảo sát gu, trang chủ/trình phát, playlist
+# Phiên 07/10/2026 (chiều–tối) — trình phát theo Figma (F10b)
+
+## 1. Mục tiêu
+1. `git pull` code phiên sáng 07/10 (commit `2123c39`: đăng nhập web, khảo sát gu, trang chủ + trình phát, playlist DB + API) rồi tóm tắt tình trạng.
+2. Làm lại trình phát theo Figma frame **`92:301` "screen play nhạc"** (người dùng gửi link sau khi đăng nhập lại Figma MCP).
+
+## 2. Việc đã làm (chưa commit)
+| Việc | File |
+|---|---|
+| Câu SQL gợi ý / xin bài trả thêm `a.avatar AS artist_avatar` (ảnh ca sĩ làm ảnh bìa) | `emotune-backend/src/model/suggestModel.js` (2 câu), `requestSongModel.js` |
+| 9 icon trình phát: 8 tải từ Figma (shuffle, prev, play, next = prev xoay 180°, repeat, mic, queue, loa) + `player_pause.svg` tự vẽ (Figma không có) | `emotune-frontend/src/assets/icons/player_*.svg` |
+| **F10b** viết lại `MusicPlayer`: khung lớn gradient (tên bài, huy hiệu cảm xúc, "bài động viên", lời nhắn, ảnh bìa ≤ 420px tự co) + **thanh phát cố định dưới cùng** (ảnh nhỏ, tên bài/ca sĩ, nút, thanh thời gian tua được, âm lượng + bấm loa để tắt tiếng). Logic chấm điểm `/listen-report`, nút chạm, PIR **giữ nguyên** | `src/components/MusicPlayer.jsx`, `MusicPlayer.scss` |
+| **Nền đổi màu theo vibe của bài** (`songs.emotion`, không phải cảm xúc AI đoán): neutral = hồng mận gốc Figma, happy = vàng cam, sad = xanh dương, angry = đỏ, surprise = tím | `MusicPlayer.scss` (`[data-vibe]` đặt `--g1..--g3`) |
+| Sidebar ngắn lại khi có thanh phát (`body:has(.player-bar)`) | `MusicPlayer.scss` |
+| `CLAUDE.md`: viết lại mục "Cách làm việc" (vibe coding), ghi cấu trúc trình phát mới | `CLAUDE.md` |
+| **Chọn cảm xúc bằng tay** khi không có camera: 5 nút cảm xúc → `POST /suggest` (thay cho quét); có camera thì có link "Pick my mood instead". Vòng quét không gửi ảnh khi camera chưa mở. `/suggest` thêm `surprise` vào `VALID_EMOTIONS` (trước đó chọn surprise → 400) | `src/components/EmotionScanner.jsx/.scss`, `emotune-backend/src/controllers/suggestController.js` |
+| **Sóng âm thay ảnh bìa giữa**: Web Audio đọc tần số bài đang phát, 64 cột đối xứng (bass ở giữa, âm cao ra hai bên), tự cân độ lớn theo bài, nhịp bass làm cả sóng phóng to + vòng sáng đập. `<audio crossOrigin="anonymous">` (backend đã có CORS `*` cho `/music`). Bỏ huy hiệu cảm xúc + "bài động viên", chỉ còn tên bài + lời gợi ý. Tên ca sĩ ở thanh dưới nhỏ (15px) + mờ (55%). Ảnh ca sĩ chỉ còn ở thanh dưới | `src/components/AudioVisualizer.jsx` (mới), `MusicPlayer.jsx/.scss` |
+| Tên bài (khung lớn + thanh dưới) đổi sang font **Be Vietnam Pro** 800/700 (vẽ riêng cho tiếng Việt), chữ thường thay vì in hoa, khung lớn 28–40px | `emotune-frontend/index.html` (thêm font Google), `MusicPlayer.scss` |
+| **Playlist trên giao diện (P3–P5)**: `PlaybackProvider` (bọc trong `MainLayout`) để SideBar bảo HomePage "phát playlist id"; SideBar tab **Playlists**; `HomePage` có `mode` emotion/playlist, `playKey` để mỗi bài tạo `MusicPlayer` mới; chế độ playlist **không gửi `/listen-report`**; hết playlist → về màn quét/chọn cảm xúc. Nút ☰ → menu (cảm xúc: "Add to playlist"; playlist: "View playlist" mở cột hàng đợi). **Thẻ Up next** kiểu YouTube: 15s cuối mờ dần hiện + vòng đếm ngược, bấm = phát luôn, ✕ = ẩn | `src/contexts/playbackContext.js`, `PlaybackProvider.jsx`, `src/layouts/MainLayout.jsx`, `src/components/SideBar.jsx/.scss`, `src/pages/HomePage.jsx`, `src/components/PlayerOverlays.jsx` (mới: Cover, UpNextCard, QueuePanel, QueueMenu), `MusicPlayer.jsx/.scss`, backend `playlistModel.js` (+`artist_avatar`) |
+| **DB máy này chưa có bảng playlist** → đã chạy `npm run db:migrate -- db/migrate_playlists.sql` (chỉ thêm bảng, giữ dữ liệu). Tài khoản `demo` giờ có "My Playlist" 2 bài (Có Chắc Yêu Là Đây, Khó Giữ Chân Thành) do Claude thêm khi thử | DB local |
+| Bỏ qua thư mục log Playwright | `.gitignore` (`.playwright-mcp/`) |
+
+Đã thử: lint (chỉ còn 2 lỗi cũ) + build OK; Playwright 1440×900 và 1280×680, đăng nhập `demo`, giả lập AI bằng cách chặn `/scan-and-suggest` → `/suggest` (máy không có camera): neutral → Next → sad → Next → happy, nền đổi màu đúng, `/listen-report` 200, nhạc phát thật.
+
+## 3. Quyết định
+| Quyết định | Lý do |
+|---|---|
+| Màu nền theo **vibe bài** (`songs.emotion`), huy hiệu vẫn là **cảm xúc người dùng** | Người dùng yêu cầu: bài vui/buồn thì nền đổi cho hợp. Bài động viên (vd người buồn → bài vui) sẽ có nền theo bài |
+| Giữ sidebar khi phát (Figma frame không có sidebar) | Sidebar sẽ chứa tab Playlists (P4) |
+| shuffle / prev / repeat / mic / queue: hiện nhưng `disabled` (mờ, "Coming soon") | Chế độ cảm xúc không có hàng đợi; queue sẽ dùng cho chế độ playlist (P4) |
+| Ảnh bìa = ảnh ca sĩ; không có ảnh / lỗi tải → ô gradient + ♪ | DB chưa có ảnh bìa bài hát; 5 ca sĩ chưa có ảnh |
+
+## 4. Lỗi / việc còn dở
+- Không có camera thì **mỗi bài** phải chọn cảm xúc lại (hết bài → quay về màn chọn). Có thể nhớ cảm xúc vừa chọn nếu cần.
+- 5 ca sĩ không có ảnh → sidebar vẫn hiện ảnh lỗi (F13).
+- Tên bài/ca sĩ dài bị cắt "..." ở thanh phát (cột trái ~290px ở màn 1440).
+- Màn 1280×680 cuộn thêm ~17px (khung lớn có `min-height: 420px`).
+- Đã dùng thêm 1 lượt Figma MCP (`get_design_context` 92:301).
+- ⚠ Sóng âm đi qua Web Audio: nếu `AudioContext` bị trình duyệt giữ "suspended" thì **mất tiếng** (đã `resume()` mỗi lần `play`; người dùng đã bấm Start/chọn cảm xúc nên được phép). Nếu `/music` mất CORS thì cũng mất tiếng.
+- Vite đôi khi giữ bản cũ sau nhiều lần sửa liên tiếp → Ctrl+Shift+R; tắt `npm run dev` bằng TaskStop có thể sót tiến trình node giữ cổng 5173 (đã gặp, phải tắt theo PID).
+- Backend + frontend đang chạy nền từ phiên này (`npm run dev`); tắt máy là mất, lần sau bật lại.
+
+## 5. Bước tiếp theo
+1. ~~P3–P5~~ xong. Còn: trang playlist riêng theo Figma "Page playlist khi đã có nhạc" (xin link frame), xoá bài khỏi playlist trên giao diện (API `DELETE` có sẵn), tạo nhiều playlist (nút + ở sidebar).
+2. Người dùng thử trọn vòng có camera (quét → phát → chấm điểm) trên máy có webcam.
+3. **Commit** F10b khi người dùng đồng ý.
+4. Còn lại như mục 6 phiên sáng 07/10 bên dưới (F12 form khảo sát, F14 điện thoại, phần cứng HIC).
+
+---
+
+# Phiên 07/10/2026 (sáng) — vibe coding: đăng nhập web, khảo sát gu, trang chủ/trình phát, playlist
 
 ## 1. Mục tiêu
 1. Đọc `NOTES.md` + `TIEN_DO.md` để nắm tình trạng; người dùng chuyển sang **vibe coding** (Claude tự code từng bước).

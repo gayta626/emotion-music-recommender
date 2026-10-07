@@ -1,180 +1,694 @@
-// Trình phát nhạc: màu nhấn đổi theo cảm xúc (data-emotion trên .player)
-.player {
-  --emo: var(--accent);
+// Trình phát nhạc theo Figma "screen play nhạc" (92:301):
+// khung lớn gradient (đổi màu theo vibe của bài, data-vibe trên .player) + thanh phát cố định dưới cùng
+:root {
+  --player-bar-h: 112px;
+  --bar-grey: #8b8989;
+}
 
-  &[data-emotion="happy"] { --emo: #ffd166; }
-  &[data-emotion="sad"] { --emo: #7aa7e0; }
-  &[data-emotion="angry"] { --emo: #ff7a7a; }
-  &[data-emotion="surprise"] { --emo: #ff9ff3; }
-  &[data-emotion="neutral"] { --emo: var(--accent); }
+// đang phát nhạc -> sidebar ngắn lại để không bị thanh phát che
+body:has(.player-bar) .side-bar-container {
+  height: calc(100vh - var(--header-h) - var(--player-bar-h));
+}
+
+.player {
+  // 3 điểm màu của gradient; mặc định = màu Figma (hồng mận)
+  --g1: #b17886;
+  --g2: #b84d67;
+  --g3: #73424e;
+
+  &[data-vibe="happy"] { --g1: #e9c17a; --g2: #db8a4f; --g3: #7a4a33; }
+  &[data-vibe="sad"] { --g1: #8aa1c4; --g2: #4f6d9e; --g3: #2c3a58; }
+  &[data-vibe="angry"] { --g1: #c9796b; --g2: #b2403a; --g3: #5a2424; }
+  &[data-vibe="surprise"] { --g1: #c79ae0; --g2: #9a5ec8; --g3: #4b3270; }
 
   width: 100%;
-  max-width: 420px;
+  // chừa chỗ cho thanh phát cố định
+  padding-bottom: var(--player-bar-h);
+}
+
+// ---------- khung lớn ----------
+.player-stage {
+  position: relative;
+  // vừa khít màn hình: trừ header, thanh phát và padding 24px trên/dưới của <main>
+  height: calc(100vh - var(--header-h) - var(--player-bar-h) - 48px);
+  min-height: 420px;
+  // tiêu đề + lời nhắn ở trên, ảnh bìa nằm giữa phần còn lại (lời nhắn dài không đè lên ảnh)
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 20px;
+  padding: 26px 28px 32px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--g1) 13%, var(--g2) 48.5%, var(--g3) 94%);
+  overflow: hidden;
+  text-align: left;
 
-  .player-emotion {
+  .stage-head {
+    align-self: stretch;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    border-radius: 999px;
-    background: var(--chip);
-
-    .emotion-emoji {
-      font-size: 20px;
-    }
-
-    .emotion-label {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--emo);
-    }
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 
-  .player-message {
-    max-width: 360px;
+  // tên bài: Be Vietnam Pro (vẽ riêng cho tiếng Việt, dấu không bị chồng); giữ chữ thường cho dấu thoáng
+  .stage-title {
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+  }
+
+  .stage-message {
+    max-width: 420px;
     font-family: 'Playfair Display', serif;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1.35;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  // chế độ playlist: thay câu gợi ý bằng "đang phát từ playlist nào"
+  .stage-source {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.22);
+    font-size: 13px;
+    font-weight: 600;
     color: #fff;
   }
 
-  .player-encourage {
-    padding: 6px 14px;
-    border-radius: var(--radius);
-    background: rgba(255, 209, 102, 0.15);
-    font-size: 13px;
-    color: #ffd166;
+  // sóng âm chiếm phần còn lại của khung
+  .stage-visual {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
   }
 
-  .player-card {
+  .visualizer {
+    display: block;
     width: 100%;
+    height: 100%;
+  }
+}
+
+// ảnh bìa dự phòng (ca sĩ chưa có ảnh)
+.cover-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--g1), var(--g3));
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 32px;
+  line-height: 1;
+}
+
+// ---------- thanh phát dưới cùng ----------
+.player-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  height: var(--player-bar-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 780px) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 0 32px 0 50px;
+  background: #000;
+  text-align: left;
+
+  .bar-song {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 0;
+  }
+
+  .bar-cover {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+
+  .bar-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+  }
+
+  .bar-title,
+  .bar-artist {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .bar-title {
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  // tên ca sĩ nhỏ + mờ hơn tên bài
+  .bar-artist {
+    font-size: 15px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .bar-center {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 28px 24px 24px;
-    border-radius: 28px;
-    background: var(--surface);
-    box-shadow: 0 0 60px color-mix(in srgb, var(--emo) 18%, transparent);
+    gap: 5px;
   }
 
-  .player-disc {
-    width: 160px;
-    height: 160px;
-    margin-bottom: 14px;
+  .bar-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, var(--chip), var(--bg) 75%);
-    border: 3px solid var(--emo);
-    font-size: 56px;
-    color: var(--emo);
-
-    &.spinning {
-      animation: player-spin 8s linear infinite;
-    }
+    gap: 23px;
   }
 
-  .player-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  .player-artist {
-    font-size: 14px;
-    color: var(--muted);
-  }
-
-  .player-progress {
+  .bar-progress {
     width: 100%;
-    margin-top: 18px;
     display: flex;
     align-items: center;
     gap: 10px;
 
     .time {
-      min-width: 36px;
-      font-size: 12px;
+      min-width: 44px;
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
       font-variant-numeric: tabular-nums;
-      color: var(--muted);
+      color: #fff;
+
+      &:last-child {
+        text-align: right;
+      }
     }
 
     .seek {
       flex: 1;
-      height: 4px;
-      appearance: none;
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-      // phần đã phát tô màu cảm xúc, phần còn lại màu chip
-      background: linear-gradient(to right, var(--emo) var(--progress, 0%), var(--chip) var(--progress, 0%));
-
-      &::-webkit-slider-thumb {
-        appearance: none;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #fff;
-      }
-
-      &::-moz-range-thumb {
-        width: 12px;
-        height: 12px;
-        border: none;
-        border-radius: 50%;
-        background: #fff;
-      }
+      height: 6px;
     }
   }
 
-  .player-controls {
-    margin-top: 14px;
+  .bar-extra {
     display: flex;
     align-items: center;
-    gap: 20px;
+    justify-content: flex-end;
+    gap: 6px;
 
-    .ctrl-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.15s;
-
-      &:hover {
-        transform: scale(1.06);
-      }
-
-      &.play {
-        width: 64px;
-        height: 64px;
-        background: var(--emo);
-        color: var(--on-premium);
-        font-size: 22px;
-      }
-
-      &.next {
-        width: 48px;
-        height: 48px;
-        background: var(--chip);
-        color: #fff;
-        font-size: 18px;
-      }
+    .volume {
+      width: 120px;
+      height: 4px;
+      margin-left: 10px;
     }
   }
 }
 
-@keyframes player-spin {
-  to {
-    transform: rotate(360deg);
+// nút icon trong suốt (shuffle, prev, next, repeat, mic, queue, loa)
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+
+  &.small {
+    width: 30px;
+    height: 30px;
+  }
+
+  // icon next trong Figma = icon prev xoay 180°
+  &.next svg {
+    transform: rotate(180deg);
+  }
+
+  &:hover:not(:disabled) {
+    transform: scale(1.08);
+    filter: brightness(1.6);
+  }
+
+  // chưa có chức năng
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  // menu/hàng đợi đang mở
+  &.active {
+    filter: brightness(2.4);
+  }
+}
+
+.play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 65px;
+  height: 65px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #d9d9d9;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+
+  &:hover {
+    transform: scale(1.05);
+    background: #fff;
+  }
+}
+
+// thanh trượt (thời gian + âm lượng): phần đã chạy màu trắng, phần còn lại xám
+.slider {
+  appearance: none;
+  border-radius: 30px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(to right, #fff var(--fill, 0%), var(--bar-grey) var(--fill, 0%));
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  &::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  &:hover,
+  &:focus-visible {
+    &::-webkit-slider-thumb { opacity: 1; }
+    &::-moz-range-thumb { opacity: 1; }
+  }
+}
+
+// màn hẹp: thu nhỏ chữ, ẩn cụm mic/queue/âm lượng
+@media (max-width: 1100px) {
+  .player-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+    padding: 0 20px;
+
+    // giữ nút ☰ (menu playlist), ẩn mic + thanh âm lượng
+    .bar-extra .volume,
+    .bar-extra > .icon-btn:first-child { display: none; }
+    .bar-title { font-size: 18px; }
+    .bar-artist { font-size: 13px; }
+    .bar-cover { width: 64px; height: 64px; }
+    .bar-progress .time { font-size: 14px; min-width: 34px; }
+  }
+}
+
+@media (max-width: 640px) {
+  :root { --player-bar-h: 150px; }
+
+  .player-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 16px;
+
+    .bar-controls { gap: 12px; }
+  }
+}
+
+// ---------- thẻ "Up next" (giống YouTube: mờ dần hiện khi sắp hết bài) ----------
+.up-next {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: min(340px, calc(100% - 48px));
+  padding: 10px 8px 10px 10px;
+  border-radius: 14px;
+  background: rgba(10, 8, 14, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  // opacity/transform đổi theo giây còn lại (style inline) -> transition cho mượt giữa các lần cập nhật
+  transition: opacity 0.35s linear, transform 0.35s ease-out;
+
+  &.end {
+    padding: 12px 8px 12px 16px;
+  }
+
+  .up-next-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover .up-next-title {
+      text-decoration: underline;
+    }
+  }
+
+  .up-next-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 68px;
+    height: 68px;
+    display: grid;
+    place-items: center;
+  }
+
+  .up-next-cover {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .up-next-ring {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-90deg);
+
+    circle {
+      fill: none;
+      stroke-width: 3;
+    }
+
+    .ring-track { stroke: rgba(255, 255, 255, 0.2); }
+
+    .ring-fill {
+      stroke: #fff;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.35s linear;
+    }
+  }
+
+  .up-next-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .up-next-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .up-next-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .up-next-artist {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .up-next-close {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+  }
+}
+
+// ---------- cột hàng đợi (☰ -> View playlist) ----------
+.queue-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: min(320px, 85%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 14px;
+  overflow-y: auto;
+  background: rgba(12, 10, 16, 0.88);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  animation: queue-in 0.25s ease-out;
+
+  .queue-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px 8px;
+
+    h3 {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+  }
+
+  .queue-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+  }
+
+  .queue-group {
+    padding: 10px 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .queue-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: #fff;
+    text-align: left;
+    font-family: inherit;
+
+    &:is(button) {
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    &.playing .queue-title {
+      color: var(--accent);
+    }
+  }
+
+  .queue-cover {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    font-size: 16px;
+  }
+
+  .queue-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .queue-title,
+  .queue-artist {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .queue-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .queue-artist {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .queue-empty {
+    padding: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+}
+
+@keyframes queue-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+// ---------- menu nút ☰ ----------
+.queue-anchor {
+  position: relative;
+}
+
+.queue-menu {
+  position: absolute;
+  right: -8px;
+  bottom: calc(100% + 14px);
+  z-index: 30;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #242029;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  text-align: left;
+
+  .menu-title {
+    padding: 8px 10px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+  }
+
+  .menu-cover {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #8a74ad, #2f2640);
+    font-size: 14px;
+  }
+
+  .menu-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    small {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+  }
+
+  .menu-status {
+    padding: 8px 10px 6px;
+    font-size: 13px;
+    color: var(--accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .up-next,
+  .up-next .ring-fill {
+    transition: none;
+  }
+
+  .queue-panel {
+    animation: none;
   }
 }
