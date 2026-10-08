@@ -16,6 +16,9 @@ app.use("/music", express.static(path.join(__dirname, "..", "music")));
 // anh dai dien nghe si: GET /avatars/son-tung.png -> emotune-backend/avatars/son-tung.png
 app.use("/avatars", express.static(path.join(__dirname, "..", "avatars")));
 
+// anh bia bai hat: GET /covers/gia_nhu.jpg -> emotune-backend/covers/gia_nhu.jpg (do `npm run fetch-images` tai ve)
+app.use("/covers", express.static(path.join(__dirname, "..", "covers")));
+
 initWebRoutes(app);
 
 let port = process.env.PORT || 8081;

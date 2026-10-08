@@ -6,7 +6,7 @@
 
 ## 📍 Đang ở đâu
 
-**Trang chủ mới đã chạy (07/10 khuya) nhưng người dùng thấy CHƯA SÁT DESIGN** → việc kế tiếp là **H7: làm lại trang chủ** theo Figma `58:112` + kiểu Spotify (ghi chú chi tiết ở NOTES.md mục "🧭 TỔNG KẾT NGÀY 07/10"). Sau đó H6 trợ lý giọng nói, rồi giai đoạn B (Pi). Mục H **chưa commit** (35 file).
+**08/10 (PC):** H7 trang chủ kiểu Spotify xong bản đầu (chờ người dùng góp ý từng mục, chưa thử 390px), **H9 ảnh bìa + ảnh ca sĩ thật ✅**, H8 trang ca sĩ đã vẽ Figma `294:134` (chờ duyệt rồi code). Việc 08/10 **chưa commit**; `32592f4` chưa push. **Phiên sau dùng laptop → làm NOTES.md "🧭 TỔNG KẾT NGÀY 08/10" mục 0 trước** (pull, `.env`, migrate `migrate_images.sql`, `npm run fetch-images`). Sau đó H8 → H6 trợ lý giọng nói → giai đoạn B (Pi).
 Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan
@@ -130,7 +130,9 @@ Spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` · 
 | H4 | Header: icon **record-circle** (viền màu cảm xúc, "Mood: Sad · 12 min ago", nhấp nháy sau 30 phút, bấm → `/scan`); thứ tự icon mới; bấm tên tài khoản → `/stats`; logo AI chờ phần 2 | Claude | ✅ 07/10 |
 | H5 | **Trang chủ duyệt nhạc** theo Figma `58:112`: chip thể loại, banner Create your own playlist, Made for you, Popular artists (bấm = phát bài của ca sĩ), Recently added, Your playlists, thẻ Your mood this week | Claude | ✅ 07/10 (1440 + 390px) |
 | H6 | **Phần 2: trợ lý giọng nói** (bấm logo AI, Figma `284:120`): nói để chọn/đổi bài, chuyển trang | Claude | ⬜ chưa thiết kế |
-| H7 | **Làm lại trang chủ cho giống thiết kế** (người dùng: "chưa sát design"; tham khảo Spotify web + Figma `58:112`) — chi tiết các điểm khác biệt ở NOTES.md mục "🧭 TỔNG KẾT NGÀY 07/10" → 5 | Claude | ⬜ (yêu cầu cuối phiên 07/10) |
+| H7 | **Làm lại trang chủ cho giống thiết kế** (người dùng: "chưa sát design"; tham khảo Spotify web + Figma `58:112`) — chi tiết các điểm khác biệt ở NOTES.md mục "🧭 TỔNG KẾT NGÀY 07/10" → 5 | Claude | 🔄 07/10: bản Spotify-style xong (Shelf + mũi tên + Show all, thẻ chia đều theo độ rộng, ảnh bìa tự vẽ theo vibe, hàng Mixes, 2 thẻ lớn cuối trang); lint + build OK; **chưa thử 390px, chưa commit**, chờ người dùng góp ý từng mục |
+| H8 | **Trang ca sĩ** kiểu Spotify (bấm ca sĩ ở Popular artists): hero ảnh + tên to, ▶ / shuffle / Follow (= thêm vào gu), Popular (vibe chip, số lần nghe), "Fits your mood now", Songs lọc theo vibe, Mixes, Fans also like, About + "You & ca sĩ" (nghe khi cảm xúc nào). **Figma xong** frame `294:134` (trang "homepage signup", y = 7300) + 3 component `Song card (NYX cover)`, `Track row`, `Artist circle` | Claude | 🔄 08/10: chờ người dùng duyệt thiết kế rồi mới code |
+| H9 | **Ảnh thật cho bài hát + ca sĩ**: cột `songs.cover`, `artists.photo` (`db/migrate_images.sql` + `setup.sql`), script `npm run fetch-images` (iTunes Search API + ảnh ca sĩ trên Apple Music; chỉ điền chỗ thiếu, có file sẵn thì không lên mạng), `/covers/<file>`, frontend ưu tiên ảnh thật, thiếu thì bìa tự vẽ (`utils/images.js`, `SongThumb`). Deezer bị mạng nhà chặn (DNS → 127.0.0.1) nên dùng iTunes | Claude | ✅ 08/10: 8/10 bài có bìa, 9/11 ca sĩ có ảnh 1000px; còn thiếu bìa *Meditation*, *Reduce Stress* + ảnh lớn *Phạm Hoài Nam*, *Lệ Quyên* (tự bỏ ảnh vào `covers/…`, `avatars/photos/…` rồi chạy lại lệnh) |
 
 ---
 
@@ -171,6 +173,7 @@ Spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` · 
 
 | Ngày | Xong |
 |---|---|
+| 08/10 | H9 ảnh bìa bài hát + ảnh ca sĩ cỡ lớn (`npm run fetch-images`) |
 | 07/10 (khuya 2) | H1–H5: trang chủ duyệt nhạc (Figma 58:112), /now-playing, /scan, icon record-circle, tự quét lại khi rảnh 60s, /songs/for-you, /stats |
 | 07/10 (khuya) | F12 khảo sát gu + C1 điểm thưởng · F13 chữ viết tắt ca sĩ · P6 trang playlist (tạo/đổi tên/xoá, Recommended, nhạc không tắt khi đổi trang) · F15 👎 + xin bài · F16 trang Your mood · C9 buồn+giận · C10 quét không chồng lệnh · F17 tìm kiếm · F14 điện thoại · lint sạch |
 | 07/10 (tối) | F10b trình phát theo Figma, nền đổi màu theo vibe bài · F10c chọn cảm xúc bằng tay khi không có camera · F10d sóng âm theo nhạc · P3–P5 playlist trên giao diện (menu ☰, tab Playlists, hàng đợi, thẻ Up next) · A-15 mp3 có đủ trên máy này |

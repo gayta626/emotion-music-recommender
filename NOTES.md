@@ -1,10 +1,113 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **07/10/2026** — xem **"🧭 TỔNG KẾT NGÀY 07/10/2026"** ngay bên dưới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: phần mềm gần xong + **trang chủ duyệt nhạc mới** (Home kiểu Spotify, màn quét chỉ hiện khi mở web / bấm icon record-circle / rảnh 60s, khung phát lớn ở `/now-playing`, thống kê ở `/stats`). Còn: **trợ lý giọng nói** (bấm logo AI — phần 2), hộp nhạc + phần cứng (giai đoạn B). Phần trang chủ mới **chưa commit**.
-> **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Quy tắc cũ "người dùng tự code, Claude hướng dẫn" đã bỏ. Không commit khi chưa được yêu cầu.
+> Phiên gần nhất: **08/10/2026** (trên PC) — xem **"🧭 TỔNG KẾT NGÀY 08/10/2026"** ngay bên dưới; **mai làm tiếp trên laptop → làm mục 0 trước**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: phần mềm gần xong; trang chủ kiểu Spotify (H7, chờ góp ý), **ảnh bìa + ảnh ca sĩ thật** (H9, `npm run fetch-images`), thiết kế trang ca sĩ trên Figma `294:134` (H8, chờ duyệt). Còn: trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Commit gần nhất `32592f4` (chưa push); việc 08/10 **chưa commit**.
+> **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# 🧭 TỔNG KẾT NGÀY 08/10/2026 — đọc phần này trước (mai làm tiếp trên LAPTOP)
+
+> Phiên này làm trên **PC**. Phiên sau dùng **laptop** → làm đúng mục **"0. Chuyển sang laptop"** trước khi code.
+> Bộ nhớ riêng của Claude (`~/.claude/...`) **không theo sang laptop** → mọi thứ cần biết nằm trong `CLAUDE.md`, file này và `TIEN_DO.md`.
+
+## 0. Chuyển sang laptop (làm theo thứ tự)
+1. **Trên PC, trước khi tắt máy:** commit + push mọi thứ (nhờ Claude: "commit và push đi"). Chưa push thì laptop **không có** code hôm nay (trang chủ mới H7, ảnh H9, notes).
+   - Ảnh bìa `emotune-backend/covers/*.jpg` và ảnh ca sĩ `emotune-backend/avatars/photos/*.jpg` (~2.5MB) **được commit cùng code** (không nằm trong `.gitignore`) → laptop kéo về là có, không cần tải lại.
+2. **Trên laptop:**
+   ```bash
+   git pull                                   # nhánh master, remote github.com/gayta626/emotion-music-recommender
+   git lfs pull                               # chỉ cần nếu chạy AI (model ViT trong Git LFS)
+   cd emotune-backend && npm install
+   cd ../emotune-frontend && npm install
+   ```
+3. **`.env` không có trong git** → chép `emotune-backend/.env` từ PC sang (USB/Zalo/Drive), hoặc tạo mới theo `emotune-backend/.evn.example`: `PORT=8080`, `DB_HOST`, `DB_PORT` (bắt buộc ghi, code mặc định 5433), `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `JWT_EXPIRES_IN=7d`. JWT_SECRET khác PC cũng được (chỉ phải đăng nhập lại).
+4. **Database trên laptop** (PostgreSQL phải đang chạy):
+   - Laptop **đã có DB** → chạy migrate (an toàn chạy lại, không mất dữ liệu):
+     ```bash
+     cd emotune-backend
+     npm run db:migrate -- db/migrate_playlists.sql   # nếu DB laptop chưa có bảng playlist
+     npm run db:migrate -- db/migrate_images.sql      # MỚI 08/10: cột songs.cover, artists.photo
+     npm run fetch-images                             # thấy file ảnh có sẵn → chỉ ghi tên vào DB, không lên mạng
+     ```
+   - Laptop **chưa có DB** → `npm run db:setup` (XOÁ & tạo lại) rồi `npm run fetch-images`.
+   - Kiểm tra: `curl localhost:8080/songs` → 8/10 bài có `"cover"`.
+5. **Mp3** nằm trong `emotune-backend/music/` (10 file). Laptop thiếu → chép từ PC.
+6. Chạy: backend `npm run dev` (:8080), frontend `npm run dev` (:5173). Đăng nhập `demo`/`demo1234` hoặc `gayta626`.
+7. Figma MCP trên laptop có thể phải đăng nhập lại (`/mcp` → figma → Authenticate) bằng **cùng tài khoản** đang mở file `lycGTr71v02BpzYgjmZZS3`.
+
+## 1. Mục tiêu của phiên
+1. Commit phần trang chủ H1–H5 (xong `32592f4`).
+2. **H7** — làm lại trang chủ cho sát thiết kế (Figma `58:112` + kiểu Spotify web).
+3. **H8** — thiết kế (trên Figma) trang ca sĩ kiểu Spotify khi bấm "Popular artists".
+4. **H9** — mọi chỗ đều có ảnh thật (ảnh bìa bài hát + ảnh ca sĩ cỡ lớn).
+
+## 2. Việc đã làm xong
+| Việc | Trạng thái | File |
+|---|---|---|
+| Commit H1–H5 | ✅ `32592f4` (chưa push) | 35 file |
+| **H7 trang chủ kiểu Spotify**: hàng cuộn ngang dùng chung (tiêu đề 24px, "Show all"/"Show less" xếp lưới, mũi tên ‹ › khi rê chuột); thẻ chia đều theo độ rộng (container query 2.4/4/5/6/7 cột); bìa tự vẽ theo vibe khi bài chưa có ảnh; các mục: chip thể loại → Getting started (banner + playlist + bài) → Made for you → Popular artists → New releases for you → Mixes for every mood → 2 thẻ lớn cuối (Your mood 7 ngày + "How do you feel right now?") | 🔄 code xong, lint/build OK, Playwright 1440px OK; **chưa thử 390px, chưa commit**, chờ người dùng góp ý từng mục | mới `emotune-frontend/src/components/Shelf.jsx/.scss`; viết lại `src/pages/BrowsePage.jsx/.scss`; `src/utils/moodSession.js` (thêm `timeAgo`), `src/components/MoodButton.jsx` (dùng `timeAgo`) |
+| **H8 thiết kế trang ca sĩ** trên Figma | 🔄 xong bản vẽ, **chờ người dùng duyệt rồi mới code** | Figma frame **`294:134`** (trang "homepage signup", x=0, y=7300); component mới `294:115` Song card (NYX cover), `294:121` Track row, `294:129` Artist circle |
+| **H9 ảnh thật** | ✅ 08/10 | xem dưới |
+
+**H9 chi tiết:**
+- DB: cột `songs.cover` (tên file trong `emotune-backend/covers/`) + `artists.photo` (dạng `photos/<ten>.jpg`, nằm trong `emotune-backend/avatars/`) — `emotune-backend/db/migrate_images.sql` (đã chạy trên PC) + `db/setup.sql`.
+- Script `emotune-backend/scripts/fetch-images.js` → `npm run fetch-images` (thêm vào `package.json`).
+- Backend: `src/server.js` phục vụ `/covers/<file>`; query trả thêm `s.cover`, ảnh ca sĩ `COALESCE(a.photo, a.avatar)` (`src/model/{songModel,suggestModel,playlistModel,requestSongModel,artistModel}.js`) → frontend không phải đổi chỗ dùng `artist_avatar`/`avatar`.
+- Frontend: mới `src/utils/images.js` (`coverUrl`, `songImageUrl`), `src/components/SongThumb.jsx`; sửa `pages/BrowsePage.jsx/.scss` (bìa thật `.cover-img`), `components/MusicPlayer.jsx`, `components/PlayerOverlays.jsx`, `components/HeaderSearch.jsx`, `pages/PlaylistPage.jsx`.
+- Kết quả: 8/10 bài có bìa 600px, 9/11 ca sĩ có ảnh 1000px (đã xem từng ảnh — đúng hết). Thiếu: bìa **Meditation**, **Reduce Stress** (không có ca sĩ → bìa tự vẽ); ảnh lớn **Phạm Hoài Nam**, **Lệ Quyên** (Apple chỉ có ảnh album → vẫn dùng avatar tròn 84px cũ).
+- Đã cập nhật `TIEN_DO.md` (H7 🔄, H8 🔄, H9 ✅, nhật ký 08/10) và `CLAUDE.md` (lệnh `npm run fetch-images`).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| Lấy ảnh bằng **iTunes Search API** (+ thẻ `og:image` trang ca sĩ Apple Music), **không dùng Deezer** | Mạng nhà chặn Deezer (DNS trả `127.0.0.1`); iTunes miễn phí, không cần key, ra đúng 8/8 bài có ca sĩ |
+| Script chỉ điền chỗ **còn thiếu**; có file trên máy thì **không lên mạng** | Chạy lại bao nhiêu lần cũng được; máy mới/Pi offline vẫn có ảnh sau `git pull` |
+| Không chắc đúng (chỉ thấy bản remix/live, hoặc bài không có ca sĩ) → **bỏ qua, in ra để người dùng tự bỏ ảnh** | Thà thiếu ảnh còn hơn ảnh sai |
+| Thêm cột `artists.photo` riêng, **giữ `avatar` cũ** | Không mất avatar tự cắt; ca sĩ không có ảnh lớn vẫn có ảnh nhỏ |
+| Ảnh lưu file trong repo, DB chỉ lưu tên file | Giống cách làm với mp3/avatar; web không cần Internet lúc chạy |
+| Thứ tự ảnh: bìa thật → ảnh ca sĩ → bìa tự vẽ / chữ viết tắt | Không chỗ nào bị trống |
+| Ảnh có bản quyền → chỉ dùng cho đồ án/demo | Đã nói với người dùng |
+| H7: bỏ hàng "Your playlists"; Popular artists chờ cả `/artists` + `/songs` mới vẽ | Tránh hàng ca sĩ nhảy thứ tự / lệch cuộn |
+| Shelf: danh sách thẻ đổi → `scrollLeft = 0` | Sửa lỗi scroll-snap làm hàng ca sĩ lệch 932px |
+| H8: vẽ Figma trước, người dùng duyệt rồi mới code | Người dùng yêu cầu "design ra figma thử xem" |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/)
+npm run db:migrate -- db/migrate_images.sql   # đã chạy trên PC
+npm run fetch-images                          # cần mạng chỉ khi thiếu file ảnh
+npm test                                      # 13/13 pass
+npm run dev                                   # :8080
+# Frontend (emotune-frontend/)
+npx eslint src && npm run build               # sạch / OK
+npm run dev                                   # :5173 — Vite hay giữ bản cũ: tắt hẳn rồi chạy lại
+# Thử nhanh
+curl localhost:8080/songs                     # có "cover"
+# trình duyệt: http://localhost:8080/covers/gia_nhu.jpg
+```
+- Bổ sung ảnh thiếu: đặt file đúng tên (trong `emotune-backend/`) rồi `npm run fetch-images`:
+  `covers/meditation.jpg`, `covers/reduce_stress.jpg`, `avatars/photos/pham-hoai-nam.jpg`, `avatars/photos/le-quyen.jpg`.
+- Bài mới sau này: chép mp3 + thêm dòng DB → `npm run fetch-images` (bìa: `covers/<tên file mp3>.jpg`; ảnh ca sĩ: `avatars/photos/<tên không dấu nối gạch>.jpg`).
+- Xem trang chủ mà không quét: sessionStorage `emotune_scanned = "1"`. Máy không có camera → dùng 5 nút chọn cảm xúc.
+
+## 5. Lỗi / việc còn dở
+- **Chưa commit** gì sau `32592f4` (H7, H9, NOTES/TIEN_DO/CLAUDE.md). **Chưa push** `32592f4`.
+- H7: chưa thử 390px (điện thoại); người dùng sẽ "chỉ từng mục có tác dụng gì" rồi chỉnh tiếp.
+- H8: chờ duyệt Figma `294:134`. Số liệu trên bản vẽ là giả (HIEUTHUHAI chưa có bài trong DB). Kế hoạch code: route `/artist/:id`; bấm ca sĩ ở trang chủ/sidebar → mở trang ca sĩ (thay vì phát ngay); nút Follow = thêm vào `survey_artists`; hero dùng `artists.photo` mờ dần.
+- Tài khoản thử `tmp_h7`/`tmp12345` (user id 27) còn trong **DB của PC** → xoá khi xong H7.
+- Figma MCP: phiên này dùng 6 lượt (có giới hạn) — xin link frame cụ thể. Bẫy khi vẽ Figma: đặt `figma.skipInvisibleInstanceChildren = false` trước khi sửa lớp ẩn trong instance.
+- Console trình duyệt báo lỗi `localhost:5001` → bình thường (gpio-service chỉ chạy trên Pi).
+- Từ trước: H6 trợ lý giọng nói (Figma `284:120`), hộp nhạc Pi (Task 6–7, F11, `IS_BOX`), giai đoạn B phần cứng — **hạn HIC 15/10/2026**; F5 sửa Figma Sign in/up.
+
+## 6. Bước tiếp theo nên làm
+1. Laptop: làm mục **0** (pull, `.env`, migrate, `fetch-images`), mở web kiểm tra trang chủ có ảnh.
+2. Người dùng duyệt Figma **H8 `294:134`** → code trang ca sĩ (backend `GET /artists/:id` kèm bài; frontend `pages/ArtistPage.jsx`, route `/artist/:id`).
+3. Người dùng góp ý H7 từng mục → chỉnh; thử 390px; xoá `tmp_h7`; commit.
+4. (Tuỳ) cập nhật Figma trang chủ/trang ca sĩ bằng ảnh thật.
+5. H6 trợ lý giọng nói → giai đoạn B (Pi) trước 15/10.
 
 ---
 
@@ -20,7 +123,7 @@
 
 ## 2. Việc đã làm xong
 - **Đã commit** (`master`, chưa push): `89a0a7c` trình phát Figma + sóng âm + chọn cảm xúc tay + playlist UI · `c5d0ac3` khảo sát gu, trang playlist, Your mood, tìm kiếm, điện thoại · `40531a3` ghi chú.
-- **Chưa commit (35 file)** — trang chủ duyệt nhạc + luồng quét mới (mục H trong `TIEN_DO.md`):
+- **Đã commit `32592f4` (35 file, chưa push)** — trang chủ duyệt nhạc + luồng quét mới (mục H trong `TIEN_DO.md`):
   - Backend: `GET /songs/for-you` (`src/model/songModel.js`, `services/songService.js` + `rankForYou`, `controllers/songController.js`, `routes/web.js`), `detectedEmotion` + `auto: true` (`services/suggestService.js`, `controllers/suggestController.js`), test `test/forYou.test.js`.
   - Frontend: `components/PlayerHost.jsx` (thay `pages/HomePage.jsx` đã xoá), `pages/ScanPage.jsx`, `pages/HomeRoute.jsx`, `pages/BrowsePage.jsx/.scss`, `components/MoodButton.jsx/.scss`, `assets/icons/record_circle_icon.svg`, `assets/images/create_playlist_banner.png`, `utils/moodSession.js`, `utils/moodStats.js`, `hooks/useIdle.js`; sửa `App.jsx`, `layouts/MainLayout.jsx`, `contexts/playbackContext.js`, `contexts/PlaybackProvider.jsx`, `components/MusicPlayer.jsx/.scss`, `components/Header.jsx/.scss`, `pages/MoodPage.jsx`, `index.html` (font Jomolhari).
   - Tài liệu: spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md`, plan `docs/superpowers/plans/2026-10-07-browse-home-and-scan-flow.md`, `CLAUDE.md`, `TIEN_DO.md`.
@@ -70,7 +173,7 @@ Figma file `lycGTr71v02BpzYgjmZZS3`: trình phát `92:301`, khảo sát `255:5`,
 - F5: sửa Figma Sign in/up (không phải code).
 
 ## 6. Bước tiếp theo nên làm
-1. Hỏi người dùng có **commit** 35 file của mục H không (đã kiểm tra đủ, có thể commit ngay).
+1. ~~Commit mục H~~ — xong `32592f4` (chạy lại trước khi commit: test 13/13, lint sạch, build OK).
 2. **Làm lại trang chủ** theo yêu cầu mới ở mục 5 (brainstorming ngắn: hỏi (a)(b)(c) → chỉnh spec `2026-10-07-browse-home-and-scan-flow-design.md` mục 4 → code `pages/BrowsePage.jsx/.scss`). Nếu cần số đo Figma: `get_design_context` node `58:112` (đã gọi 1 lần, nội dung ở mục "Phiên 07/10 (khuya, phần 2)").
 3. Thiết kế + làm **trợ lý giọng nói** (H6).
 4. Giai đoạn B (Pi) trước 15/10.

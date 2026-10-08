@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api';
-import ArtistAvatar from '../components/ArtistAvatar';
+import SongThumb from '../components/SongThumb';
 import { useAuth } from '../contexts/authContext';
 import { usePlayback } from '../contexts/playbackContext';
 import { plain } from '../utils/text';
@@ -36,7 +36,7 @@ const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-GB', { da
 
 const SongCell = ({ song }) => (
     <div className="song-cell">
-        <ArtistAvatar className="song-thumb" name={song.artist || song.title} avatar={song.artist_avatar} />
+        <SongThumb className="song-thumb" song={song} />
         <div className="song-text">
             <span className="song-title">{song.title}</span>
             <span className="song-artist">{song.artist || 'Unknown artist'}</span>

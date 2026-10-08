@@ -1,43 +1,73 @@
-// Trang chủ duyệt nhạc — theo Figma "Frame 13" (58:112)
+// Trang chủ duyệt nhạc — nội dung theo Figma "Frame 13" (58:112), bố cục / mật độ thẻ theo Spotify web.
+// Số thẻ mỗi hàng (--cols) đổi theo độ rộng vùng nội dung (container query), thẻ chia đều chiều ngang.
 .browse-page {
-  --card: 200px;
-  --card-gap: 26px;
-  --card-bg: #211c2b;
+  container: browse / inline-size;
 
-  // màu nền thẻ khi ca sĩ không có ảnh: cùng bộ màu vibe với trình phát
-  --vibe-happy: linear-gradient(135deg, #e9c17a, #7a4a33);
-  --vibe-sad: linear-gradient(135deg, #8aa1c4, #2c3a58);
-  --vibe-angry: linear-gradient(135deg, #c9796b, #5a2424);
-  --vibe-surprise: linear-gradient(135deg, #c79ae0, #4b3270);
-  --vibe-neutral: linear-gradient(135deg, #b17886, #73424e);
+  // nền ảnh bìa tự vẽ, theo vibe bài (cùng tông với nền trình phát)
+  --vibe-happy: linear-gradient(145deg, #f2b84b 0%, #d9712c 45%, #7a2f1c 100%);
+  --vibe-surprise: linear-gradient(145deg, #c08bf0 0%, #7b4bc9 50%, #2e1a5c 100%);
+  --vibe-neutral: linear-gradient(145deg, #d48ca0 0%, #9a5468 50%, #4a2233 100%);
+  --vibe-sad: linear-gradient(145deg, #7fa6e0 0%, #3f64b0 50%, #1a2650 100%);
+  --vibe-angry: linear-gradient(145deg, #f07a62 0%, #c0392f 50%, #4f1212 100%);
+
+  // màu cảm xúc (cùng bảng màu đã kiểm tra mù màu ở trang /stats)
+  --mood-happy: #c9842a;
+  --mood-surprise: #9b6fd0;
+  --mood-neutral: #2f9c8a;
+  --mood-sad: #4c7bd0;
+  --mood-angry: #d14b4b;
+
+  // dải màu mờ ở đầu trang theo cảm xúc quét gần nhất (như Spotify đổi màu đầu trang)
+  --tint: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  &[data-mood='happy'] { --tint: color-mix(in srgb, var(--mood-happy) 30%, var(--surface)); }
+  &[data-mood='surprise'] { --tint: color-mix(in srgb, var(--mood-surprise) 30%, var(--surface)); }
+  &[data-mood='neutral'] { --tint: color-mix(in srgb, var(--mood-neutral) 30%, var(--surface)); }
+  &[data-mood='sad'] { --tint: color-mix(in srgb, var(--mood-sad) 30%, var(--surface)); }
+  &[data-mood='angry'] { --tint: color-mix(in srgb, var(--mood-angry) 30%, var(--surface)); }
 
   display: flex;
   flex-direction: column;
-  gap: 36px;
-  padding: 20px 36px 40px;
-  border-radius: 20px;
-  background: var(--surface);
+  gap: 32px;
+  padding: 18px 28px 40px;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--tint) 0, var(--surface) 320px);
   color: #fff;
   text-align: left;
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 
   // ---- chip thể loại ----
   .browse-chips {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .chip {
-    padding: 5px 13px;
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 14px;
     border: none;
-    border-radius: 20px;
+    border-radius: 999px;
     background: var(--chip);
     color: #fff;
     font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.22px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover:not(.on) {
+      background: #4d4251;
+    }
 
     &.on {
       background: var(--accent);
@@ -45,51 +75,297 @@
     }
   }
 
-  // ---- hàng ----
-  .browse-row {
+  // ---- thẻ (bài, playlist, ca sĩ, mix) kiểu Spotify: nền trong, rê chuột sáng lên ----
+  .card {
+    container-type: inline-size; // để ảnh bìa + nút ▶ co theo bề rộng thẻ (đơn vị cqw)
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    min-width: 0;
+    gap: 4px;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s;
 
-    h2 {
-      font-family: 'Inter', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
+    &:hover:not(:disabled),
+    &:focus-within {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    &:hover:not(:disabled) .card-play,
+    &:focus-visible .card-play,
+    &:focus-within .card-play {
+      opacity: 1;
+      transform: none;
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    // thẻ đang phát: tên bài màu tím
+    &.playing .card-title {
+      color: var(--accent);
     }
   }
 
-  .row-scroll {
+  // thẻ playlist: phần bấm để mở là 1 nút riêng, nút ▶ nằm ngoài
+  .card-main {
     display: flex;
-    gap: var(--card-gap);
-    overflow-x: auto;
-    padding-bottom: 6px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--chip) transparent;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: none;
+    }
   }
 
-  .row-note {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  // ---- banner "CREATE YOUR OWN PLAYLIST" ----
-  .banner {
-    flex-shrink: 0;
-    width: 426px;
-    height: 292px;
+  .card-art {
     position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 6px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #282828;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+    // ca sĩ: ảnh tự tròn, khung không cắt → nút ▶ ở góc không bị cắt mất
+    &.round {
+      overflow: visible;
+      background: none;
+      box-shadow: none;
+    }
+  }
+
+  .artist-photo {
+    width: 100%;
+    height: 100%;
+    font-size: 26cqw; // chữ viết tắt khi ca sĩ chưa có ảnh
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  // nút ▶ tròn tím, góc dưới phải ảnh, hiện khi rê chuột
+  .card-play {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 1;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    padding: 0 0 0 2px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s, scale 0.1s;
+    cursor: pointer;
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    &:hover {
+      scale: 1.05;
+    }
+  }
+
+  // nút ▶ của thẻ playlist nằm ở mức thẻ → tính vị trí theo bề rộng ảnh (= bề rộng nội dung thẻ)
+  .card > .card-play {
+    top: calc(10px + 100cqw - 54px);
+    right: 18px;
+    bottom: auto;
+  }
+
+  .card-title {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .card-sub {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--muted);
+
+    &.two-lines {
+      -webkit-line-clamp: 2;
+    }
+  }
+
+  // ---- ảnh bìa: ảnh thật (.cover-img) hoặc tự vẽ khi bài chưa có ảnh ----
+  .cover {
+    position: absolute;
+    inset: 0;
+
+    &.cover-img {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      object-fit: cover;
+    }
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 9cqw;
+    overflow: hidden;
+
+    // vệt sáng góc trên cho có chiều sâu
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 85% 10%, rgba(255, 255, 255, 0.28), transparent 55%);
+    }
+
+    &.vibe-happy { background: var(--vibe-happy); }
+    &.vibe-surprise { background: var(--vibe-surprise); }
+    &.vibe-neutral { background: var(--vibe-neutral); }
+    &.vibe-sad { background: var(--vibe-sad); }
+    &.vibe-angry { background: var(--vibe-angry); }
+
+    &.playlist {
+      background: linear-gradient(145deg, #a48bd0 0%, #6a4f99 50%, #2a2040 100%);
+    }
+
+    .cover-brand {
+      position: absolute;
+      top: 8cqw;
+      left: 9cqw;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 6.5cqw;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      opacity: 0.85;
+    }
+
+    .cover-face {
+      position: absolute;
+      top: 7cqw;
+      right: 7cqw;
+      width: 26cqw;
+      height: 26cqw;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+      font-size: 9cqw;
+    }
+
+    .cover-note {
+      position: absolute;
+      top: 3cqw;
+      right: 9cqw;
+      font-size: 26cqw;
+      line-height: 1;
+      opacity: 0.85;
+    }
+
+    .cover-title {
+      position: relative;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+      font-size: 12cqw;
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      overflow-wrap: anywhere;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  // ---- mix theo vibe (kiểu thẻ "Popular radio" của Spotify) ----
+  .mix-art {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8cqw;
+
+    &.vibe-happy { background: var(--vibe-happy); }
+    &.vibe-surprise { background: var(--vibe-surprise); }
+    &.vibe-neutral { background: var(--vibe-neutral); }
+    &.vibe-sad { background: var(--vibe-sad); }
+    &.vibe-angry { background: var(--vibe-angry); }
+
+    .mix-label {
+      font-size: 6.5cqw;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+    }
+
+    .mix-faces {
+      display: flex;
+      justify-content: center;
+    }
+
+    .mix-face {
+      width: 30cqw;
+      height: 30cqw;
+      margin-left: -7cqw;
+      border: 3px solid rgba(0, 0, 0, 0.25);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+      font-size: 10cqw;
+
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+
+    .mix-title {
+      font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+      font-size: 12cqw;
+      font-weight: 800;
+      line-height: 1.05;
+    }
+  }
+
+  // ---- banner "CREATE YOUR OWN PLAYLIST" (rộng 2 thẻ, cao bằng hàng) ----
+  .banner {
+    grid-column: span 2;
+    position: relative;
+    margin: 10px;
+    min-height: 200px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-bottom: 40px;
     border-radius: 8px;
     background-size: cover;
     background-position: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 
     .banner-title {
       font-family: 'Jomolhari', 'Playfair Display', serif;
-      font-size: 20px;
+      font-size: clamp(17px, 2cqw, 26px);
       line-height: 1.3;
       text-align: center;
       letter-spacing: 0.04em;
@@ -97,22 +373,22 @@
 
     .banner-actions {
       position: absolute;
-      left: 25px;
-      bottom: 17px;
+      left: 20px;
+      bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 40px;
+      gap: 24px;
     }
 
     .banner-browse {
-      width: 98px;
-      height: 33px;
+      height: 34px;
+      padding: 0 22px;
       border: none;
-      border-radius: 20px;
+      border-radius: 999px;
       background: #8d7898;
       color: #fff;
       font-family: 'Inter', sans-serif;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
 
@@ -130,9 +406,9 @@
       padding: 0;
       border: none;
       background: none;
-      color: #c9c9c9;
+      color: #d6d6d6;
       font-family: 'Inter', sans-serif;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
 
@@ -143,247 +419,220 @@
     }
   }
 
-  // ---- thẻ bài / playlist 200x200 ----
-  .song-card {
-    position: relative;
-    flex-shrink: 0;
-    width: var(--card);
+  // ---- 2 thẻ lớn cuối trang (Figma: thẻ podcast #471824 + khung xám) ----
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .feature {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 0;
-    border: none;
-    background: none;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    text-align: left;
-    cursor: pointer;
+    gap: 20px;
+    padding: 28px;
+    border-radius: 16px;
 
-    &.as-div {
-      cursor: default;
-    }
+    &.mood-feature { background: #471824; }
+    &.scan-feature { background: #1f2a44; }
 
-    &:hover .card-play,
-    &:focus-visible .card-play {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    &:hover .card-art img {
-      transform: scale(1.04);
+    h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.15;
     }
   }
 
-  .card-art {
-    position: relative;
-    width: var(--card);
-    height: var(--card);
-    margin-bottom: 12px;
+  .feature-top {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .feature-thumb {
+    flex-shrink: 0;
+    width: 112px;
+    height: 112px;
     display: grid;
     place-items: center;
-    overflow: hidden;
-    padding: 0;
-    border: none;
-    border-radius: 8px;
-    background: var(--card-bg);
-    color: #fff;
-    cursor: pointer;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s;
-    }
+    border-radius: 12px;
+    font-size: 56px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 
     &.vibe-happy { background: var(--vibe-happy); }
-    &.vibe-sad { background: var(--vibe-sad); }
-    &.vibe-angry { background: var(--vibe-angry); }
     &.vibe-surprise { background: var(--vibe-surprise); }
     &.vibe-neutral { background: var(--vibe-neutral); }
+    &.vibe-sad { background: var(--vibe-sad); }
+    &.vibe-angry { background: var(--vibe-angry); }
 
-    &.playlist-art {
-      background: linear-gradient(135deg, #8a74ad, #2f2640);
+    &.scan-thumb {
+      background: radial-gradient(circle at 30% 25%, #6f8fd8, #2b3c6e 70%);
+
+      svg {
+        width: 56px;
+        height: 56px;
+      }
     }
   }
 
-  .card-note {
-    font-size: 64px;
-    opacity: 0.85;
-  }
-
-  // nút ▶ tím hiện khi rê chuột
-  .card-play {
-    position: absolute;
-    right: 12px;
-    top: 144px;
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    padding-left: 3px;
-    border: none;
-    border-radius: 50%;
-    background: var(--accent);
-    color: var(--on-premium);
-    font-size: 16px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.15s, transform 0.15s;
-    cursor: pointer;
-
-    &.visible:focus-visible {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  .song-card.as-div:hover .card-play.visible {
-    opacity: 1;
-    transform: none;
-  }
-
-  .card-title {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+  .feature-sub {
+    margin-top: 6px;
     font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.28px;
+    color: rgba(255, 255, 255, 0.75);
   }
 
-  .card-sub {
-    font-size: 12px;
-    letter-spacing: 0.24px;
-    color: var(--muted);
-  }
-
-  // ---- ca sĩ: vòng tròn 200px ----
-  .artist-tile {
-    flex-shrink: 0;
-    width: var(--card);
+  .feature-panel {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 0;
-    border: none;
-    background: none;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    text-align: left;
-    cursor: pointer;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.25);
+  }
 
-    &:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
+  .feature-line {
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.85);
 
-    &:hover:not(:disabled) .artist-circle {
-      transform: scale(1.03);
-    }
-
-    .card-sub {
+    &.big {
+      font-size: 17px;
+      font-weight: 600;
       color: #fff;
     }
   }
 
-  .artist-circle {
-    width: var(--card);
-    height: var(--card);
-    margin-bottom: 12px;
-    font-size: 48px;
-    transition: transform 0.2s;
+  .feature-btn {
+    align-self: center;
+    height: 40px;
+    padding: 0 26px;
+    border: none;
+    border-radius: 999px;
+    background: #c9c9c9;
+    color: #1a1a1a;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      background: #fff;
+    }
   }
 
-  // ---- thẻ "Your mood this week" (vị trí thẻ podcast trong Figma) ----
-  .mood-card {
-    width: min(540px, 100%);
-    display: flex;
-    flex-direction: column;
+  // biểu đồ mini 7 ngày (cột chồng theo cảm xúc)
+  .mini-chart {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
     gap: 10px;
-    padding: 32px 36px;
-    border-radius: 20px;
-    background: #471824;
+    height: 130px;
+  }
 
-    .mood-eyebrow {
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.7);
-    }
+  .mini-day {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    gap: 6px;
+    height: 100%;
+  }
 
-    .mood-big {
-      font-family: 'Inter', sans-serif;
-      font-size: 32px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
+  .mini-col {
+    width: 100%;
+    max-width: 28px;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+  }
 
-    .mood-line {
-      font-family: 'Inter', sans-serif;
-      font-size: 15px;
-      color: rgba(255, 255, 255, 0.85);
-    }
+  .mini-bar {
+    width: 100%;
+    min-height: 3px;
+    display: flex;
+    flex-direction: column-reverse;
+    overflow: hidden;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
 
-    .mood-link {
-      align-self: flex-start;
-      margin-top: 10px;
-      padding: 10px 22px;
-      border: none;
-      border-radius: 999px;
-      background: #c9c9c9;
-      color: #1a1a1a;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
+    .seg {
+      flex-basis: 0;
 
-      &:hover {
-        background: #fff;
-      }
+      &.happy { background: var(--mood-happy); }
+      &.surprise { background: var(--mood-surprise); }
+      &.neutral { background: var(--mood-neutral); }
+      &.sad { background: var(--mood-sad); }
+      &.angry { background: var(--mood-angry); }
     }
   }
 
-  button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
+  .mini-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
   }
 }
 
-// điện thoại: thẻ nhỏ lại, banner rộng hết dòng
+// số thẻ mỗi hàng theo độ rộng vùng nội dung (--cols-int: dùng khi "Show all" xếp lưới)
+.browse-page .shelf {
+  --cols: 2.4;
+  --cols-int: 2;
+}
+
+@container browse (min-width: 560px) {
+  .browse-page .shelf { --cols: 4; --cols-int: 4; }
+}
+
+@container browse (min-width: 760px) {
+  .browse-page .shelf { --cols: 5; --cols-int: 5; }
+}
+
+@container browse (min-width: 960px) {
+  .browse-page .shelf { --cols: 6; --cols-int: 6; }
+}
+
+@container browse (min-width: 1200px) {
+  .browse-page .shelf { --cols: 7; --cols-int: 7; }
+}
+
+// vùng hẹp: 2 thẻ lớn xếp chồng
+@container browse (max-width: 759px) {
+  .browse-page .features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// điện thoại
 @media (max-width: 640px) {
   .browse-page {
-    --card: 150px;
-    --card-gap: 16px;
-    padding: 16px;
+    gap: 26px;
+    padding: 14px 16px 28px;
+
+    .shelf h2 {
+      font-size: 20px;
+    }
 
     .banner {
-      width: min(320px, 85vw);
-      height: 220px;
+      min-height: 180px;
 
       .banner-actions {
-        gap: 20px;
+        left: 14px;
+        gap: 16px;
       }
     }
 
-    .card-play {
-      top: 98px;
-    }
+    .feature {
+      padding: 20px;
 
-    .artist-circle {
-      font-size: 36px;
-    }
-
-    .mood-card {
-      padding: 24px;
-
-      .mood-big {
-        font-size: 24px;
+      h3 {
+        font-size: 20px;
       }
+    }
+
+    .feature-thumb {
+      width: 80px;
+      height: 80px;
+      font-size: 40px;
     }
   }
 }

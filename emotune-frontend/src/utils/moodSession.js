@@ -26,3 +26,11 @@ export const saveLastMood = (emotion) => {
     write(LAST_MOOD, JSON.stringify(mood));
     return mood;
 };
+
+// "just now" / "12 min ago" / "2 h ago" (icon quet tren header + the quet tren trang chu)
+export const timeAgo = (ms) => {
+    const min = Math.floor(ms / 60000);
+    if (min < 1) return 'just now';
+    if (min < 60) return `${min} min ago`;
+    return `${Math.floor(min / 60)} h ago`;
+};

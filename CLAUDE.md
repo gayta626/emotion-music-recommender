@@ -68,6 +68,7 @@ PYTHONUTF8=1 python analyze_confusion.py
 npm run dev                                      # nodemon, :8080 (PORT trong .env; mặc định code là 8081)
 npm run db:setup                                 # XOÁ và tạo lại toàn bộ DB từ db/setup.sql (bảng + dữ liệu mẫu)
 npm run rename-music -- --apply                  # chuẩn hoá tên file mp3 cho khớp cột file_path trong setup.sql
+npm run fetch-images                             # điền ảnh bìa (covers/) + ảnh ca sĩ lớn (avatars/photos/) còn thiếu; file có sẵn thì không lên mạng
 
 # Frontend (trong emotune-frontend/)
 npm run dev                                      # :5173

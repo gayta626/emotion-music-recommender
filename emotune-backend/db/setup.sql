@@ -38,7 +38,8 @@ CREATE TABLE devices (
 CREATE TABLE artists (
     id          SERIAL PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,
-    avatar      TEXT
+    avatar      TEXT,   -- anh tron nho tu cat (avatars/), co the NULL
+    photo       TEXT    -- anh vuong co lon (avatars/), do `npm run fetch-images` dien; uu tien hon avatar
 );
 
 -- The loai nhac. name viet thuong de khong bi trung kieu "Ballad" / "ballad"
@@ -56,7 +57,8 @@ CREATE TABLE songs (
     genre_id    INTEGER REFERENCES genres(id) ON DELETE SET NULL,
     file_path   TEXT NOT NULL UNIQUE,
     emotion     TEXT NOT NULL CHECK (emotion IN ('neutral', 'happy', 'sad', 'angry', 'surprise')),
-    energy      REAL CHECK (energy BETWEEN 0 AND 1)
+    energy      REAL CHECK (energy BETWEEN 0 AND 1),
+    cover       TEXT    -- anh bia (covers/), do `npm run fetch-images` dien; NULL -> web tu ve bia
 );
 
 -- ===== Du lieu ca nhan: 5 bang duoi deu co user_id -> moi cau SQL dung toi phai loc / ghi user_id =====

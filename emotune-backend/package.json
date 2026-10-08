@@ -9,6 +9,7 @@
     "rename-music": "node scripts/rename-music.js",
     "db:setup": "node scripts/db-setup.js",
     "db:migrate": "node scripts/db-migrate.js",
+    "fetch-images": "node scripts/fetch-images.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [

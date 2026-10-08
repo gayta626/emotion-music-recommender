@@ -25,7 +25,7 @@ const TASTE_BONUS = `(CASE WHEN EXISTS (SELECT 1 FROM survey_artists sa WHERE sa
 let getSongsByEmotion = async (userId, emotion) => {
     try {
         const result = await db.query(
-            `SELECT s.id, s.title, a.name AS artist, a.avatar AS artist_avatar, s.file_path, s.emotion, s.energy,
+            `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.emotion, s.energy,
                     COALESCE(p.score, 0) AS score,
                     ${TASTE_BONUS} AS taste_bonus
              FROM songs s
@@ -49,7 +49,7 @@ let getSongsByEmotion = async (userId, emotion) => {
 
         if (candidates.length === 0) {
             const fallback = await db.query(
-                `SELECT s.id, s.title, a.name AS artist, a.avatar AS artist_avatar, s.file_path, s.emotion, s.energy,
+                `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.emotion, s.energy,
                         COALESCE(p.score, 0) AS score,
                         ${TASTE_BONUS} AS taste_bonus
                  FROM songs s

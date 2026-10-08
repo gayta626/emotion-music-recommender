@@ -1,0 +1,129 @@
+// Hàng thẻ kiểu Spotify. Số thẻ mỗi hàng = --cols (trang đặt theo độ rộng), thẻ tự chia đều chiều ngang.
+.shelf {
+  --shelf-gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  .shelf-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .shelf-eyebrow {
+    margin-bottom: 2px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  .shelf-all {
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+  }
+
+  .shelf-note {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .shelf-body {
+    position: relative;
+    // thẻ có padding 10px → kéo hàng ra 10px để mép ảnh thẳng hàng với tiêu đề (như Spotify)
+    margin: 0 -10px;
+
+    &:hover .shelf-arrow {
+      opacity: 1;
+    }
+  }
+
+  .shelf-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--cols, 6) - 1) * var(--shelf-gap)) / var(--cols, 6));
+    gap: var(--shelf-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    > * {
+      scroll-snap-align: start;
+      min-width: 0;
+    }
+
+    // "Show all": xếp thành lưới nhiều dòng, không cuộn ngang
+    &.expanded {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(var(--cols-int, 6), minmax(0, 1fr));
+      overflow: visible;
+    }
+  }
+
+  // mũi tên ‹ › hiện khi rê chuột vào hàng
+  .shelf-arrow {
+    position: absolute;
+    top: 38%;
+    z-index: 2;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    padding-bottom: 3px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(18, 18, 18, 0.9);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transform: translateY(-50%);
+    transition: opacity 0.15s, background 0.15s;
+    cursor: pointer;
+
+    &.left { left: 6px; }
+    &.right { right: 6px; }
+
+    &:hover {
+      background: #2a2a2a;
+    }
+
+    &:focus-visible {
+      opacity: 1;
+      outline: 2px solid var(--accent);
+    }
+  }
+}
+
+// màn cảm ứng: vuốt để cuộn, không cần mũi tên
+@media (hover: none) {
+  .shelf .shelf-arrow {
+    display: none;
+  }
+}

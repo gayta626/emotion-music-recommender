@@ -1,0 +1,171 @@
+// Lay anh cho moi bai hat (anh bia) va moi ca si (anh chan dung co lon) roi ghi ten file vao DB.
+// Chay: npm run fetch-images
+//
+// Cach lam (chi dien cho bai / ca si dang THIEU anh -> chay lai bao nhieu lan cung duoc):
+//   1. Da co san file anh tren may (tai lan truoc, hoac ban tu bo vao) -> chi ghi ten file vao DB, khong len mang.
+//      Bai hat:  covers/<ten file mp3>.jpg        vd covers/gia_nhu.jpg
+//      Ca si:    avatars/photos/<ten khong dau>.jpg  vd avatars/photos/son-tung-m-tp.jpg
+//   2. Chua co -> tim tren iTunes Search API (mien phi, khong can key) theo TEN BAI + TEN CA SI,
+//      tai anh ve, luu file roi ghi vao DB. Anh ca si lay tu trang ca si tren Apple Music.
+//   3. Khong tim thay / khong chac dung -> in ra cuoi de ban tu bo anh vao dung ten file roi chay lai.
+// Anh tai ve co ban quyen cua hang dia / ca si: chi dung cho do an, demo.
+const fs = require('fs');
+const path = require('path');
+const db = require('../src/config/db');
+
+const COVERS_DIR = path.join(__dirname, "..", "covers");
+const PHOTOS_DIR = path.join(__dirname, "..", "avatars", "photos");
+const EXTS = [".jpg", ".jpeg", ".png", ".webp"];
+
+// iTunes chi cho ~20 lan tim / phut -> moi lan tim cach nhau 3,2 giay
+const SEARCH_GAP_MS = 3200;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// "Sơn Tùng M-TP" -> "son tung m tp" (so khop khong dau, khong phan biet hoa thuong)
+const plain = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d")
+    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const slug = (s) => plain(s).replace(/ /g, "-");
+// bo phan trong ngoac: "Nếu Như Ta Chẳng Còn (feat. A$AP Ướt Mi)" -> "Nếu Như Ta Chẳng Còn"
+const baseTitle = (s) => s.replace(/[([].*?[)\]]/g, "").trim();
+// ban phu (remix, live, speed up...) -> khong lay anh bia cua ban do
+const ALT_VERSION = /remix|live|speed|slowed|lofi|lo-fi|acoustic|version|instrumental|karaoke|beat/i;
+
+// file anh da co san tren may (bat ky duoi nao trong EXTS) -> ten file, khong co -> null
+const findLocal = (dir, name) => {
+    const ext = EXTS.find((e) => fs.existsSync(path.join(dir, name + e)));
+    return ext ? name + ext : null;
+};
+
+let lastSearch = 0;
+const itunesSearch = async (params) => {
+    const wait = lastSearch + SEARCH_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastSearch = Date.now();
+    const url = "https://itunes.apple.com/search?" + new URLSearchParams({ country: "vn", limit: "10", ...params });
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`iTunes tra loi ${res.status}`);
+    return (await res.json()).results;
+};
+
+const download = async (url, file) => {
+    const res = await fetch(url);
+    const type = res.headers.get("content-type") || "";
+    if (!res.ok || !type.startsWith("image/")) throw new Error(`tai anh loi (${res.status} ${type})`);
+    fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+};
+
+// Chon ket qua dung bai: ca si phai khop, ten bai khop nguyen ven truoc, sau do khop phan ngoai ngoac
+// (bo ban remix/live). Khong ket qua nao du chac -> null (de ban tu chon anh, thay vi lay nham)
+const pickTrack = (results, title, artist) => {
+    const byArtist = results.filter((r) => plain(r.artistName).includes(plain(artist)));
+    return byArtist.find((r) => plain(r.trackName) === plain(title))
+        || byArtist.find((r) => plain(baseTitle(r.trackName)) === plain(baseTitle(title)) && !ALT_VERSION.test(r.trackName))
+        || null;
+};
+
+const fetchSongCover = async (song) => {
+    const results = await itunesSearch({ term: `${baseTitle(song.title)} ${song.artist}`, entity: "song" });
+    const hit = pickTrack(results, song.title, song.artist);
+    if (!hit) return { error: "khong tim thay ban goc tren iTunes" };
+    // artworkUrl100 la anh 100x100 -> doi so trong link de lay ban 600x600 (du net cho the lon nhat)
+    const url = hit.artworkUrl100.replace(/\/\d+x\d+bb\./, "/600x600bb.");
+    const file = path.basename(song.file_path, path.extname(song.file_path)) + ".jpg";
+    await download(url, path.join(COVERS_DIR, file));
+    return { file, source: `${hit.trackName} — ${hit.artistName} (album: ${hit.collectionName})` };
+};
+
+const fetchArtistPhoto = async (artist) => {
+    const results = await itunesSearch({ term: artist.name, entity: "musicArtist", limit: "5" });
+    const hit = results.find((r) => plain(r.artistName) === plain(artist.name));
+    if (!hit?.artistLinkUrl) return { error: "khong co ca si nay tren iTunes" };
+    // API khong tra anh ca si -> doc the og:image cua trang ca si tren Apple Music
+    const html = await (await fetch(hit.artistLinkUrl)).text();
+    const og = html.match(/property="og:image" content="([^"]+)"/)?.[1];
+    // trang ca si khong co anh chan dung thi Apple dung anh bia album -> bo, giu avatar cu
+    if (!og || !/AMCArtistImages|Features/.test(og)) return { error: "Apple Music chi co anh album, khong co anh chan dung" };
+    // ".../1200x630cw.png" (anh ngang) -> ".../1000x1000cc.jpg" (vuong, cat giua)
+    const url = og.replace(/\/\d+x\d+\w*\.(png|jpg)$/, "/1000x1000cc.jpg");
+    const file = slug(artist.name) + ".jpg";
+    await download(url, path.join(PHOTOS_DIR, file));
+    return { file, source: hit.artistLinkUrl.replace(/\?.*$/, "") };
+};
+
+const run = async () => {
+    fs.mkdirSync(COVERS_DIR, { recursive: true });
+    fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+    const missing = [];   // can ban tu bo anh vao
+
+    const songs = (await db.query(
+        `SELECT s.id, s.title, s.file_path, a.name AS artist
+         FROM songs s LEFT JOIN artists a ON a.id = s.artist_id
+         WHERE s.cover IS NULL ORDER BY s.id`
+    )).rows;
+    console.log(`\n== Anh bia: ${songs.length} bai chua co ==`);
+    for (const song of songs) {
+        const name = path.basename(song.file_path, path.extname(song.file_path));
+        try {
+            let file = findLocal(COVERS_DIR, name);
+            let note = "file co san tren may";
+            if (!file) {
+                if (!song.artist) {
+                    missing.push(`bai "${song.title}" (khong co ca si) -> covers/${name}.jpg`);
+                    console.log(`  - ${song.title}: bo qua, khong co ca si de tim`);
+                    continue;
+                }
+                const r = await fetchSongCover(song);
+                if (r.error) {
+                    missing.push(`bai "${song.title}" (${r.error}) -> covers/${name}.jpg`);
+                    console.log(`  x ${song.title}: ${r.error}`);
+                    continue;
+                }
+                file = r.file;
+                note = r.source;
+            }
+            await db.query(`UPDATE songs SET cover = $1 WHERE id = $2`, [file, song.id]);
+            console.log(`  ✓ ${song.title} -> covers/${file}   [${note}]`);
+        } catch (err) {
+            missing.push(`bai "${song.title}" (loi: ${err.message}) -> covers/${name}.jpg`);
+            console.log(`  x ${song.title}: ${err.message}`);
+        }
+    }
+
+    const artists = (await db.query(`SELECT id, name FROM artists WHERE photo IS NULL ORDER BY id`)).rows;
+    console.log(`\n== Anh ca si: ${artists.length} ca si chua co ==`);
+    for (const artist of artists) {
+        const name = slug(artist.name);
+        try {
+            let file = findLocal(PHOTOS_DIR, name);
+            let note = "file co san tren may";
+            if (!file) {
+                const r = await fetchArtistPhoto(artist);
+                if (r.error) {
+                    missing.push(`ca si "${artist.name}" (${r.error}) -> avatars/photos/${name}.jpg`);
+                    console.log(`  x ${artist.name}: ${r.error}`);
+                    continue;
+                }
+                file = r.file;
+                note = r.source;
+            }
+            // luu duong dan tinh tu avatars/ -> web goi /avatars/photos/<file> giong anh avatar cu
+            await db.query(`UPDATE artists SET photo = $1 WHERE id = $2`, ["photos/" + file, artist.id]);
+            console.log(`  ✓ ${artist.name} -> avatars/photos/${file}   [${note}]`);
+        } catch (err) {
+            missing.push(`ca si "${artist.name}" (loi: ${err.message}) -> avatars/photos/${name}.jpg`);
+            console.log(`  x ${artist.name}: ${err.message}`);
+        }
+    }
+
+    if (missing.length) {
+        console.log(`\n== Con thieu ${missing.length} anh: tu bo anh vao dung ten file duoi day roi chay lai lenh ==`);
+        missing.forEach((m) => console.log("  - " + m));
+    } else {
+        console.log("\nDu anh cho tat ca bai hat va ca si.");
+    }
+};
+
+run()
+    .catch((err) => {
+        console.error("Loi:", err.message);
+        process.exitCode = 1;
+    })
+    .finally(() => db.pool.end());

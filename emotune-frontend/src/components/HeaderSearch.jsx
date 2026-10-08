@@ -3,7 +3,7 @@ import api from '../api'
 import { usePlayback } from '../contexts/playbackContext'
 import { plain } from '../utils/text'
 import SearchIcon from '../assets/icons/search_icon.svg?react'
-import ArtistAvatar from './ArtistAvatar'
+import SongThumb from './SongThumb'
 import './HeaderSearch.scss'
 
 // O tim kiem tren header: go ten bai / ca si (khong dau cung duoc) -> chon 1 bai la phat ngay
@@ -79,7 +79,7 @@ const HeaderSearch = () => {
                                 onMouseEnter={() => setActive(i)}
                                 onClick={() => choose(s)}
                             >
-                                <ArtistAvatar className="search-thumb" name={s.artist || s.title} avatar={s.artist_avatar} />
+                                <SongThumb className="search-thumb" song={s} />
                                 <span className="search-text">
                                     <span className="search-title">{s.title}</span>
                                     <span className="search-artist">{s.artist || 'Unknown artist'}</span>

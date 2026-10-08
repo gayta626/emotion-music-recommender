@@ -1,5 +1,6 @@
-// API_URL van can cho the <audio> va <img> (trinh duyet tu tai file, khong qua axios)
+// API_URL van can cho the <audio> (trinh duyet tu tai file, khong qua axios)
 import { API_URL } from '../config'
+import { songImageUrl } from '../utils/images'
 import api from '../api'
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -49,7 +50,7 @@ const MusicPlayer = (props) => {
     // mau nen theo "vibe" cua bai (songs.emotion), khong theo cam xuc AI doan
     const vibe = VIBES.includes(data.song.emotion) ? data.song.emotion
         : VIBES.includes(data.emotion) ? data.emotion : "neutral";
-    const coverSrc = data.song.artist_avatar ? `${API_URL}/avatars/${data.song.artist_avatar}` : null;
+    const coverSrc = songImageUrl(data.song);
     const artist = data.song.artist || "Unknown artist";
 
     const finishAndSend = () => {

@@ -1,7 +1,7 @@
 // Cac phan noi tren trinh phat: anh bia, the "Up next", cot hang doi, menu nut ☰
 import { useEffect, useRef, useState } from 'react'
 import api from '../api'
-import { API_URL } from '../config'
+import { songImageUrl } from '../utils/images'
 import { usePlayback } from '../contexts/playbackContext'
 import { plain } from '../utils/text'
 
@@ -9,9 +9,7 @@ const UP_NEXT_SECONDS = 15;   // con bao nhieu giay thi the "Up next" bat dau hi
 const RING_R = 30;
 const RING_C = 2 * Math.PI * RING_R;
 
-const avatarUrl = (song) => song?.artist_avatar ? `${API_URL}/avatars/${song.artist_avatar}` : null;
-
-// anh bia = anh ca si; ca si chua co anh (hoac file loi) -> o gradient co not nhac
+// anh bia that -> anh ca si -> (khong co / file loi) o gradient co not nhac
 export const Cover = ({ src, className }) => {
     const [failed, setFailed] = useState(false);
     if (!src || failed) {
@@ -51,7 +49,7 @@ export const UpNextCard = ({ remaining, duration, nextSong, onPlayNow }) => {
         <div className="up-next" style={style}>
             <button className="up-next-main" onClick={onPlayNow} aria-label={`Play ${nextSong.title} now`}>
                 <span className="up-next-thumb">
-                    <Cover className="up-next-cover" src={avatarUrl(nextSong)} />
+                    <Cover className="up-next-cover" src={songImageUrl(nextSong)} />
                     {/* vong dem nguoc: day dan khi sap chuyen bai */}
                     <svg className="up-next-ring" viewBox="0 0 68 68" aria-hidden="true">
                         <circle cx="34" cy="34" r={RING_R} className="ring-track" />
@@ -85,7 +83,7 @@ export const QueuePanel = ({ playlist, onJump, onClose }) => {
 
             <div className="queue-group">Now playing</div>
             <div className="queue-item playing">
-                <Cover className="queue-cover" src={avatarUrl(current)} />
+                <Cover className="queue-cover" src={songImageUrl(current)} />
                 <span className="queue-text">
                     <span className="queue-title">{current.title}</span>
                     <span className="queue-artist">{current.artist || "Unknown artist"}</span>
@@ -96,7 +94,7 @@ export const QueuePanel = ({ playlist, onJump, onClose }) => {
             {upcoming.length === 0 && <div className="queue-empty">This is the last song. After it, NYX picks songs from your mood.</div>}
             {upcoming.map((song, i) => (
                 <button className="queue-item" key={song.id} onClick={() => onJump(playlist.index + 1 + i)}>
-                    <Cover className="queue-cover" src={avatarUrl(song)} />
+                    <Cover className="queue-cover" src={songImageUrl(song)} />
                     <span className="queue-text">
                         <span className="queue-title">{song.title}</span>
                         <span className="queue-artist">{song.artist || "Unknown artist"}</span>
@@ -203,7 +201,7 @@ export const QueueMenu = ({ inPlaylist, songId, emotion, onViewPlaylist, onReque
                     />
                     {matches.map((s) => (
                         <button className="menu-item" role="menuitem" key={s.id} disabled={busy} onClick={() => requestSong(s)}>
-                            <Cover className="menu-cover" src={avatarUrl(s)} />
+                            <Cover className="menu-cover" src={songImageUrl(s)} />
                             <span className="menu-text">{s.title}<small>{s.artist || "Unknown artist"}</small></span>
                         </button>
                     ))}
