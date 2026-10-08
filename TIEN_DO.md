@@ -6,7 +6,7 @@
 
 ## 📍 Đang ở đâu
 
-**08/10 (PC):** H7 trang chủ kiểu Spotify xong bản đầu (chờ người dùng góp ý từng mục, chưa thử 390px), **H9 ảnh bìa + ảnh ca sĩ thật ✅**, H8 trang ca sĩ đã vẽ Figma `294:134` (chờ duyệt rồi code). Việc 08/10 **chưa commit**; `32592f4` chưa push. **Phiên sau dùng laptop → làm NOTES.md "🧭 TỔNG KẾT NGÀY 08/10" mục 0 trước** (pull, `.env`, migrate `migrate_images.sql`, `npm run fetch-images`). Sau đó H8 → H6 trợ lý giọng nói → giai đoạn B (Pi).
+**08/10 (PC):** H7 trang chủ kiểu Spotify xong bản đầu (chờ người dùng góp ý từng mục, chưa thử 390px), **H9 ảnh bìa + ảnh ca sĩ thật ✅**, H8 trang ca sĩ đã vẽ Figma `294:134` (chờ duyệt rồi code). Việc 08/10 **đã commit `93c2b9e` + push**. **Phiên sau dùng laptop → làm NOTES.md "🧭 TỔNG KẾT NGÀY 08/10" mục 0 trước** (pull, `.env`, migrate `migrate_images.sql`, `npm run fetch-images`). Sau đó H8 → H6 trợ lý giọng nói → giai đoạn B (Pi).
 Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
 ## Tổng quan

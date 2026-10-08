@@ -1,7 +1,7 @@
 # NOTES.md — EmoTune Project Session Log
 
 > Phiên gần nhất: **08/10/2026** (trên PC) — xem **"🧭 TỔNG KẾT NGÀY 08/10/2026"** ngay bên dưới; **mai làm tiếp trên laptop → làm mục 0 trước**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: phần mềm gần xong; trang chủ kiểu Spotify (H7, chờ góp ý), **ảnh bìa + ảnh ca sĩ thật** (H9, `npm run fetch-images`), thiết kế trang ca sĩ trên Figma `294:134` (H8, chờ duyệt). Còn: trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Commit gần nhất `32592f4` (chưa push); việc 08/10 **chưa commit**.
+> Trạng thái: phần mềm gần xong; trang chủ kiểu Spotify (H7, chờ góp ý), **ảnh bìa + ảnh ca sĩ thật** (H9, `npm run fetch-images`), thiết kế trang ca sĩ trên Figma `294:134` (H8, chờ duyệt). Còn: trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Việc 08/10 **đã commit `93c2b9e` + push** lên GitHub (laptop chỉ cần `git pull`).
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
@@ -14,7 +14,7 @@
 > Bộ nhớ riêng của Claude (`~/.claude/...`) **không theo sang laptop** → mọi thứ cần biết nằm trong `CLAUDE.md`, file này và `TIEN_DO.md`.
 
 ## 0. Chuyển sang laptop (làm theo thứ tự)
-1. **Trên PC, trước khi tắt máy:** commit + push mọi thứ (nhờ Claude: "commit và push đi"). Chưa push thì laptop **không có** code hôm nay (trang chủ mới H7, ảnh H9, notes).
+1. ✅ **Đã commit `93c2b9e` + push** (tối 08/10) — laptop `git pull` là có code hôm nay (trang chủ mới H7, ảnh H9, notes).
    - Ảnh bìa `emotune-backend/covers/*.jpg` và ảnh ca sĩ `emotune-backend/avatars/photos/*.jpg` (~2.5MB) **được commit cùng code** (không nằm trong `.gitignore`) → laptop kéo về là có, không cần tải lại.
 2. **Trên laptop:**
    ```bash
@@ -94,7 +94,7 @@ curl localhost:8080/songs                     # có "cover"
 - Xem trang chủ mà không quét: sessionStorage `emotune_scanned = "1"`. Máy không có camera → dùng 5 nút chọn cảm xúc.
 
 ## 5. Lỗi / việc còn dở
-- **Chưa commit** gì sau `32592f4` (H7, H9, NOTES/TIEN_DO/CLAUDE.md). **Chưa push** `32592f4`.
+- Đã commit `93c2b9e` + push (H7 bản đầu, H9, NOTES/TIEN_DO/CLAUDE.md). Chỉnh H7 sau góp ý sẽ là commit mới.
 - H7: chưa thử 390px (điện thoại); người dùng sẽ "chỉ từng mục có tác dụng gì" rồi chỉnh tiếp.
 - H8: chờ duyệt Figma `294:134`. Số liệu trên bản vẽ là giả (HIEUTHUHAI chưa có bài trong DB). Kế hoạch code: route `/artist/:id`; bấm ca sĩ ở trang chủ/sidebar → mở trang ca sĩ (thay vì phát ngay); nút Follow = thêm vào `survey_artists`; hero dùng `artists.photo` mờ dần.
 - Tài khoản thử `tmp_h7`/`tmp12345` (user id 27) còn trong **DB của PC** → xoá khi xong H7.
