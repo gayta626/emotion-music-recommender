@@ -1,162 +1,105 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api';
-import MoodIcon from '../components/MoodIcon';
-import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
+import { buildDays, cheerUpStatus } from '../utils/moodStats';
+import OverviewTiles from '../components/stats/OverviewTiles';
+import CheerTile from '../components/stats/CheerTile';
+import DailyChart from '../components/stats/DailyChart';
+import DaypartGrid from '../components/stats/DaypartGrid';
+import TopLists from '../components/stats/TopLists';
+import MoodSongs from '../components/stats/MoodSongs';
+import HitRateChart from '../components/stats/HitRateChart';
+import ConfidenceRose from '../components/stats/ConfidenceRose';
+import PreferenceGrid from '../components/stats/PreferenceGrid';
 import './MoodPage.scss';
+import '../components/stats/Stats.scss';
 
-// Lich su cam xuc 7 ngay (GET /mood-history) + giai thich NYX dang "nghi" gi ve xu huong cam xuc.
-// Day la phan the hien "thong minh" cho mon Xay dung he thong thong minh: nguoi dung thay duoc
-// vi sao he thong chuyen sang bai dong vien.
+// Trang thống kê (/stats), spec docs/superpowers/specs/2026-10-09-stats-page-design.md:
+// phần "You" (người dùng tự hiểu mình) + "What NYX learned about you" (thể hiện hệ thống học được gì).
+// Số liệu từ GET /stats?days=7|30; ô Cheer-up vẫn tính từ GET /mood-history như trước.
+const RANGES = [7, 30];
 
 const MoodPage = () => {
-    const [rows, setRows] = useState(null);
+    const [days, setDays] = useState(7);
+    const [stats, setStats] = useState(null);
     const [error, setError] = useState('');
-    const [hover, setHover] = useState(null);
-    const [showTable, setShowTable] = useState(false);
+    const [reload, setReload] = useState(0);
+    const [history, setHistory] = useState(null);
+    const statsDaysRef = useRef(null);   // khoảng ngày của số liệu đang hiển thị
+
+    // đổi 7/30 ngày: giữ số liệu cũ trên màn tới khi có số mới (không nhảy trang, giữ vị trí cuộn)
+    useEffect(() => {
+        let alive = true;
+        api.get('/stats', { params: { days } })
+            .then((res) => {
+                if (!alive) return;
+                statsDaysRef.current = res.data.days;
+                setStats(res.data);
+                setError('');
+            })
+            .catch(() => {
+                if (!alive) return;
+                setError("Couldn't load your stats.");
+                // chuyển 7/30 lỗi: nút quay về khoảng đang hiển thị thật (stats cũ), tránh nút và số liệu lệch nhau
+                setDays((d) => (statsDaysRef.current && statsDaysRef.current !== d ? statsDaysRef.current : d));
+            });
+        return () => { alive = false; };
+    }, [days, reload]);
 
     useEffect(() => {
-        api.get('/mood-history')
-            .then((res) => setRows(res.data))
-            .catch(() => setError("Couldn't load your mood history."));
+        api.get('/mood-history').then((res) => setHistory(res.data)).catch(() => {});
     }, []);
 
-    const days = useMemo(() => buildDays(rows || []), [rows]);
-    const weekTotal = days.reduce((s, d) => s + d.total, 0);
-    const maxDay = Math.max(1, ...days.map((d) => d.total));
-    const top = useMemo(() => {
-        const sums = EMOTIONS.map((e) => ({ ...e, n: days.reduce((s, d) => s + (d.counts[e.key] || 0), 0) }));
-        return sums.sort((a, b) => b.n - a.n)[0];
-    }, [days]);
-    const status = cheerUpStatus(days);
-    // vach chia truc doc: so nguyen "dep" (1, 2, 5, 10...)
-    const step = maxDay <= 4 ? 1 : maxDay <= 10 ? 2 : maxDay <= 25 ? 5 : 10;
-    const scaleMax = Math.ceil(maxDay / step) * step;
-    const ticks = [];
-    for (let v = 0; v <= scaleMax; v += step) ticks.push(v);
+    const cheer = useMemo(() => (history ? cheerUpStatus(buildDays(history)) : null), [history]);
+    const retry = <button className="table-toggle" onClick={() => setReload((n) => n + 1)}>Try again</button>;
 
-    if (error) return <div className="mood-page"><p className="mood-muted">{error}</p></div>;
-    if (!rows) return <div className="mood-page"><p className="mood-muted">Loading…</p></div>;
+    if (!stats) {
+        return (
+            <div className="mood-page stats-page">
+                {error ? <p className="stats-error">{error} {retry}</p> : <p className="mood-muted">Loading…</p>}
+                {/* /stats lỗi nhưng /mood-history được: ô Cheer-up vẫn hiện (spec §6) */}
+                {error && cheer && <section className="mood-tiles stats-tiles"><CheerTile cheer={cheer} /></section>}
+            </div>
+        );
+    }
 
     return (
-        <div className="mood-page">
-            <header className="mood-head">
-                <span className="mood-eyebrow">Mood history</span>
-                <h1>Your mood this week</h1>
-                <p>Every scan (or mood you pick) is saved here. NYX uses the last few days to decide when to cheer you up.</p>
-            </header>
-
-            <section className="mood-tiles">
-                <div className="mood-tile">
-                    <span className="tile-label">Scans in 7 days</span>
-                    <span className="tile-value">{weekTotal}</span>
+        <div className="mood-page stats-page">
+            <header className="mood-head stats-head">
+                <div>
+                    <span className="mood-eyebrow">Your stats</span>
+                    <h1>How you feel &amp; what you play</h1>
+                    <p>Everything here comes from your own scans and listens. Nobody else can see it.</p>
                 </div>
-                <div className="mood-tile">
-                    <span className="tile-label">Most common mood</span>
-                    <span className="tile-value">
-                        {weekTotal ? <MoodIcon emotion={top.key} size={40} /> : '—'}
-                    </span>
-                </div>
-                <div className={`mood-tile status ${status.on ? 'on' : ''}`}>
-                    <span className="tile-label">Cheer-up mode</span>
-                    <span className="tile-value">{status.on ? 'On' : 'Off'}</span>
-                    <span className="tile-note">
-                        {status.on
-                            ? `${status.negative} of ${status.total} scans ${status.span} were sad or angry, so when you feel down NYX plays happier songs.`
-                            : status.total < 4
-                                ? `NYX needs at least 4 scans to see a trend (${status.total} ${status.span}).`
-                                : `Only ${status.negative} of ${status.total} scans ${status.span} were sad or angry. NYX follows your mood as it is.`}
-                    </span>
-                </div>
-            </section>
-
-            <section className="mood-chart-card">
-                <div className="chart-top">
-                    <h2>Scans per day, by mood</h2>
-                    <button className="table-toggle" onClick={() => setShowTable((v) => !v)} aria-pressed={showTable}>
-                        {showTable ? 'Show chart' : 'Show table'}
-                    </button>
-                </div>
-
-                <ul className="chart-legend" aria-label="Legend">
-                    {EMOTIONS.map((e) => (
-                        <li key={e.key}><span className={`swatch ${e.key}`} aria-hidden="true" />{e.label}</li>
+                <div className="stats-range" role="group" aria-label="Time range" aria-busy={days !== stats.days}>
+                    {RANGES.map((n) => (
+                        <button
+                            key={n}
+                            className={days === n && days !== stats.days ? 'pending' : ''}
+                            aria-pressed={stats.days === n}
+                            onClick={() => setDays(n)}
+                        >{n} days</button>
                     ))}
-                </ul>
+                </div>
+            </header>
+            {error && <p className="stats-error">{error} {retry}</p>}
 
-                {weekTotal === 0 && !showTable && (
-                    <p className="mood-muted chart-empty">No scans in the last 7 days. Scan your face or pick a mood on the home page, and your week fills in here.</p>
-                )}
+            <h2 className="stats-section">You</h2>
+            <OverviewTiles overview={stats.overview} days={stats.days} daily={stats.daily} cheer={cheer} />
+            <div className="stats-pair">
+                <DailyChart daily={stats.daily} />
+                <DaypartGrid cells={stats.dayparts} />
+            </div>
+            <TopLists songs={stats.topSongs} artists={stats.topArtists} />
+            <MoodSongs data={stats.moodSongs} />
 
-                {weekTotal > 0 && !showTable && (
-                    <div className="chart" role="img" aria-label={`Stacked bar chart of ${weekTotal} scans over 7 days`}>
-                        <div className="chart-grid" aria-hidden="true">
-                            {ticks.map((t) => (
-                                <div key={t} className="grid-line" style={{ bottom: `${(t / scaleMax) * 100}%` }}>
-                                    <span>{t}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="chart-cols">
-                            {days.map((d, i) => (
-                                <div
-                                    key={i}
-                                    className={`chart-col ${hover === i ? 'hover' : ''}`}
-                                    onMouseEnter={() => setHover(i)}
-                                    onMouseLeave={() => setHover(null)}
-                                    onFocus={() => setHover(i)}
-                                    onBlur={() => setHover(null)}
-                                    tabIndex={d.total ? 0 : -1}
-                                >
-                                    <div className="stack" style={{ height: `${(d.total / scaleMax) * 100}%` }}>
-                                        {EMOTIONS.filter((e) => d.counts[e.key]).map((e) => (
-                                            <div key={e.key} className={`seg ${e.key}`} style={{ flexGrow: d.counts[e.key] }} />
-                                        ))}
-                                    </div>
-                                    {hover === i && d.total > 0 && (
-                                        <div className="chart-tip" role="tooltip">
-                                            <strong>{d.label} · {d.sub}</strong>
-                                            {EMOTIONS.filter((e) => d.counts[e.key]).map((e) => (
-                                                <span key={e.key}><i className={`swatch ${e.key}`} />{e.label}<b>{d.counts[e.key]}</b></span>
-                                            ))}
-                                            <span className="tip-total">Total<b>{d.total}</b></span>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="chart-x" aria-hidden="true">
-                            {days.map((d, i) => (
-                                <span key={i}><b>{d.label}</b>{d.sub}</span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {showTable && (
-                    <div className="mood-table-wrap">
-                        <table className="mood-table">
-                            <thead>
-                                <tr>
-                                    <th>Day</th>
-                                    {EMOTIONS.map((e) => <th key={e.key}>{e.label}</th>)}
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {days.map((d, i) => (
-                                    <tr key={i}>
-                                        <td>{d.label} · {d.sub}</td>
-                                        {EMOTIONS.map((e) => <td key={e.key}>{d.counts[e.key] || 0}</td>)}
-                                        <td><b>{d.total}</b></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </section>
+            <h2 className="stats-section">What NYX learned about you</h2>
+            <div className="stats-pair">
+                <HitRateChart hitRate={stats.hitRate} />
+                <ConfidenceRose confidence={stats.confidence} />
+            </div>
+            <PreferenceGrid rows={stats.preferences} />
         </div>
-    )
-}
+    );
+};
 
-export default MoodPage
+export default MoodPage;

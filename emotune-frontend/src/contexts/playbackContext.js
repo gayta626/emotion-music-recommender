@@ -7,11 +7,13 @@ import { createContext, useContext } from "react";
 // - lastMood { emotion, at }: cam xuc quet gan nhat (icon quet tren header, chon bai tiep khi dang luot)
 // - nowPlaying { songId, playlistId }: trang playlist to sang dong dang phat
 // - playlistsVersion / refreshPlaylists(): them/xoa bai, tao/xoa playlist xong -> noi khac tai lai
+// - control(command): tro ly giong noi dieu khien bai dang phat (pause/resume/next/volume_up/volume_down/mute/not_for_me/duck/unduck)
 export const PlaybackContext = createContext({
     playScanResult: () => {},
     playPlaylist: () => {},
     playQueue: () => {},
     playSong: () => {},
+    control: () => {},
     registerPlayer: () => () => {},
     lastMood: null,
     setLastMood: () => {},

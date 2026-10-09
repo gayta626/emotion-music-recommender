@@ -38,7 +38,7 @@ const getPlaylistInfo = async (userId, playlistId) => {
 const getPlaylistSongs = async (playlistId) => {
     const result = await db.query(
         `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.emotion,
-                s.artist_id, s.genre_id, g.name AS genre, ps.position, ps.added_at
+                s.artist_id, s.genre_id, g.name AS genre, s.album, s.duration, ps.position, ps.added_at
          FROM playlist_songs ps
          JOIN songs s ON s.id = ps.song_id
          LEFT JOIN artists a ON a.id = s.artist_id

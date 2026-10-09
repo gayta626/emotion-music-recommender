@@ -58,7 +58,10 @@ CREATE TABLE songs (
     file_path   TEXT NOT NULL UNIQUE,
     emotion     TEXT NOT NULL CHECK (emotion IN ('neutral', 'happy', 'sad', 'angry', 'surprise')),
     energy      REAL CHECK (energy BETWEEN 0 AND 1),
-    cover       TEXT    -- anh bia (covers/), do `npm run fetch-images` dien; NULL -> web tu ve bia
+    cover       TEXT,   -- anh bia (covers/), do `npm run fetch-images` dien; NULL -> web tu ve bia
+    album       TEXT,   -- ten album (iTunes), do `npm run fetch-song-info` dien; NULL -> web hien "—"
+    duration    INTEGER, -- thoi luong (giay) doc tu file mp3, do `npm run fetch-song-info` dien
+    added_at    TIMESTAMP NOT NULL DEFAULT NOW()   -- luc them vao kho nhac (cot "Date added")
 );
 
 -- ===== Du lieu ca nhan: 5 bang duoi deu co user_id -> moi cau SQL dung toi phai loc / ghi user_id =====

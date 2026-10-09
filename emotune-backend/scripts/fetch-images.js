@@ -18,34 +18,13 @@ const COVERS_DIR = path.join(__dirname, "..", "covers");
 const PHOTOS_DIR = path.join(__dirname, "..", "avatars", "photos");
 const EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
-// iTunes chi cho ~20 lan tim / phut -> moi lan tim cach nhau 3,2 giay
-const SEARCH_GAP_MS = 3200;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// "Sơn Tùng M-TP" -> "son tung m tp" (so khop khong dau, khong phan biet hoa thuong)
-const plain = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d")
-    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const { plain, baseTitle, ALT_VERSION, itunesSearch, findTrack } = require('./lib/itunes');
 const slug = (s) => plain(s).replace(/ /g, "-");
-// bo phan trong ngoac: "Nếu Như Ta Chẳng Còn (feat. A$AP Ướt Mi)" -> "Nếu Như Ta Chẳng Còn"
-const baseTitle = (s) => s.replace(/[([].*?[)\]]/g, "").trim();
-// ban phu (remix, live, speed up...) -> khong lay anh bia cua ban do
-const ALT_VERSION = /remix|live|speed|slowed|lofi|lo-fi|acoustic|version|instrumental|karaoke|beat/i;
 
 // file anh da co san tren may (bat ky duoi nao trong EXTS) -> ten file, khong co -> null
 const findLocal = (dir, name) => {
     const ext = EXTS.find((e) => fs.existsSync(path.join(dir, name + e)));
     return ext ? name + ext : null;
-};
-
-let lastSearch = 0;
-const itunesSearch = async (params) => {
-    const wait = lastSearch + SEARCH_GAP_MS - Date.now();
-    if (wait > 0) await sleep(wait);
-    lastSearch = Date.now();
-    const url = "https://itunes.apple.com/search?" + new URLSearchParams({ country: "vn", limit: "10", ...params });
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`iTunes tra loi ${res.status}`);
-    return (await res.json()).results;
 };
 
 // Deezer: khong gioi han chat nhu iTunes. Co the bi chan DNS o 1 so mang nha (api.deezer.com -> 127.0.0.1) -> loi thi bo qua.
@@ -64,15 +43,6 @@ const download = async (url, file) => {
     fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
 };
 
-// Chon ket qua dung bai: ca si phai khop, ten bai khop nguyen ven truoc, sau do khop phan ngoai ngoac
-// (bo ban remix/live). Khong ket qua nao du chac -> null (de ban tu chon anh, thay vi lay nham)
-const pickTrack = (results, title, artist) => {
-    const byArtist = results.filter((r) => plain(r.artistName).includes(plain(artist)));
-    return byArtist.find((r) => plain(r.trackName) === plain(title))
-        || byArtist.find((r) => plain(baseTitle(r.trackName)) === plain(baseTitle(title)) && !ALT_VERSION.test(r.trackName))
-        || null;
-};
-
 // Deezer: ca si khop, ten bai khop (khong lay ban remix/live) -> anh bia album 1000x1000
 const fetchSongCoverDeezer = async (song) => {
     const results = await deezerSearch("track", `artist:"${song.artist}" track:"${baseTitle(song.title)}"`);
@@ -87,8 +57,7 @@ const fetchSongCoverDeezer = async (song) => {
 };
 
 const fetchSongCover = async (song) => {
-    const results = await itunesSearch({ term: `${baseTitle(song.title)} ${song.artist}`, entity: "song" });
-    const hit = pickTrack(results, song.title, song.artist);
+    const hit = await findTrack(song.title, song.artist);
     if (!hit) {
         const dz = await fetchSongCoverDeezer(song).catch(() => null);
         return dz || { error: "khong tim thay ban goc tren iTunes lan Deezer" };

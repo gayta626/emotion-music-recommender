@@ -5,7 +5,9 @@ import SongThumb from '../components/SongThumb';
 import { useAuth } from '../contexts/authContext';
 import { usePlayback } from '../contexts/playbackContext';
 import { plain } from '../utils/text';
+import { formatAdded, formatDuration } from '../utils/format';
 import SearchIcon from '../assets/icons/search_icon.svg?react';
+import ClockIcon from '../assets/icons/clock.svg?react';
 import './PlaylistPage.scss';
 
 // Trang 1 playlist (theo Figma "Page playlist khi da co nhac"):
@@ -31,8 +33,6 @@ const recommend = (allSongs, playlistSongs, limit = 4) => {
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 }
-
-const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
 const SongCell = ({ song }) => (
     <div className="song-cell">
@@ -188,8 +188,9 @@ const PlaylistView = ({ id }) => {
                             <tr>
                                 <th className="col-num">#</th>
                                 <th>Title</th>
-                                <th className="col-genre">Genre</th>
+                                <th className="col-album">Album</th>
                                 <th className="col-date">Date added</th>
+                                <th className="col-time"><ClockIcon aria-label="Duration" /></th>
                                 <th className="col-act"><span className="sr-only">Remove</span></th>
                             </tr>
                         </thead>
@@ -203,8 +204,9 @@ const PlaylistView = ({ id }) => {
                                             <button className="row-play" onClick={() => playPlaylist(playlist.id, i)} aria-label={`Play ${s.title}`}>▶</button>
                                         </td>
                                         <td><SongCell song={s} /></td>
-                                        <td className="col-genre">{s.genre}</td>
-                                        <td className="col-date">{formatDate(s.added_at)}</td>
+                                        <td className="col-album" title={s.album || ''}>{s.album || '—'}</td>
+                                        <td className="col-date">{formatAdded(s.added_at)}</td>
+                                        <td className="col-time">{formatDuration(s.duration)}</td>
                                         <td className="col-act">
                                             <button className="row-remove" onClick={() => removeSong(s.id)} aria-label={`Remove ${s.title}`} title="Remove from playlist">✕</button>
                                         </td>

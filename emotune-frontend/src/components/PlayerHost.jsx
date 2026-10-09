@@ -25,6 +25,10 @@ const PlayerHost = () => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
     const isIdle = useIdle(IDLE_MS);
+    // MusicPlayer dang phat dat ham nhan lenh dieu khien vao day (tro ly giong noi: dung, bai tiep, to/nho...)
+    const controlRef = useRef(null);
+    // dang duck (tro ly dang noi) -> giu o day de bai moi (MusicPlayer tao lai moi bai) van duck
+    const duckRef = useRef(false);
 
     const play = (result) => {
         setSuggestResult(result);
@@ -56,6 +60,10 @@ const PlayerHost = () => {
             api.get(`/playlists/${cmd.playlistId}`)
                 .then((res) => startQueue({ name: res.data.name, songs: res.data.songs, playlistId: res.data.id }, cmd.start))
                 .catch((err) => console.error("Loi tai playlist:", err));
+        } else if (cmd.kind === "control") {
+            if (cmd.command === "duck") duckRef.current = true;
+            else if (cmd.command === "unduck") duckRef.current = false;
+            controlRef.current?.(cmd.command);
         }
     }
 
@@ -131,6 +139,8 @@ const PlayerHost = () => {
                 onJump={jumpTo}
                 onRequest={playRequested}
                 showLyrics={onLyrics}
+                controlRef={controlRef}
+                duckRef={duckRef}
             />
         </div>
     )

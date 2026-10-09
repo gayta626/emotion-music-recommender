@@ -7,10 +7,12 @@ import NotificationIcon from '../assets/icons/notification_icon.svg?react'
 import UserIcon from '../assets/icons/user_icon.svg?react'
 import { useAuth } from '../contexts/authContext'
 import { useNavigate } from 'react-router-dom'
+import { useAIAssistant } from '../contexts/aiAssistantStore'
 
 const Header = () => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
+    const { openAssistant } = useAIAssistant()
     return (
         <>
             <div className="header-container">
@@ -33,8 +35,8 @@ const Header = () => {
 
                 </div>
 
-                {/* bieu tuong AI: tro ly giong noi (phan 2, chua lam) */}
-                <button className="ai-btn" title="Voice assistant (coming soon)" aria-label="Voice assistant (coming soon)">
+                {/* bieu tuong AI: mo tro ly giong noi (H6) */}
+                <button className="ai-btn" onClick={openAssistant} title="Voice assistant" aria-label="Voice assistant">
                     <AIIcon className="ai-icon" />
                 </button>
 

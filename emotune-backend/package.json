@@ -11,6 +11,8 @@
     "db:migrate": "node scripts/db-migrate.js",
     "fetch-images": "node scripts/fetch-images.js",
     "fetch-lyrics": "node scripts/fetch-lyrics.js",
+    "fetch-song-info": "node scripts/fetch-song-info.js",
+    "seed-demo": "node scripts/seed-demo.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [
@@ -20,6 +22,7 @@
   "author": "Nguyen Duc Vinh",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
     "axios": "1.7.9",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

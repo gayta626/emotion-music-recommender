@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage'
 import SurveyPage from './pages/SurveyPage'
 import HomeRoute from './pages/HomeRoute'
 import ArtistPage from './pages/ArtistPage'
+import MixPage from './pages/MixPage'
 import ScanPage from './pages/ScanPage'
 import './App.css'
 
@@ -32,6 +33,8 @@ const App = () => {
                 <Route path='/lyrics' element={null} />
                 <Route path='/artist/:id' element={<ArtistPage />} />
                 <Route path='/playlist/:id' element={<PlaylistPage />} />
+                {/* mix theo vibe / radio ca si (/mix/happy?genre=2, /mix/radio?artist=4) */}
+                <Route path='/mix/:key' element={<MixPage />} />
                 <Route path='/stats' element={<MoodPage />} />
                 <Route path='/mood' element={<Navigate to='/stats' replace />} />
                 <Route path='/settings' element={<Setting />} />

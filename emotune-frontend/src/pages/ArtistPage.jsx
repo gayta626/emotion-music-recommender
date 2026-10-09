@@ -6,7 +6,7 @@ import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
 import MoodIcon from '../components/MoodIcon';
 import Shelf from '../components/Shelf';
 import { usePlayback } from '../contexts/playbackContext';
-import { MIXES } from '../utils/mixes';
+import { buildMix, mixPath } from '../utils/mixes';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import { timeAgo } from '../utils/moodSession';
 import { coverUrl } from '../utils/images';
@@ -88,14 +88,10 @@ const ArtistView = ({ artistId }) => {
             .filter((a) => a.id !== artist.id)
             .map((a) => ({ ...a, shared: songs.some((s) => s.artist_id === a.id && myGenreIds.has(s.genre_id)) }))
             .sort((a, b) => b.shared - a.shared || !!b.avatar - !!a.avatar);
-        // radio: bài của ca sĩ + bài cùng thể loại của người khác
-        const radioSongs = [...mine, ...songs.filter((s) => s.artist_id !== artist.id && myGenreIds.has(s.genre_id))];
-        const mixes = EMOTIONS
-            .map((e) => ({ key: e.key, ...MIXES[e.key], songs: mine.filter((s) => s.emotion === e.key) }))
-            .filter((m) => m.songs.length);
-        if (radioSongs.length > mine.length) {
-            mixes.unshift({ key: 'radio', label: 'RADIO', title: `${artist.name} Radio`, desc: 'Songs you might like next', songs: radioSongs });
-        }
+        // radio (bài của ca sĩ + bài cùng thể loại của người khác) rồi mix theo từng vibe của ca sĩ
+        const mixes = ['radio', ...EMOTIONS.map((e) => e.key)]
+            .map((key) => buildMix(songs, { key, artist }))
+            .filter(Boolean);
         const vibes = EMOTIONS.filter((e) => mine.some((s) => s.emotion === e.key));
         return { artist, mine, ranked, pick, genres, others, mixes, vibes, shares: moodShares(stats.moods), stats };
     }, [data, lastMood]);
@@ -220,7 +216,7 @@ const ArtistView = ({ artistId }) => {
 
             {mixes.length > 0 && (
                 <Shelf title={`Mixes with ${artist.name}`}>
-                    {mixes.map((m) => <MixCard key={m.key} mix={m} onPlay={(mix) => playQueue({ name: mix.title, songs: mix.songs })} />)}
+                    {mixes.map((m) => <MixCard key={m.key} mix={m} onOpen={(mix) => navigate(mixPath(mix))} />)}
                 </Shelf>
             )}
 

@@ -1,0 +1,994 @@
+// Trang thống kê mới — nằm trong .mood-page (dùng lại style biểu đồ của MoodPage.scss)
+// Giao diện "neon" theo ảnh mẫu người dùng gửi: thẻ xanh tím than, màu sáng + phát sáng nhẹ.
+// Mọi bảng màu dưới đây đã chạy validate_palette (dataviz) trên nền thẻ #24253e.
+.mood-page.stats-page {
+  // 5 cảm xúc (thứ tự happy, surprise, neutral, sad, angry): qua đủ kiểm tra độ sáng / độ đậm / mù màu / tương phản
+  --mood-happy: #d4741f;
+  --mood-surprise: #a35cf0;
+  --mood-neutral: #1fa99c;
+  --mood-sad: #4d74f0;
+  --mood-angry: #e8456e;
+  // kết quả nghe: xanh = nghe hết … hồng đỏ = Not for me; xám = mức giữa (cố ý ít màu, luôn có chữ chú thích)
+  --out-good: #3f7ff5;
+  --out-neutral: #73758f;
+  --out-bad: #c4861a;
+  --out-declined: #e0407a;
+
+  --card: linear-gradient(160deg, #2a2b48 0%, #1f2036 100%);
+  --card-solid: #24253e;
+  --grid: rgba(255, 255, 255, 0.07);
+  --tip-bg: #30315a;
+  --neon: linear-gradient(90deg, #f08a3c 0%, #e8456e 55%, #a35cf0 100%);
+
+  // mỗi phần tử mang class cảm xúc / kết quả có biến --c = màu của nó (dùng cho gradient, viền sáng, donut)
+  .happy { --c: var(--mood-happy); }
+  .surprise { --c: var(--mood-surprise); }
+  .neutral { --c: var(--mood-neutral); }
+  .sad { --c: var(--mood-sad); }
+  .angry { --c: var(--mood-angry); }
+  .out-good { --c: var(--out-good); }
+  .out-neutral { --c: var(--out-neutral); }
+  .out-bad { --c: var(--out-bad); }
+  .out-declined { --c: var(--out-declined); }
+
+  max-width: 1200px;
+  container: stats / inline-size;   // bố cục theo bề rộng vùng nội dung (đã trừ sidebar), không theo cửa sổ
+
+  .stats-head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  // nút 7 / 30 ngày
+  .stats-range {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+
+    button {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 999px;
+      background: none;
+      color: var(--search-text);
+      font: 600 13px 'DM Sans', sans-serif;
+      cursor: pointer;
+
+      &[aria-pressed='true'] {
+        background: var(--neon);
+        color: #fff;
+        box-shadow: 0 0 14px rgba(232, 69, 110, 0.45);
+      }
+
+      // đã bấm nhưng số liệu mới chưa về
+      &.pending {
+        opacity: 0.6;
+        outline: 1px dashed var(--accent);
+        outline-offset: -3px;
+      }
+    }
+  }
+
+  .stats-section {
+    margin-top: 8px;
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .stats-card .chart-top h3 {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .stats-card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px 18px;
+    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  .stats-note {
+    margin-top: -6px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  // 2 thẻ cạnh nhau (thẻ trái rộng hơn)
+  .stats-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 16px;
+  }
+
+  .stats-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2fr);
+  }
+
+  // 30 cột: khe hẹp, cột mảnh
+  .chart.dense {
+    .chart-cols,
+    .chart-x {
+      gap: 3px;
+    }
+
+    .stack {
+      width: 80%;
+    }
+
+    // nhãn thưa: không để chữ nới cột, căn giữa dưới cột của nó
+    .chart-x span {
+      min-width: 0;
+      justify-self: center;
+      white-space: nowrap;
+      overflow: visible;
+    }
+  }
+
+  .stats-error {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+  }
+}
+
+// theo bề rộng vùng nội dung (container "stats"), không theo cửa sổ: bên trái còn sidebar 240px.
+// Selector viết đủ `.mood-page.stats-page ...` để không thua độ ưu tiên của luật gốc phía trên.
+@container stats (max-width: 1000px) {
+  .mood-page.stats-page .stats-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mood-page.stats-page .stats-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    .status {
+      grid-column: span 2;   // 5 ô = 3 + 2, không để ô trống
+    }
+  }
+}
+
+@container stats (max-width: 640px) {
+  .mood-page.stats-page .stats-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .status {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .mood-page.stats-page .stats-card {
+    padding: 16px 14px;
+  }
+
+  .mood-page.stats-page .chart.dense .chart-x span {
+    font-size: 9px;
+  }
+}
+
+// ---- Task 6: theo buổi, top, nghe gì khi… ----
+.mood-page.stats-page {
+  .stats-pair.even {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  // lưới thứ × buổi (cuộn ngang chỉ khi container hẹp, xem cuối file; không đặt overflow ở đây vì sẽ cắt tooltip)
+
+  .daypart-grid {
+    min-width: 320px;
+    display: grid;
+    grid-template-columns: 40px repeat(4, minmax(56px, 1fr));
+    gap: 4px;
+
+    .dp-row {
+      display: contents;
+    }
+
+    .dp-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 12px;
+      color: var(--search-text);
+
+      small {
+        font-size: 10px;
+        color: var(--muted);
+      }
+    }
+
+    .dp-day {
+      align-self: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  // ô = vùng rê chuột; bên trong là 1 chấm tròn (to theo số lần quét, màu theo cảm xúc chính)
+  .dp-cell {
+    position: relative;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    outline: none;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .dp-dot {
+      width: var(--size, 5px);
+      height: var(--size, 5px);
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);   // ô trống: chấm nhỏ mờ, giữ nhịp lưới như ảnh mẫu
+      transition: transform 0.15s;
+    }
+
+    &:not(.empty) .dp-dot {
+      background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--c) 55%, white), var(--c) 70%);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--c) 60%, transparent);
+    }
+
+    &:hover .dp-dot,
+    &:focus-visible .dp-dot {
+      transform: scale(1.12);
+    }
+
+    .dp-n {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .chart-tip {
+      bottom: calc(100% + 6px);
+      transform: translateX(-50%);
+
+      // hàng đầu (Mon–Wed) hiện tooltip phía dưới; cột Morning/Night căn mép để không tràn thẻ
+      &.tip-below {
+        top: calc(100% + 6px);
+        bottom: auto;
+      }
+
+      &.tip-left {
+        left: 0;
+        transform: none;
+      }
+
+      &.tip-right {
+        left: auto;
+        right: 0;
+        transform: none;
+      }
+    }
+  }
+
+  // top bài / ca sĩ
+  .top-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 22px 44px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 8px;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      color: #fff;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+    }
+
+    .rank {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .top-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      object-fit: cover;
+      font-size: 14px;
+
+      &.round {
+        border-radius: 50%;
+      }
+    }
+
+    .top-text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      b,
+      small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      b {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      small {
+        font-size: 12px;
+        color: var(--muted);
+      }
+    }
+
+    .top-count {
+      font-size: 12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // nghe gì khi…
+  .mood-songs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .mood-col {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.09);
+      }
+    }
+
+    .ms-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ms-times {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .ms-empty {
+      font-size: 13px;
+    }
+  }
+
+  .mood-col-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+// như trên: theo bề rộng container "stats", selector viết đủ để không thua luật gốc
+@container stats (max-width: 1000px) {
+  .mood-page.stats-page .stats-pair.even {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mood-page.stats-page .mood-songs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container stats (max-width: 640px) {
+  .mood-page.stats-page .daypart-wrap {
+    overflow-x: auto;
+  }
+
+  .mood-page.stats-page .mood-songs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// ---- Task 7: gợi ý trúng, độ tự tin, điểm sở thích ----
+.mood-page.stats-page {
+  // màu .out-* lấy qua biến --c (đầu file), gradient + viền sáng ở khối "Giao diện neon"
+
+  .hit-hero {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .hit-value {
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: 44px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hit-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 14px;
+    color: var(--search-text);
+
+    small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  .hit-cols {
+    height: 150px;
+    display: grid;
+    gap: 3px;
+  }
+
+  // không đặt overflow ở .hit-col / .hit-chart / .hit-cols: sẽ cắt tooltip (tooltip là anh em của .hit-stack, không nằm trong nó)
+  .hit-col {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    border-radius: 4px;
+    outline: none;
+
+    &.hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .chart-tip {
+      top: 0;
+      bottom: auto;
+      transform: translate(-50%, -100%);
+
+      // 3 cột đầu / cuối căn mép để không tràn khỏi thẻ (viết đủ 2 class để thắng luật trên)
+      &.tip-left {
+        left: 0;
+        transform: translate(0, -100%);
+      }
+
+      &.tip-right {
+        left: auto;
+        right: 0;
+        transform: translate(0, -100%);
+      }
+    }
+  }
+
+  .hit-stack {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .hit-none {
+    align-self: flex-end;
+    width: 100%;
+    height: 2px;
+    background: var(--grid);
+  }
+
+  // bảng điểm sở thích: cuộn ngang trong thẻ khi hẹp
+  .pref-wrap {
+    overflow-x: auto;
+  }
+
+  .pref-table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: separate;
+    border-spacing: 4px;
+    table-layout: fixed;
+
+    th {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .pref-song {
+      width: 34%;
+      text-align: left;
+
+      button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px;
+        border: none;
+        border-radius: 6px;
+        background: none;
+        color: #fff;
+        font-family: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .pref-text {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        b,
+        small {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        b {
+          font-size: 13px;
+        }
+
+        small {
+          font-size: 11px;
+          color: var(--muted);
+        }
+      }
+    }
+  }
+
+  .pref-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .pref-thumb {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    font-size: 12px;
+  }
+
+  .pref-cell {
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid var(--grid);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ---- Giao diện neon (ảnh mẫu): cột mảnh phát sáng, donut, sparkline, hoa hồng ----
+.mood-page.stats-page {
+  .mood-tile {
+    border-radius: 16px;
+    border-color: rgba(255, 255, 255, 0.06);
+
+    &.status.on {
+      border-color: #e8456e;
+      box-shadow: 0 0 18px rgba(232, 69, 110, 0.25);
+
+      .tile-value {
+        background: var(--neon);
+        background-clip: text;
+        color: transparent;
+      }
+    }
+  }
+
+  .chart-tip {
+    background: var(--tip-bg);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  // chú giải: chấm tròn thay ô vuông
+  .swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent);
+  }
+
+  // màu 1 đoạn: gradient tối -> sáng của chính màu đó + viền sáng (1 cảm xúc = 1 màu, không trộn màu khác)
+  .seg {
+    background: linear-gradient(to top, color-mix(in oklab, var(--c) 75%, black), var(--c) 55%, color-mix(in oklab, var(--c) 70%, white));
+    box-shadow: 0 0 10px color-mix(in srgb, var(--c) 55%, transparent);
+  }
+
+  // ---- Scans per day: cột mảnh bo tròn trên một "rãnh" mờ ----
+  .chart-col::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 14px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
+
+  .chart-col.hover,
+  .chart-col:focus-visible {
+    background: none;
+
+    .stack {
+      filter: brightness(1.15);
+    }
+  }
+
+  // không cắt overflow (để giữ viền sáng): bo tròn đoạn trên cùng / dưới cùng thay vì bo cả cột
+  .stack {
+    position: relative;
+    width: 14px;
+    overflow: visible;
+    border-radius: 0;
+
+    .seg:first-child { border-radius: 0 0 4px 4px; }   // column-reverse: phần tử đầu nằm dưới cùng (chạm trục)
+    .seg:last-child { border-radius: 999px 999px 0 0; }
+    .seg:only-child { border-radius: 999px 999px 4px 4px; }
+  }
+
+  .chart.dense .stack {
+    width: min(8px, 80%);
+  }
+
+  .chart.dense .chart-col::before {
+    width: min(8px, 80%);
+  }
+
+  // 3 cột đầu / cuối: chú thích căn theo mép cột để không tràn khỏi thẻ
+  .chart-col .chart-tip {
+    &.tip-left {
+      left: 0;
+      transform: translate(0, -100%);
+    }
+
+    &.tip-right {
+      left: auto;
+      right: 0;
+      transform: translate(0, -100%);
+    }
+  }
+
+  // ---- donut dùng chung ----
+  .donut {
+    position: relative;
+    flex-shrink: 0;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+  }
+
+  .donut-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+  }
+
+  .donut-arc {
+    fill: none;
+    stroke: var(--c);
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--c) 70%, transparent));
+  }
+
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  // ô "Most common mood": donut tỉ lệ cảm xúc, icon cảm xúc chính ở giữa
+  .mood-mix .donut {
+    margin-top: 2px;
+  }
+
+  // sparkline ô "Scans"
+  .spark {
+    width: 100%;
+    height: 30px;
+    margin-top: auto;
+    overflow: visible;
+    filter: drop-shadow(0 0 4px rgba(232, 69, 110, 0.45));
+  }
+
+  // ---- How often NYX got it right: donut lớn + cột mảnh ----
+  .hit-hero {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .hit-value {
+    font-size: 30px;
+    background: var(--neon);
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hit-side {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hit-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    gap: 6px 18px;
+
+    b {
+      margin-left: 6px;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .hit-col {
+    justify-content: center;
+
+    &.hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  .hit-stack {
+    width: min(12px, 70%);
+    overflow: visible;
+    border-radius: 0;
+
+    .seg:first-child { border-radius: 999px 999px 0 0; }   // column: phần tử đầu nằm trên cùng
+    .seg:last-child { border-radius: 0 0 999px 999px; }
+    .seg:only-child { border-radius: 999px; }
+  }
+
+  .hit-none {
+    width: min(12px, 70%);
+    align-self: flex-end;
+    margin: 0 auto;
+    border-radius: 999px;
+  }
+
+  // ---- How sure the face AI was: hoa hồng + danh sách ----
+  .rose-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 230px) minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+  }
+
+  .rose {
+    position: relative;
+    width: 100%;
+    max-width: 230px;
+    aspect-ratio: 1;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+  }
+
+  .rose-ring {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-dasharray: 2 4;
+  }
+
+  .rose-track {
+    fill: rgba(255, 255, 255, 0.05);
+  }
+
+  .rose-petal {
+    transition: opacity 0.15s;
+
+    .rose-fill {
+      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 65%, transparent));
+    }
+
+    &.active .rose-fill {
+      filter: drop-shadow(0 0 10px var(--c)) brightness(1.15);
+    }
+  }
+
+  // đang rê 1 cảm xúc: các cánh / dòng khác mờ đi
+  .rose-wrap.has-active {
+    .rose-petal:not(.active),
+    .rose-list li:not(.active) {
+      opacity: 0.35;
+    }
+  }
+
+  .rose-label {
+    fill: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rose-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    b {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    small {
+      font-size: 10px;
+      color: var(--muted);
+    }
+  }
+
+  .rose-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    li {
+      display: grid;
+      grid-template-columns: 9px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      outline: none;
+      transition: opacity 0.15s;
+
+      &.active,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      &.none {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .rose-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 6px var(--c);
+  }
+
+  .rose-name {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .rose-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rose-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+
+    small {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+  }
+
+  // ---- điểm sở thích: viên bo tròn ----
+  .pref-cell {
+    border-radius: 999px;
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+@container stats (max-width: 640px) {
+  .mood-page.stats-page .rose-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+
+    .rose-list {
+      width: 100%;
+    }
+  }
+
+  .mood-page.stats-page .hit-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

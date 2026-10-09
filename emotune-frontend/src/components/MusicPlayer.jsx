@@ -2,7 +2,7 @@
 import { API_URL } from '../config'
 import { songImageUrl } from '../utils/images'
 import api from '../api'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useHardwareButtons } from '../hardware'
 import ShuffleIcon from '../assets/icons/bar_shuffle.svg?react'
@@ -34,7 +34,7 @@ const formatTime = (seconds) => {
 const MusicPlayer = (props) => {
     // playlist: { name, songs, index } khi dang phat playlist, null o che do cam xuc
     // showLyrics: dang o /lyrics -> phu man loi bai hat len tren (thanh phat van o duoi)
-    const { data, onFinish, playlist, onJump, onRequest, showLyrics } = props;
+    const { data, onFinish, playlist, onJump, onRequest, showLyrics, controlRef, duckRef } = props;
     const audioRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
@@ -159,6 +159,40 @@ const MusicPlayer = (props) => {
         audioRef.current.muted = next;
         setMuted(next);
     }
+
+    // tro ly dang nghe / dang noi -> nhac nho con 20% ("duck"), xong tra lai ("unduck").
+    // Co duck do PlayerHost giu (duckRef), khong giu o day: doi bai thi MusicPlayer duoc tao lai
+    const changeVolume = (value) => {
+        const audio = audioRef.current;
+        audio.volume = duckRef?.current ? value * 0.2 : value;
+        audio.muted = false;
+        setVolume(value);
+        setMuted(false);
+    }
+
+    // lenh tu tro ly giong noi (PlayerHost chuyen toi qua controlRef)
+    const runControl = (command) => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (command === "pause") audio.pause();
+        else if (command === "resume") { if (!loadError) audio.play().catch(() => {}); }
+        else if (command === "next") finishAndSend();
+        // playlist khong cham diem -> chi bo qua bai, khong gui feed-back
+        else if (command === "not_for_me") { if (playlist) finishAndSend(); else dislike(); }
+        else if (command === "volume_up") changeVolume(Math.min(1, volume + 0.2));
+        else if (command === "volume_down") changeVolume(Math.max(0.1, volume - 0.2));
+        else if (command === "mute") { audio.muted = true; setMuted(true); }
+        else if (command === "duck") audio.volume = volume * 0.2;
+        else if (command === "unduck") audio.volume = volume;
+    }
+    // luon de ban moi nhat (dung state volume moi)
+    useEffect(() => {
+        if (controlRef) controlRef.current = runControl;
+    });
+    // bai moi duoc tao khi dang duck (tro ly dang noi) -> ha am luong ngay tu dau
+    useEffect(() => {
+        if (duckRef?.current && audioRef.current) audioRef.current.volume = 0.2;
+    }, [duckRef]);
 
     // true khi nhac dang dung vi nguoi dung di khoi -> quay lai moi tu phat tiep
     // (tu bam dung thi khong tu phat lai)

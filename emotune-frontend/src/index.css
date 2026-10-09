@@ -6,6 +6,8 @@
   --muted: #a79fc9;
   --search-text: #dad1ff;
   --on-premium: #27003c;
+  --assistant-bg: #261925;
+  --assistant-bg-rgb: 38 25 37;   /* cùng màu #261925, dạng số để pha độ trong (nền trợ lý nhạt dần ra mép) */
   --radius: 20px;
   --header-h: 117px;
 }

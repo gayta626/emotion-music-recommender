@@ -7,12 +7,21 @@ const normalizeUsername = (raw) => {
     return raw.trim().toLowerCase();
 }
 
+// 5 username cua tai khoan MAU (lay tu PROFILES cua npm run seed-demo): seed-demo xoa + tao lai dung cac ten nay,
+// nen khong cho nguoi that dang ky, neu khong tai khoan + lich su cua ho se bi xoa im lang o lan seed sau.
+// demoHistory.js la ham thuan (khong require gi, khong dong DB) nen import duoc an toan.
+const { PROFILES } = require("../../scripts/lib/demoHistory");
+const RESERVED_USERNAMES = PROFILES.map((p) => p.username);
+
 const validateCredentials = (rawUsername, password) => {
     const nameRegex = /^[a-z0-9_]{3,30}$/;
     const username = normalizeUsername(rawUsername);
 
     if (!nameRegex.test(username)) {
         return { ok: false, message: "Username must be 3–30 characters: letters, digits or underscore (_)" };
+    }
+    if (RESERVED_USERNAMES.includes(username)) {
+        return { ok: false, message: "This username is reserved for sample accounts. Please pick another one" };
     }
     // kiem tra kieu truoc: password undefined thi dung luon, khong cham toi .length
     if (typeof password !== "string" || password.length < 6) {

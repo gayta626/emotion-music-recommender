@@ -29,6 +29,15 @@ test("username qua ngan (2 ky tu) bi tu choi", () => {
     assert.strictEqual(result.ok, false);
 });
 
+// ===== Username cua tai khoan MAU (seed-demo) bi cam dang ky =====
+test("5 username tai khoan mau bi tu choi (ke ca viet hoa)", () => {
+    for (const name of ["demo30", "mau_ballad", "mau_rap", "mau_pop", "MAU_Chill"]) {
+        assert.strictEqual(validateCredentials(name, "123456").ok, false, name);
+    }
+    // ten gan giong nhung khong nam trong danh sach van hop le
+    assert.strictEqual(validateCredentials("demo31", "123456").ok, true);
+});
+
 // ===== Ban tu viet tiep 6 truong hop con lai theo 2 mau tren =====
 // - username qua dai: "a".repeat(31)
 // - username co dau cach: "vinh nguyen"

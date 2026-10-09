@@ -52,19 +52,23 @@ export const ArtistCard = ({ artist, onOpen }) => (
     </button>
 )
 
-// the mix theo vibe: bam = phat ca mix
-export const MixCard = ({ mix, onPlay }) => (
-    <button className="card mix" onClick={() => onPlay(mix)} title={`Play ${mix.title}`}>
-        <span className={`card-art mix-art vibe-${mix.key}`}>
-            <span className="mix-label">{mix.label || 'MIX'}</span>
-            <span className="mix-faces">
-                {[...new Map(mix.songs.filter((s) => s.artist).map((s) => [s.artist, s])).values()].slice(0, 3).map((s) => (
-                    <ArtistAvatar key={s.artist} className="mix-face" name={s.artist} avatar={s.artist_avatar} />
-                ))}
-            </span>
-            <span className="mix-title">{mix.title}</span>
-            <PlayBadge />
+// anh bia cua mix: nhan MIX/RADIO, toi da 3 anh ca si, ten mix (co chu theo cqw → dat trong khung co container-type)
+export const MixArt = ({ mix, className = '' }) => (
+    <span className={`mix-art vibe-${mix.key} ${className}`}>
+        <span className="mix-label">{mix.label || 'MIX'}</span>
+        <span className="mix-faces">
+            {[...new Map(mix.songs.filter((s) => s.artist).map((s) => [s.artist, s])).values()].slice(0, 3).map((s) => (
+                <ArtistAvatar key={s.artist} className="mix-face" name={s.artist} avatar={s.artist_avatar} />
+            ))}
         </span>
+        <span className="mix-title">{mix.title}</span>
+    </span>
+)
+
+// the mix theo vibe: bam = mo trang danh sach bai cua mix (/mix/:key), phat bang nut Play trong trang
+export const MixCard = ({ mix, onOpen }) => (
+    <button className="card mix" onClick={() => onOpen(mix)} title={`Open ${mix.title}`}>
+        <MixArt mix={mix} className="card-art" />
         <span className="card-sub two-lines">{withArtists(mix.songs)} · {mix.desc}</span>
     </button>
 )

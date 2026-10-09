@@ -22,14 +22,15 @@ const PlaybackProvider = ({ children }) => {
     const playPlaylist = useCallback((playlistId, start = 0) => send({ kind: "playlist", playlistId, start }), [send]);
     const playQueue = useCallback((queue, start = 0) => send({ kind: "queue", queue, start }), [send]);
     const playSong = useCallback((song) => send({ kind: "song", song }), [send]);
+    const control = useCallback((command) => send({ kind: "control", command }), [send]);
 
     const setLastMood = useCallback((emotion) => setLastMoodState(saveLastMood(emotion)), []);
     const refreshPlaylists = useCallback(() => setPlaylistsVersion((v) => v + 1), []);
 
     const value = useMemo(() => ({
-        playScanResult, playPlaylist, playQueue, playSong, registerPlayer,
+        playScanResult, playPlaylist, playQueue, playSong, control, registerPlayer,
         lastMood, setLastMood, nowPlaying, setNowPlaying, playlistsVersion, refreshPlaylists,
-    }), [playScanResult, playPlaylist, playQueue, playSong, registerPlayer,
+    }), [playScanResult, playPlaylist, playQueue, playSong, control, registerPlayer,
         lastMood, setLastMood, nowPlaying, playlistsVersion, refreshPlaylists]);
 
     return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;

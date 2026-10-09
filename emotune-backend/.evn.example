@@ -7,3 +7,5 @@ DB_NAME =
 # chuoi ngau nhien: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 JWT_SECRET = 
 JWT_EXPIRES_IN = 7d
+# Tro ly giong noi (H6): key Claude API cho phan du phong (bo trong = chi dung bo luat)
+ANTHROPIC_API_KEY = 

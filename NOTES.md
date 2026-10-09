@@ -1,10 +1,111 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **09/10/2026 chiều** (trên LAPTOP) — xem **"🧭 PHIÊN 09/10/2026 (chiều)"** ngay bên dưới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: phần mềm gần xong — trang chủ kiểu Spotify (H7), ảnh thật (H9), icon cảm xúc động (H10), trang ca sĩ (H8), thanh phát queue-screen (H11), **màn lời bài hát `/lyrics` nền theo màu ảnh bìa (H12)**. Laptop đã có đủ 10 mp3. Còn: trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Việc 09/10 đã commit + push.
+> Phiên gần nhất: **09/10/2026 tối** (trên LAPTOP) — xem **"🧭 PHIÊN 09/10/2026 (tối, laptop) — H6 trợ lý giọng nói, H13 Mix, trang thống kê `/stats` + giao diện neon"** ngay bên dưới (liền sau là phiên chiều: H12 màn lời bài hát). Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: phần mềm gần xong — H7 trang chủ, H8 trang ca sĩ, H9 ảnh thật, H10 icon cảm xúc, H11 thanh phát, H12 lời bài hát, **H6 trợ lý giọng nói ✅ (tối 09/10, đã chỉnh theo góp ý: lời dẫn + nghỉ, icon thanh phát to, sóng âm theo giọng, nền trong suốt)**. **H13 trang Mix/Radio ✅ (tối 09/10, Figma frame 25 `79:75`).** **C12 trang thống kê `/stats` mới ✅ + `npm run seed-demo` + giao diện neon (biểu đồ hoa hồng).** Còn: giai đoạn B (Pi), C13. Toàn bộ việc tối 09/10 **đã commit + push cuối phiên** (xem `git log`).
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# 🧭 PHIÊN 09/10/2026 (tối, laptop) — H6 trợ lý giọng nói, H13 Mix, trang thống kê `/stats` + giao diện neon
+
+## 1. Mục tiêu
+1. `git pull` code mới (2 commit `7ee0951`, `9e57d5e`), đọc NOTES/TIEN_DO, tóm tắt tình trạng. Người dùng chốt: **làm phần mềm trước, Pi để sau**.
+2. **H6 trợ lý giọng nói**: bấm logo AI (Figma `284:120`) → overlay → nói hoặc gõ để: điều khiển nhạc, phát bài/ca sĩ/playlist, **nói cảm xúc → gợi ý bài** (kênh cảm xúc thứ 2, mục C11), **chuyển tới mọi trang** (trùng tên → hỏi lại). Quy trình: brainstorm → spec → plan → **subagent-driven** (mỗi task 1 agent làm + 1 agent review) → review cả nhánh.
+3. Chỉnh theo góp ý người dùng sau khi thử: lời dẫn + quãng nghỉ, tắt màn hình AI rồi mới phát; icon thanh phát to hơn; sóng âm nhạy theo giọng; nền tím nhạt dần thấy trang phía sau.
+4. **H13 trang Mix/Radio** theo Figma "frame 25" (`79:75`) — xong, xem cuối mục 2.
+5. Bảng bài kiểu Spotify (cột Album · Date added · ⏱) cho trang Mix + Playlist.
+6. **C12 trang thống kê `/stats` mới + `npm run seed-demo`** (thể hiện "hệ thống học được gì" cho môn Hệ thống thông minh): brainstorm → spec → plan 8 task → SDD (mỗi task 1 agent làm + 1 agent review) → review cả nhánh bằng model mạnh nhất → 1 đợt sửa (1 lỗi quan trọng + 5 lỗi nhỏ).
+7. Người dùng gửi ảnh mẫu dashboard ("Infographic Chart") → đổi `/stats` sang **giao diện neon** và đổi 1 biểu đồ thành **biểu đồ tròn** (chọn "How sure the face AI was" → hoa hồng).
+8. Cuối phiên: tóm tắt vào NOTES/TIEN_DO, **commit + push** (người dùng yêu cầu).
+
+## 2. Việc đã làm xong (đã commit + push cuối phiên)
+| Việc | File |
+|---|---|
+| Spec + plan H6 | `docs/superpowers/specs/2026-10-09-voice-assistant-design.md`, `docs/superpowers/plans/2026-10-09-voice-assistant.md` |
+| **Backend `POST /assistant`** (cần đăng nhập): body `{text, pending?, pick?}` → `{action, reply, source}`; `action.type` = `navigate` / `play` / `mood` / `control` / `choose` / `unknown`; `source` = `rules` / `llm` / `none`. `pending` (từ client) luôn qua `sanitizePending` | `emotune-backend/src/controllers/assistantController.js`, `src/services/assistantService.js` (danh mục: `songModel.getAllSongs`, `artistModel.getArtistsData`, `playlistModel.getPlaylists(userId)`), `src/routes/web.js` |
+| **Bộ luật** `parseCommand` (hàm thuần). Thứ tự xét: trả lời lượt hỏi lại → tên đọc nguyên văn + động từ → điều khiển nhạc → trang cố định → tên bài/ca sĩ/playlist (khớp theo **đoạn chữ liền nhau**, không dấu; chữ dính liền "hiếu thứ hai" = HIEUTHUHAI) → cảm xúc (từ điển + phủ định "không vui" → sad) → chưa hiểu. Trùng tên (điểm cách nhau ≤ 0.15) → `choose` tối đa 4 nút; playlist rỗng / ca sĩ chưa có bài → mở trang thay vì phát. Câu phát: "Mình sẽ phát bài “X” của Y nhé." | `emotune-backend/src/services/assistantRules.js`, `test/assistantRules.test.js` (tổng `npm test` **43/43**) |
+| **LLM dự phòng** Claude Haiku 5.5 `claude-haiku-5-5` (`effort: low`, JSON schema): chỉ khi luật không hiểu **và** có `ANTHROPIC_API_KEY`; timeout 6s, thử lại 1 lần; kết quả kiểm lại bằng `validateLlmAction` (loại hành động, đường dẫn trang, id có thật; câu trả lời ≤ 200 ký tự) | `emotune-backend/src/services/assistantLlm.js`, `.evn.example` (thêm `ANTHROPIC_API_KEY`), `package.json` (`@anthropic-ai/sdk` 0.132.1) |
+| **Kênh điều khiển `control(command)`**: pause / resume / next / volume_up / volume_down / mute / not_for_me / duck / unduck (không có prev). `PlayerHost` giữ cờ **duck** (`duckRef`) để bài mới vẫn nhỏ khi trợ lý đang nói. "Không thích bài này" khi phát playlist → chỉ bỏ qua bài, không chấm điểm | `emotune-frontend/src/contexts/playbackContext.js`, `PlaybackProvider.jsx`, `src/components/PlayerHost.jsx`, `MusicPlayer.jsx` |
+| **Overlay `VoiceAssistant`**: logo AI `button.ai-btn` mở; Esc/✕ đóng; ô gõ "Hoặc gõ yêu cầu…"; 3 câu gợi ý; nút chọn khi trùng tên; `turnRef` chống lượt cũ đóng nhầm lượt mới; bắt đầu nghe bằng `setTimeout(0)` (StrictMode); Esc bắt ở pha capture (không đóng luôn màn lời bài hát). `MainLayout` đóng trợ lý khi bị gỡ (sang `/survey`, `/login`) | `emotune-frontend/src/components/VoiceAssistant.jsx/.scss`, `src/contexts/AIAssistantContext.jsx`, `src/components/Header.jsx`, `src/layouts/MainLayout.jsx`, icon `src/assets/icons/assistant_logo.svg`, `assistant_mic.svg` (tải từ Figma) |
+| **Giọng nói**: Web Speech `vi-VN` + đọc to `speechSynthesis` (không có giọng Việt → chỉ hiện chữ) | `emotune-frontend/src/utils/speech.js` |
+| **Góp ý 1 — lời dẫn + quãng nghỉ, tắt màn hình rồi mới phát**: hiểu lệnh → `prepare` (chưa làm gì; nói cảm xúc thì gọi `/suggest` chọn bài trước, **chưa phát**) → đọc lời dẫn có tên bài ("Nghe bạn hơi buồn, mình sẽ phát bài “…” của …, hợp với tâm trạng của bạn nhé."; bài động viên: "Dạo này bạn hay buồn, mình đổi không khí bằng bài …") → nghỉ 1s (không giọng Việt: để chữ 2.5s) → đóng overlay → trả âm lượng → **mới** phát / chuyển trang / dừng (`deferredRef`, chạy ở cleanup). Esc / ✕ / gõ yêu cầu mới giữa chừng = huỷ lệnh | `VoiceAssistant.jsx`, `assistantRules.js` |
+| **Góp ý 2 — icon thanh phát to hơn**: nút điều khiển 20→26px, Play 42→50px (icon 22px), icon phải + tim 18→24px, loa 16→22px; SVG co giãn theo nút (`svg {width:100%; height:100%}`) | `emotune-frontend/src/components/MusicPlayer.scss` |
+| **Góp ý 3 — sóng âm nhạy theo giọng**: viết lại giống `AudioVisualizer` của trình phát: mỗi vạch 1 dải tần (90Hz–5kHz, trầm ở giữa), tự cân theo mức to nhất gần đây, lên nhanh xuống chậm; `AudioContext.resume()`; dự phòng nhảy theo chữ Web Speech đang nhận (`activityRef`) khi không đọc được mic | `emotune-frontend/src/components/VoiceWave.jsx`, `VoiceAssistant.jsx` |
+| **Góp ý 4 — nền**: `radial-gradient` tím `#261925` đậm giữa (97%) nhạt dần ra mép (35%) → thấy trang phía sau; nút ✕ nền đặc + viền | `VoiceAssistant.scss`, `src/index.css` (thêm `--assistant-bg-rgb: 38 25 37`) |
+| **Bảng bài kiểu Spotify** (người dùng gửi ảnh Spotify): trang Mix `/mix/...` và trang Playlist thêm cột **Album · Date added · ⏱ thời lượng** (ca sĩ vẫn ở dưới tên bài; trang Mix giữ cột Vibe, bỏ Genre). DB: cột mới `songs.album`, `songs.duration` (giây), `songs.added_at` — **đã chạy migrate trên DB laptop** + `npm run fetch-song-info` (đủ thời lượng 10/10, album 8/10; *Meditation*, *Reduce Stress* không có ca sĩ → "—"). Trang playlist dùng ngày thêm vào playlist thật (`playlist_songs.added_at`); trang mix dùng `songs.added_at` → 10 bài cũ cùng hiện thời điểm chạy migrate. Tách hàm dùng chung: `scripts/lib/mp3Duration.js` (fetch-lyrics dùng), `scripts/lib/itunes.js` (fetch-images dùng). Màn ≤ 1000px ẩn Date added, điện thoại chỉ giữ # · Title · Vibe · ⏱. Cột chia theo tỉ lệ để trải đều (trang Mix: grid `60px 4fr 3fr 2fr 1fr 1fr`; trang Playlist: `table-layout: fixed`, Title 40% · Album 30% · Date 20% · ⏱ 72px) | `emotune-backend/db/migrate_song_info.sql`, `db/setup.sql`, `scripts/fetch-song-info.js`, `scripts/lib/*.js`, `scripts/fetch-images.js`, `scripts/fetch-lyrics.js`, `package.json`, `src/model/songModel.js`, `src/model/playlistModel.js`; `emotune-frontend/src/utils/format.js` (`formatDuration`, `formatAdded`), `src/assets/icons/clock.svg`, `src/pages/MixPage.jsx/.scss`, `src/pages/PlaylistPage.jsx/.scss` |
+| Tài liệu | `TIEN_DO.md` (H6 ✅, H13 mới), `CLAUDE.md` (mô tả `/assistant`, `VoiceAssistant`, `control`, test `assistantRules`), `NOTES.md` |
+| **H13 trang Mix/Radio** (Figma `79:75`, 1 lượt `get_design_context`): route `/mix/:key` (`/mix/happy?genre=2` từ trang chủ theo chip thể loại, `/mix/sad?artist=8`, `/mix/radio?artist=8` từ trang ca sĩ). Banner màu theo vibe + ảnh bìa mix 320px + tên 48px + mô tả; Play tròn 80px `#faddff` + Shuffle (icon `mix_play.svg`, `mix_shuffle.svg` tải từ Figma); bảng # / Title / Genre / Vibe, bấm dòng = `playQueue(mix, i)`; "You might also like" = mix khác (bỏ trùng tên). Thẻ mix: **bấm = mở trang, bỏ nút ▶**. `buildMix` / `mixPath` (hàm thuần) thay code dựng mix lặp ở 2 trang; `MixArt` tách khỏi `MixCard` | mới `emotune-frontend/src/pages/MixPage.jsx/.scss`, `src/assets/icons/mix_play.svg`, `mix_shuffle.svg`; sửa `src/utils/mixes.js`, `components/BrowseCards.jsx`, `pages/BrowsePage.jsx`, `pages/ArtistPage.jsx`, `App.jsx` |
+| **Trang thống kê mới `/stats` + `npm run seed-demo`** (spec `docs/superpowers/specs/2026-10-09-stats-page-design.md`, plan `docs/superpowers/plans/2026-10-09-stats-page.md`): 2 phần **"You"** (5 ô tổng quan, "Scans per day, by mood", "Mood by time of day", Top songs / Top artists, "What you play when you feel…") và **"What NYX learned about you"** ("How often NYX got it right", "How sure the face AI was", "What NYX thinks you like, by mood"); nút 7 / 30 ngày; 4 biểu đồ có "View as table"; chú thích hiện khi rê chuột / focus; mốc co giãn bằng container query ở ≤ 1000px và ≤ 640px. Backend `GET /stats?days=7\|30` (`statsModel` → `statsService` hàm thuần → `statsController`). `seed-demo` tạo 5 tài khoản mẫu (`demo30`, `mau_ballad`, `mau_rap`, `mau_pop`, `mau_chill`, mật khẩu `demo1234`) với lịch sử 30 ngày, chỉ xoá / tạo lại chính chúng. **`demo30` và `mau_*` là dữ liệu MẪU do script sinh, khi demo phải nói rõ.** | mới `emotune-backend/src/model/statsModel.js`, `src/services/statsService.js`, `src/controllers/statsController.js`, `scripts/seed-demo.js`, `test/stats.test.js`, `test/demoHistory.test.js`; `emotune-frontend/src/components/stats/*`, `src/pages/MoodPage.jsx`; sửa `src/routes/web.js`, `package.json` |
+
+Đã kiểm tra trang `/stats` (Task 8, Playwright, tài khoản `demo30`): 1440px đủ 2 phần + 8 mục, 5 ô tổng quan có số, 7 → 30 ngày (30 cột, không nhảy trang), chú thích hiện ở cột ngày / ô theo buổi / cột "got it right" và nằm trọn trong viewport, "View as table" bật tắt được ở 4 biểu đồ, bấm Top songs → thanh phát đổi bài, bấm Top artists → `/artist/<id>`, thanh `Angry` ngắn nhất; tài khoản mới (đã xoá `tmp_stats`) → mọi mục hiện lời nhắc, không lỗi JS; 1000px `scrollWidth` 985, 390px `scrollWidth` 375 (không tràn ngang), bảng điểm sở thích cuộn ngang trong thẻ. Chỉ có lỗi `localhost:5001` (gpio, bình thường).
+
+**Giao diện "neon" cho `/stats` (theo ảnh mẫu người dùng gửi, 09/10 tối):** thẻ xanh tím than gradient, 5 màu cảm xúc mới (`--mood-*` chỉ trong `.stats-page`: happy `#d4741f`, surprise `#a35cf0`, neutral `#1fa99c`, sad `#4d74f0`, angry `#e8456e`; màu kết quả nghe good `#3f7ff5` / neutral `#73758f` / bad `#c4861a` / declined `#e0407a`; phân kỳ sở thích `#4d74f0` / `#e8456e`) — đã chạy `validate_palette` trên nền `#24253e` (xám "about half" cố ý ít màu, luôn có chữ). Mỗi phần tử có class cảm xúc mang biến `--c` → gradient tối→sáng của **chính màu đó** + viền sáng (không trộn màu khác, giữ 1 cảm xúc = 1 màu). Đổi hình: cột ngày **mảnh bo tròn** trên rãnh mờ; "Mood by time of day" thành **lưới chấm** (đường kính ∝ √số lần quét); "got it right" có **donut** lớn (giữa là %) + cột 100% mảnh; **"How sure the face AI was" = biểu đồ hoa hồng** (`ConfidenceRose.jsx`, thay `ConfidenceBars.jsx`: mỗi cảm xúc 1 cánh 72°, độ dài cánh = độ tự tin, giữa = trung bình có trọng số theo số lần quét, rê danh sách/cánh thì cánh khác mờ); ô "Most common mood" có donut tỉ lệ cảm xúc, ô "Scans" có sparkline; ô sở thích bo tròn. Component dùng chung `components/stats/Donut.jsx`. Đã thử Playwright 1440 / 1000 / 390px (`demo30`, 7 và 30 ngày): không tràn ngang (`scrollWidth` 985 / 375), chú thích cột ngày 3 cột đầu/cuối căn mép thẻ. Lưu ý: chuột Playwright phiên này không gửi được sự kiện (lỗi công cụ, DOM `click()` chạy đúng).
+
+Đã kiểm tra (trước trang thống kê): backend `npm test` **43/43**; frontend `npx eslint src` sạch, `npm run build` OK. Playwright (gõ chữ, tài khoản `demo`): 9/9 luồng (xem ca sĩ, phát bài, tạm dừng / phát tiếp / bài tiếp, cảm xúc → `/now-playing`, mở thống kê, chưa có bài, câu lạ, Esc, trùng tên → 2 nút); lời dẫn hiện khi nhạc **chưa** phát, ~2.5s sau đóng rồi mới phát; Esc giữa chừng → không phát; 390px không tràn. Sóng âm thử bằng **mic giả** (Web Audio): cột nhảy 0.5→1.0 theo nhịp, nhiều cột khác nhau. Console chỉ có lỗi `localhost:5001` (gpio, bình thường).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| **Luật trước, Haiku 5.5 dự phòng** (người dùng chọn) | Lệnh thường gặp nhanh + miễn phí + có test; phần "thông minh" tự viết, giải thích được khi bảo vệ. Haiku = model Claude rẻ nhất (người dùng chọn) |
+| Bộ luật ở **backend**, hàm thuần | Test bằng `node:test`; key LLM không lộ ra trình duyệt |
+| Kết quả LLM **kiểm lại với danh mục** | Không cho LLM bịa id / trang |
+| **Web Speech `vi-VN`**, không tự chạy model speech-to-text | Web Speech đã là STT (máy chủ Google), miễn phí; `speech.js` tách riêng để sau thay Whisper/PhoWhisper cho Pi (Chromium trên Pi không có Web Speech) |
+| Khớp tên theo **đoạn chữ liền nhau**; tên chỉ gồm từ cảm xúc ("Nhạc Buồn") thua câu kể cảm xúc nếu không nói rõ "playlist/bài/ca sĩ" | Tránh hiểu nhầm câu thường ("phát tiếp lần nữa nha" → ca sĩ Lân Nhã; "mình buồn" → playlist "Buồn" thay vì gợi ý) |
+| Trợ lý **nói xong → nghỉ → tắt màn hình → mới làm lệnh**; Esc giữa chừng = huỷ | Người dùng muốn có quãng nghỉ, không phát chen lúc trợ lý đang nói |
+| Nhạc **duck 20%** suốt lúc overlay mở; cờ duck giữ ở `PlayerHost` | Micro không thu lẫn nhạc; bài mới mount vẫn nhỏ |
+| "Không thích bài này" trong playlist chỉ bỏ qua | Playlist không chấm điểm (quy tắc cũ) |
+| Sóng 43 vạch (spec ghi ~45) | Frame Figma thật có 43 vạch |
+| Làm theo SDD nhưng **không commit, không tạo nhánh**; diff để review lấy từ ảnh chụp cây thư mục (index tạm + `write-tree`) | Quy tắc repo: không commit khi chưa được yêu cầu |
+| Thẻ Mix/Radio: **bấm = mở trang** danh sách bài, **bỏ nút ▶ trên thẻ** (người dùng chọn) | Giống album; phát bằng nút Play trong trang |
+| Mix **không lưu DB**, dựng lại từ `/songs` theo đường dẫn (`?genre=`, `?artist=`) | Mix chỉ là bộ lọc kho nhạc; link mở lại / F5 vẫn ra đúng mix, không cần API mới |
+| `/stats`: số liệu tính ở **backend** (`statsModel` 9 câu SQL, đều lọc `user_id` → `statsService` hàm thuần có test) | Test được bằng `node:test`; trình duyệt không phải tải cả lịch sử |
+| Cột cảm xúc lúc quét đặt bí danh **`mood`** trong SQL (`m.emotion AS mood`) | Trùng tên `s.emotion` (vibe bài) → `pg` giữ cột sau, số liệu bị lấy nhầm |
+| `seed-demo`: 1 transaction, **chỉ xoá/tạo 5 tài khoản mẫu**; 5 tên này **bị cấm đăng ký** (`authValidation` lấy từ `PROFILES`) | Không đụng dữ liệu người thật; tránh người thật trùng tên bị xoá im lặng |
+| 3 ngày gần nhất của `demo30` toàn buồn/giận | Để Cheer-up mode **luôn bật** đúng theo luật thật (24h ≥ 4 lần quét, không thì 72h) khi demo |
+| Bố cục `/stats` co giãn bằng **container query** (`container: stats`), không theo cửa sổ | Sidebar chiếm 240px; theo bề rộng vùng nội dung mới đúng |
+| Nút 7/30 ngày chỉ đổi khi **số liệu mới đã về**; lỗi thì quay lại | Nút và số liệu không bao giờ lệch nhau |
+| `/stats` lỗi nhưng `/mood-history` được → **ô Cheer-up vẫn hiện** (`CheerTile.jsx`) | Spec §6; khi demo gặp lỗi DB vẫn thấy trạng thái động viên |
+| Giao diện neon: gradient chỉ **tối→sáng của chính màu cảm xúc**, không trộn cam→hồng→tím trong 1 cột như ảnh mẫu | 1 cảm xúc = 1 màu, người xem không lẫn đoạn nào là cảm xúc nào |
+| Biểu đồ tròn = **hoa hồng cho độ tự tin AI** (5 giá trị, 5 cánh) + danh sách số bên cạnh; bỏ các hình chỉ trang trí của ảnh mẫu (mạng nhện, dây sóng) | Mỗi hình phải đọc ra số liệu — khi bảo vệ trả lời được "biểu đồ này nói gì" |
+| Bảng màu mới chạy `validate_palette` (dataviz) trên nền `#24253e` | Người mù màu vẫn phân biệt được các màu đứng cạnh nhau |
+| Trang Mix bỏ cột Album / Date added / thời lượng, ảnh nhỏ cạnh nút Play, footer công ty (Figma có) → cột **Genre + Vibe** | DB không có album, ngày thêm, thời lượng; ảnh nhỏ không có chức năng; không bịa dữ liệu |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+git pull --ff-only                       # a4352df -> 9e57d5e (đầu phiên)
+# Backend (emotune-backend/): .env có sẵn; ANTHROPIC_API_KEY để trống = chỉ dùng bộ luật
+npm install                              # đã cài @anthropic-ai/sdk (máy mới cần chạy lại)
+npm run dev                              # :8080
+npm test                                 # 62/62
+npm run db:migrate -- db/migrate_song_info.sql   # MÁY MỚI / Pi: cột album, duration, added_at (an toàn chạy lại)
+npm run fetch-song-info                  # điền thời lượng (đọc mp3) + album (iTunes) còn thiếu
+npm run seed-demo                        # 5 tài khoản MẪU (demo30, mau_ballad, mau_rap, mau_pop, mau_chill / demo1234) + lịch sử 30 ngày; chỉ xoá/tạo lại chính chúng (id đổi mỗi lần chạy → trình duyệt đang đăng nhập bằng chúng phải đăng xuất rồi đăng nhập lại; 5 tên này bị cấm đăng ký)
+# Frontend (emotune-frontend/)
+npm run dev                              # :5173 — đăng nhập demo/demo1234
+npx eslint src && npm run build
+# curl tiếng Việt trên Git Bash bị hỏng đối số -> dùng \uXXXX trong JSON hoặc --data-binary @body.json (UTF-8)
+```
+Thử: Chrome/Edge (cần Internet cho Web Speech) → bấm logo AI → cho phép micro → nói "phát nhạc Sơn Tùng", "bài tiếp", "hôm nay tôi hơi buồn", "cho tôi xem ca sĩ Taylor Swift", "mở trang thống kê"; hoặc gõ vào ô dưới cùng.
+**Khi Claude cần thử Playwright**: kiểm tra cổng trước (`netstat -ano | grep -E ":(8080|5173) .*LISTEN"`); server người dùng đang chạy thì **dùng chung, không tắt** (phiên này từng tắt nhầm server của người dùng nhiều lần).
+
+## 5. Lỗi / việc còn dở
+- **Sự cố tối 09/10 — Windows Smart App Control chặn `postgres.exe`**: tối 09/10 (sau 21:46; lúc 21:46 DB vẫn trả lời truy vấn), Code Integrity (policy `{0283ac0f-…}`, "did not meet the Enterprise signing level") chặn `postgres.exe`. Triệu chứng: PostgreSQL reset mọi kết nối, đăng nhập backend trả 500, rồi dịch vụ không khởi động được (Error 1067). **Cách sửa:** tắt Smart App Control (Windows Security → App & browser control), rồi Start dịch vụ `postgresql-x64-17`. Chẩn đoán: `Get-WinEvent -LogName "Microsoft-Windows-CodeIntegrity/Operational"` và chạy `& "C:\Program Files\PostgreSQL\17\bin\postgres.exe" -V` trong PowerShell (Git Bash: bỏ `&`) (hiện "An Application Control policy has blocked this file"). Nếu lặp lại thì kiểm tra Smart App Control trước.
+- **Giao diện neon `/stats`**: người dùng **chưa xem/góp ý**. Chuột Playwright phiên này không gửi được sự kiện (lỗi công cụ) → nút 7/30 và rê chuột chỉ thử bằng sự kiện DOM; nên tự bấm thử 1 lần trên trình duyệt thật.
+- Việc nhỏ hoãn ở `/stats`: `role="img"` bọc phần tử focus được; mốc ngày DB (`CURRENT_DATE`) và Node (`dayKey`) phải cùng múi giờ (1 máy thì ổn); `seed-demo` chạy 2 lần vắt qua mốc giờ có thể lệch số dòng; số liệu "got it right" gồm cả bài tự bấm phát ở chế độ cảm xúc (câu chữ đã ghi đúng). Quan sát 1 lần (chưa chắc): đổi cỡ 1000 → 390px khi xem 30 ngày thì nút về 7 ngày. Vite dev chạy lâu mà thiếu mục → khởi động lại `npm run dev` frontend.
+- **H13**: người dùng chưa xem trang Mix → chờ góp ý.
+- **Chưa thử micro thật** sau khi viết lại sóng âm (chỉ thử mic giả). Nếu sóng vẫn đứng: xem Console (F12).
+- **Chưa có `ANTHROPIC_API_KEY`** → đường Haiku chưa chạy thật. Khi thêm key: nên đổi `maxRetries: 1` → `0` trong `assistantLlm.js` (tránh chờ ~12s), đặt giới hạn chi tiêu trong Console.
+- Việc nhỏ H6 đã duyệt, hoãn: `/suggest` của cảm xúc chưa chặn lượt cũ; focus / `aria-live` của hộp thoại; kéo thanh âm lượng khi đang duck ghi đè mức duck; `pick` ngoài phạm vi trả 200 `unknown`; chưa rate limit đường LLM; cảm xúc hoà điểm chọn theo thứ tự từ điển; 3 chữ liền nhau của tên 5 chữ vẫn tính là khớp; "bài tiếp" sau 1 bài lẻ khi chưa từng quét → `/scan`; "Mình đang nghe…" còn hiện khi bị chặn micro.
+- DB laptop: tài khoản `demo` đã bị bấm **Skip khảo sát** khi thử; còn 2 tài khoản thử cũ `tmp_h7`, `vinh` (có từ trước).
+
+## 6. Bước tiếp theo
+1. Người dùng xem `/stats` giao diện neon (đăng nhập `demo30` / `demo1234`, bấm 7/30 ngày, rê chuột lên hoa hồng) + trang Mix → góp ý.
+2. Người dùng thử micro thật cho trợ lý giọng nói → sửa nếu sai.
+3. Viết spec **C13 "gợi ý theo người dùng tương tự" (lọc cộng tác)**, dùng 4 người dùng mẫu `mau_*` của `seed-demo` làm "hàng xóm".
+4. **Giai đoạn B (Pi), hạn HIC 15/10**: LD2410C, đồng bộ Pi qua git (`git pull` + `npm install` + `npm run db:migrate -- db/migrate_song_info.sql` + `fetch-song-info` / `fetch-images` / `fetch-lyrics` + `seed-demo` nếu cần demo), vỏ hộp, systemd + kiosk, sửa slide, tập demo. Web Speech không chạy trên Chromium của Pi → trợ lý giọng nói trên Pi chỉ dùng ô gõ (hoặc thay `speech.js` bằng Whisper).
+5. Khi demo: nói rõ `demo30` / `mau_*` là **dữ liệu mẫu do script sinh**.
 
 ---
 

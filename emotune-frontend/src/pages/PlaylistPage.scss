@@ -192,6 +192,8 @@
   .pl-table {
     width: 100%;
     border-collapse: collapse;
+    // cố định tỉ lệ cột (Title > Album > Date added > ⏱) -> các cột trải đều, không dồn về một phía
+    table-layout: fixed;
     font-size: 14px;
 
     th {
@@ -236,8 +238,35 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .col-date {
+    th:nth-child(2) { width: 40%; }
+
+    // cột Album (giống Spotify): 1 dòng, dài thì "…"
+    .col-album {
+      width: 30%;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .col-date {
+      width: 20%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // thời lượng: tiêu đề là icon đồng hồ
+    .col-time {
+      width: 72px;
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        vertical-align: middle;
+      }
     }
 
     .col-act {
@@ -325,6 +354,9 @@
   .song-artist {
     font-size: 13px;
     color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   // ---- tìm bài + gợi ý ----
@@ -478,10 +510,15 @@
       font-size: 48px;
     }
 
-    .col-genre,
+    .col-album,
     .col-date,
     .pl-reason {
       display: none;
+    }
+
+    // Album / Date added ẩn -> Title lấy hết chỗ còn lại
+    .pl-table th:nth-child(2) {
+      width: auto;
     }
   }
 }

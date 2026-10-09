@@ -11,6 +11,8 @@ const genreController = require('../controllers/genreController')
 const profileController = require('../controllers/profileController')
 const playlistController = require('../controllers/playlistController')
 const songController = require('../controllers/songController')
+const assistantController = require('../controllers/assistantController')
+const statsController = require('../controllers/statsController')
 const { requireAuth } = require('../middleware/auth')
 
 let router = express.Router()
@@ -35,12 +37,14 @@ let initWebRoutes = (app) => {
     router.post('/playlists/:id/songs', requireAuth, playlistController.addSong);
     router.delete('/playlists/:id/songs/:songId', requireAuth, playlistController.removeSong);
     router.get('/mood-history', requireAuth, moodHistoryController.getMoodHistory);
+    router.get('/stats', requireAuth, statsController.getStats);
 
     router.post('/feed-back', requireAuth, feedBackController.submitFeedBack);
     router.post('/suggest', requireAuth, suggestController.getSuggest)
     router.post('/listen-report', requireAuth, listenReportController.submitListenReport)
     router.post('/request-song', requireAuth, requestSongController.postRequestSong)
     router.post('/scan-and-suggest', requireAuth, scanController.scanAndSuggest)
+    router.post('/assistant', requireAuth, assistantController.ask)
     router.post('/auth/register', authController.register)
     router.post('/auth/login', authController.login)
     router.get('/auth/me', requireAuth, authController.getUserByJWT)

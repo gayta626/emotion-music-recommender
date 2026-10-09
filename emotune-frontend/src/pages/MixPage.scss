@@ -1,0 +1,487 @@
+// Trang mix / radio — theo Figma "frame 25" (79:75): khung #282828, banner cao 390px (ảnh bìa 320px + tên 48px),
+// nút Play tròn 80px #faddff + shuffle 60px, bảng bài (số 26px, ảnh 64px, tên 24px / ca sĩ 20px, mỗi dòng ~98px).
+// Bọc trong `.browse-page` để dùng lại màu vibe + kiểu thẻ mix (MixArt, MixCard, Shelf).
+.browse-page.mix-page {
+  // màu banner theo vibe của mix (Figma: xanh lá nhạt bên trái → đậm bên phải)
+  --hero: #2f9c8a;
+  &.hero-happy { --hero: var(--mood-happy); }
+  &.hero-surprise { --hero: var(--mood-surprise); }
+  &.hero-sad { --hero: var(--mood-sad); }
+  &.hero-angry { --hero: var(--mood-angry); }
+  &.hero-radio { --hero: #7a49d6; }
+
+  gap: 36px;
+  padding: 0 0 40px;
+  background: #282828;
+
+  .mix-note {
+    padding: 40px 28px 0;
+    color: var(--muted);
+  }
+
+  .mix-back {
+    align-self: flex-start;
+    margin: 0 28px;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-premium);
+    font: 600 14px 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  // ---- banner ----
+  .mix-hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 34px;
+    min-height: 390px;
+    padding: 35px 37px;
+    border-radius: var(--radius);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--hero) 20%, transparent) 43.75%,
+      color-mix(in srgb, var(--hero) 60%, #0b0b0b) 71.9%,
+      color-mix(in srgb, var(--hero) 25%, #020202) 100%
+    );
+  }
+
+  .mix-cover {
+    container-type: inline-size; // chữ trong ảnh bìa mix tính theo cqw
+    flex-shrink: 0;
+    width: 320px;
+
+    .mix-art {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  .mix-heading {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 8px;
+  }
+
+  .mix-eyebrow {
+    font: 600 13px 'DM Sans', sans-serif;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .mix-desc {
+    margin: 0;
+    max-width: 674px;
+    font: 400 20px 'Inter', sans-serif;
+    line-height: 1.35;
+  }
+
+  .mix-meta {
+    margin: 0;
+    font: 500 14px 'DM Sans', sans-serif;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  // ---- nút Play + Shuffle ----
+  .mix-actions {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding: 0 41px;
+    margin-top: 2px;
+  }
+
+  .mix-play {
+    width: 80px;
+    height: 80px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #faddff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: scale 0.1s;
+
+    svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    &:hover {
+      scale: 1.05;
+    }
+  }
+
+  .mix-shuffle {
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #979797;
+    cursor: pointer;
+
+    svg {
+      width: 60px;
+      height: 60px;
+    }
+
+    path {
+      fill: currentColor;
+    }
+
+    &:hover:not(:disabled) {
+      color: #fff;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  // ---- bảng bài ----
+  .mix-tracks {
+    display: flex;
+    flex-direction: column;
+    margin: -12px 25px 0;
+  }
+
+  .mix-row {
+    display: grid;
+    // # · Title · Album · Date added · Vibe · thời lượng: chia theo tỉ lệ để các cột trải đều cả bảng (giống Spotify)
+    grid-template-columns: 60px minmax(0, 4fr) minmax(0, 3fr) minmax(0, 2fr) minmax(56px, 1fr) minmax(64px, 1fr);
+    column-gap: 24px;
+    align-items: center;
+    min-height: 98px;
+    padding: 0 17px;
+    border: none;
+    border-radius: 10px;
+    background: none;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    &.playing .col-num,
+    &.playing .mix-song-title {
+      color: var(--accent);
+    }
+
+    .col-num {
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .col-album,
+    .col-date,
+    .col-time {
+      font-size: 18px;
+      color: #d0d0d0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .col-time {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .col-vibe {
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  // tiêu đề Vibe căn giữa cho thẳng với icon bên dưới
+  .mix-head .col-vibe {
+    text-align: center;
+  }
+
+  // hàng tiêu đề: chữ xám 24px, gạch dưới #676565 (không bấm được)
+  .mix-head {
+    min-height: 56px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #676565;
+    border-radius: 0;
+    cursor: default;
+
+    &:hover {
+      background: none;
+    }
+
+    span,
+    .col-num,
+    .col-album,
+    .col-date {
+      font-size: 24px;
+      font-weight: 400;
+      color: #d0d0d0;
+    }
+
+    .col-album,
+    .col-date {
+      font-size: 20px;
+    }
+
+    // icon đồng hồ thay chữ (giống Spotify)
+    .col-time {
+      display: flex;
+      justify-content: flex-end;
+
+      svg {
+        width: 22px;
+        height: 22px;
+      }
+    }
+  }
+
+  .mix-song {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+
+  .mix-thumb {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+    font-size: 22px;
+  }
+
+  .mix-song-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .mix-song-title,
+  .mix-song-artist {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mix-song-title {
+    font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .mix-song-artist {
+    font-size: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  .shelf {
+    padding: 0 21px;
+  }
+
+  // ---- màn vừa ----
+  @container browse (max-width: 1000px) {
+    .mix-hero {
+      min-height: 0;
+      gap: 24px;
+      padding: 28px;
+    }
+
+    .mix-cover {
+      width: 220px;
+    }
+
+    h1 {
+      font-size: 36px;
+    }
+
+    .mix-desc {
+      font-size: 17px;
+    }
+
+    .mix-row {
+      grid-template-columns: 44px minmax(0, 4fr) minmax(0, 3fr) minmax(48px, 1fr) minmax(56px, 1fr);
+      column-gap: 16px;
+      min-height: 80px;
+
+      .col-num {
+        font-size: 20px;
+      }
+
+      // màn vừa: bỏ cột Date added cho đủ chỗ tên bài
+      .col-date {
+        display: none;
+      }
+
+      .col-album,
+      .col-time {
+        font-size: 16px;
+      }
+    }
+
+    .mix-head span,
+    .mix-head .col-num,
+    .mix-head .col-album {
+      font-size: 18px;
+    }
+
+    .mix-thumb {
+      width: 52px;
+      height: 52px;
+    }
+
+    .mix-song {
+      gap: 18px;
+    }
+
+    .mix-song-title {
+      font-size: 19px;
+    }
+
+    .mix-song-artist {
+      font-size: 16px;
+    }
+  }
+
+  // ---- điện thoại ----
+  @container browse (max-width: 640px) {
+    gap: 24px;
+
+    .mix-hero {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 20px 16px;
+      // xếp dọc → dải màu cũng chạy dọc (ngang thì cột phải tối hẳn)
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--hero) 45%, transparent) 0%,
+        color-mix(in srgb, var(--hero) 25%, #0b0b0b) 100%
+      );
+    }
+
+    .mix-cover {
+      width: 170px;
+      align-self: center;
+    }
+
+    h1 {
+      font-size: 28px;
+    }
+
+    .mix-desc {
+      font-size: 15px;
+    }
+
+    .mix-actions {
+      gap: 24px;
+      padding: 0 16px;
+    }
+
+    .mix-play {
+      width: 60px;
+      height: 60px;
+
+      svg {
+        width: 30px;
+        height: 30px;
+      }
+    }
+
+    .mix-shuffle,
+    .mix-shuffle svg {
+      width: 44px;
+      height: 44px;
+    }
+
+    .mix-tracks {
+      margin: -8px 4px 0;
+    }
+
+    .mix-row {
+      grid-template-columns: 28px minmax(0, 1fr) 32px 40px;
+      min-height: 64px;
+      padding: 0 10px;
+      column-gap: 10px;
+
+      .col-num {
+        font-size: 15px;
+      }
+
+      // điện thoại: chỉ giữ #, tên bài, vibe, thời lượng
+      .col-album,
+      .col-date {
+        display: none;
+      }
+
+      .col-time {
+        font-size: 13px;
+      }
+    }
+
+    .mix-head {
+      min-height: 40px;
+      margin-bottom: 8px;
+    }
+
+    .mix-head span,
+    .mix-head .col-num {
+      font-size: 14px;
+    }
+
+    .mix-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+    }
+
+    .mix-song {
+      gap: 12px;
+    }
+
+    .mix-song-text {
+      gap: 3px;
+    }
+
+    .mix-song-title {
+      font-size: 15px;
+    }
+
+    .mix-song-artist {
+      font-size: 13px;
+    }
+
+    .shelf {
+      padding: 0 6px;
+    }
+  }
+}

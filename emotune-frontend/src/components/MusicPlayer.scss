@@ -212,7 +212,7 @@ body:has(.player-bar) {
   .bar-controls {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 28px;
   }
 
   .bar-progress {
@@ -266,31 +266,37 @@ body:has(.player-bar) {
     }
 
     .icon-btn {
-      width: 16px;
-      height: 16px;
+      width: 22px;
+      height: 22px;
     }
   }
 }
 
 // nút icon trong suốt (shuffle, prev, next, repeat, lời bài hát, hàng đợi, thiết bị, loa)
+// Figma vẽ icon 16–20px -> nhìn nhỏ so với chữ / ảnh bìa; phóng to ~1.3 lần, icon co giãn theo cỡ nút
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
   transition: transform 0.15s, opacity 0.15s;
 
-  // icon bên phải + tim cỡ 18px trong Figma
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  // icon bên phải + tim (Figma 18px)
   .bar-extra &,
   &.dislike {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
   }
 
   &:hover:not(:disabled) {
@@ -310,20 +316,25 @@ body:has(.player-bar) {
   }
 }
 
-// nút Play: vòng tròn trắng, icon 18px màu tối
+// nút Play: vòng tròn trắng, icon màu tối (Figma 42px / icon 18px, phóng to cùng các icon khác)
 .play-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 42px;
-  height: 42px;
+  width: 50px;
+  height: 50px;
   padding: 0;
   border: none;
-  border-radius: 24px;
+  border-radius: 50%;
   background: #fff;
   cursor: pointer;
   transition: transform 0.15s;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
 
   &:hover:not(:disabled) {
     transform: scale(1.06);

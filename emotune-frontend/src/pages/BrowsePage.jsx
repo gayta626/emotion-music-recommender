@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import MoodIcon from '../components/MoodIcon';
 import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
-import { MIXES } from '../utils/mixes';
+import { buildMix, mixPath } from '../utils/mixes';
 import Shelf from '../components/Shelf';
 import { usePlayback } from '../contexts/playbackContext';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
@@ -57,7 +57,7 @@ const PlaylistCard = ({ playlist, onOpen, onPlay }) => (
 
 const BrowsePage = () => {
     const navigate = useNavigate();
-    const { playSong, playQueue, playPlaylist, refreshPlaylists, playlistsVersion, nowPlaying, lastMood } = usePlayback();
+    const { playSong, playPlaylist, refreshPlaylists, playlistsVersion, nowPlaying, lastMood } = usePlayback();
     const [genre, setGenre] = useState(null);       // null = All
     const [creating, setCreating] = useState(false);
     const [now] = useState(() => Date.now());        // "x min ago" cua lan quet gan nhat
@@ -94,8 +94,8 @@ const BrowsePage = () => {
 
     // mix theo vibe bai hat (theo chip the loai dang chon)
     const mixes = EMOTIONS
-        .map((e) => ({ ...e, ...MIXES[e.key], songs: byGenre(songs.data || []).filter((s) => s.emotion === e.key) }))
-        .filter((m) => m.songs.length);
+        .map((e) => buildMix(songs.data || [], { key: e.key, genreId: genre }))
+        .filter(Boolean);
 
     // the "Your mood this week": cung cach tinh voi trang /stats
     const moodSummary = useMemo(() => {
@@ -174,7 +174,7 @@ const BrowsePage = () => {
                 title="Mixes for every mood"
                 note={songs.error ? LOAD_ERROR : songs.data && !mixes.length ? EMPTY_GENRE : null}
             >
-                {mixes.map((m) => <MixCard key={m.key} mix={m} onPlay={(mix) => playQueue({ name: mix.title, songs: mix.songs })} />)}
+                {mixes.map((m) => <MixCard key={m.key} mix={m} onOpen={(mix) => navigate(mixPath(mix))} />)}
             </Shelf>
 
             {/* 2 the lon cuoi trang (vi tri the podcast #471824 + khung xam trong Figma) */}
