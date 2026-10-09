@@ -1,10 +1,75 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **09/10/2026** (trên LAPTOP) — xem **"🧭 PHIÊN 09/10/2026"** ngay bên dưới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: phần mềm gần xong — trang chủ kiểu Spotify (H7), ảnh thật đủ 10/10 bài + 11/11 ca sĩ (H9), **icon cảm xúc động** (H10), **trang ca sĩ `/artist/:id`** (H8), **thanh phát theo Figma `queue-screen`** (H11). Còn: **chép mp3 vào `emotune-backend/music/`** (đang trống → không phát được nhạc), trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Việc 09/10 đã commit + push.
+> Phiên gần nhất: **09/10/2026 chiều** (trên LAPTOP) — xem **"🧭 PHIÊN 09/10/2026 (chiều)"** ngay bên dưới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: phần mềm gần xong — trang chủ kiểu Spotify (H7), ảnh thật (H9), icon cảm xúc động (H10), trang ca sĩ (H8), thanh phát queue-screen (H11), **màn lời bài hát `/lyrics` nền theo màu ảnh bìa (H12)**. Laptop đã có đủ 10 mp3. Còn: trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Việc 09/10 đã commit + push.
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# 🧭 PHIÊN 09/10/2026 (chiều, laptop) — màn lời bài hát H12
+
+## 1. Mục tiêu
+1. Đọc NOTES/TIEN_DO, tóm tắt tình trạng dự án.
+2. Sửa frame **lyrics** trong Figma (`91:283`) cho giống ảnh NhacCuaTui người dùng gửi (ảnh bìa trái, lời chữ to đậm phải, nền ảnh bìa mờ) — **ít lượt gọi Figma MCP nhất**.
+3. Code màn lời bài hát theo frame đó; **nền mỗi bài một màu khác, không "đen xì"**.
+4. Ghi NOTES, commit + push.
+
+## 2. Việc đã làm xong
+| Việc | File |
+|---|---|
+| Figma: frame `91:283` vẽ lại kiểu NhacCuaTui (1440×1024: nền ảnh bìa mờ, trái bìa 300px + tên + ca sĩ + ♥/chia sẻ/⋯, phải 8 dòng lời DM Sans Bold 34, nút ⌄ góc phải, đáy = bản sao thanh phát H11 `186:214` nền trong suốt). Bản cũ giữ ở **`316:300` "lyrics (bản cũ – backup)"** (x = 3247, y = −4120). Tốn **2 lượt** `use_figma` (1 đọc, 1 dựng + chụp trong cùng script) | Figma `lycGTr71v02BpzYgjmZZS3` |
+| Script **`npm run fetch-lyrics`**: tìm lời trên **LRCLIB** (lrclib.net, miễn phí, không key) theo tên bài + ca sĩ; tự đo độ dài mp3 từ header (không cần ffmpeg) để chọn bản **có mốc thời gian khớp ±3s**, không có thì lưu lời thường; có file rồi thì bỏ qua. Kết quả **6/8 bài có lời chạy theo nhạc** (lệch ≤ 0.1s) | mới `emotune-backend/scripts/fetch-lyrics.js`, `emotune-backend/lyrics/.gitignore`; sửa `emotune-backend/package.json` |
+| Backend phục vụ tĩnh `GET /lyrics/<tên mp3>.lrc` (404 = chưa có lời) | `emotune-backend/src/server.js` |
+| Màn **`/lyrics`** (do `PlayerHost` vẽ như `/now-playing`, route `element={null}`): `LyricsView` phủ toàn màn hình (z 19, dưới thanh phát z 20); trái bìa + tên + ca sĩ (link `/artist/:id` nếu có `artist_id`) + nút "Not for me" (chế độ cảm xúc); phải lời: dòng đang hát trắng sáng, tự cuộn tới ~1/3 trên (dừng tự cuộn 3s khi người dùng tự cuộn), bấm dòng = tua; lời thường thì hiện hết + ghi chú; không có lời → "No lyrics for this song yet." / bài không ca sĩ → "Instrumental…". Đóng: nút ⌄ hoặc Esc → về trang trước (nhạc vẫn chạy). Màn ≤ 900px: 1 cột, bìa 64px nằm ngang | mới `emotune-frontend/src/components/LyricsView.jsx/.scss`, `src/utils/lyrics.js` (`parseLrc`, `activeLineIndex`, `lyricsFileName`) |
+| **Nền theo màu ảnh bìa**: `useCoverColor` vẽ bìa lên canvas 40×40 → `dominantColor` (12 dải sắc độ, bỏ điểm xám/đen/trắng) → `lyricsPalette` đặt `--ly-h`, `--ly-s`, `--ly-glow-l`; CSS dựng gradient + ảnh bìa mờ (blur 80px, opacity .24) + lớp tối. Thử: CILU tím 282°, Có Chắc Yêu Là Đây xanh ngọc 169°, Giá Như nâu cam 19°, Muộn Rồi Mà Sao Còn vàng ô-liu | mới `src/utils/coverColor.js`, `src/hooks/useCoverColor.js` |
+| Thanh phát: nút **Lyrics** chạy (bật/tắt `/lyrics`, sáng khi đang mở; điện thoại vẫn hiện), thanh phát gần trong suốt khi đang mở lời | `src/components/MusicPlayer.jsx/.scss`, `src/components/PlayerHost.jsx`, `src/App.jsx` |
+| Tài liệu: H12 ✅ + "Đang ở đâu"; lệnh `fetch-lyrics` + mô tả `/lyrics` | `TIEN_DO.md`, `CLAUDE.md`, `NOTES.md` |
+
+Đã kiểm tra: `npx eslint src` sạch, `npm run build` OK, `npm test` 15/15; Playwright 1440px + 390px (4 bài 4 màu nền, dòng sáng + tự cuộn, bấm dòng tua đúng, ⌄ đóng về trang trước nhạc vẫn chạy, không tràn ngang). Console chỉ có lỗi `localhost:5001` (gpio, bình thường) và 404 `gia_nhu.lrc` (bài chưa có lời — đúng).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| Figma: sửa thẳng `91:283` (giữ id) + clone bản cũ làm backup; bỏ bước dò thư viện design system | Người dùng muốn ít lượt MCP; file không dùng thư viện |
+| Nguồn lời: **LRCLIB** qua script tải về file (giống `fetch-images`), không gọi API lúc chạy web | Web/Pi không cần mạng khi demo; có mốc thời gian để làm kiểu karaoke |
+| Chọn bản lời theo **độ dài mp3** (±3s) | Mỗi bài trên LRCLIB có nhiều bản (radio/MV/999s); lấy nhầm thì lời lệch nhạc |
+| Lời bài **không đưa lên git** (`lyrics/.gitignore` = `*` + `!.gitignore`, giống `music/`) | Có bản quyền; máy mới / Pi chạy `npm run fetch-lyrics` |
+| Nền = **màu chủ đạo ảnh bìa**, chỉ lấy sắc độ + độ đậm, độ sáng CSS giữ tối vừa; không ảnh / ảnh đen trắng → màu theo tên bài (`hueFromText`) | Người dùng: "mỗi bài mỗi background, đừng đen xì"; chữ trắng vẫn đọc rõ |
+| `@property --ly-h/--ly-s/--ly-glow-l` | Đổi bài nền chuyển màu mượt (biến CSS thường không chuyển dần) |
+| Hue 40–190 (vàng/xanh lá) vệt sáng 26% (khác 36%), phủ tối 16%, dòng mờ 58% trắng, dòng đang hát có quầng sáng | Bìa vàng làm dòng mờ khó đọc (đã thấy khi thử) |
+| Dòng đang hát sáng, dòng khác mờ (Figma để trắng hết) | Có mốc thời gian thì kiểu karaoke dễ theo hơn |
+| Giữ thanh phát H11 (tiến độ ở giữa), không làm thanh tiến độ dài full như NCT; bỏ ♥/chia sẻ/số lượt (Figma có) | Code dùng chung 1 thanh phát mọi trang; DB không có lượt thích/chia sẻ |
+| Font lời: Be Vietnam Pro 700 (Figma ghi DM Sans) | Vẽ riêng cho tiếng Việt, dấu không chồng; đã dùng cho tên bài ở `/now-playing` |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/) — .env có sẵn trên laptop, PostgreSQL 17 đang chạy
+npm run fetch-lyrics        # tải lời còn thiếu vào lyrics/ (cần mạng; có file rồi thì bỏ qua)
+npm run dev                 # :8080 (nodemon)
+npm test                    # 15 test
+curl -I localhost:8080/lyrics/cilu.lrc          # 200
+# Frontend (emotune-frontend/)
+npm run dev                 # :5173 — đăng nhập demo/demo1234
+npx eslint src && npm run build
+```
+Thử: phát 1 bài (ô tìm kiếm gõ "cilu" + Enter, hoặc chọn cảm xúc) → bấm icon **Lyrics** (cột phải thanh phát) → `/lyrics`.
+Playwright MCP báo "Browser is already in use" → còn Chrome của phiên trước: tìm `chrome.exe` có `mcp-chrome-970c08b` trong dòng lệnh (không có `--type=`) rồi `Stop-Process`.
+
+## 5. Lỗi / việc còn dở
+- *Giá Như*, *Khó Giữ Chân Thành*: LRCLIB không có → tự tạo `emotune-backend/lyrics/gia_nhu.lrc`, `kho_giu_chan_thanh.lrc` (mỗi dòng 1 câu; thêm `[mm:ss.xx]` đầu dòng thì chạy theo nhạc).
+- Máy khác / Pi chưa có lời → `npm run fetch-lyrics` (lyrics/ không có trong git).
+- Backend trên laptop đang chạy bằng `node src/server.js` (Claude bật nền) → không tự nạp lại khi sửa code; tắt rồi `npm run dev`.
+- Figma `91:283`: chưa vẽ trạng thái "dòng đang hát" như code; backup `316:300` xoá tay nếu không cần.
+- Còn từ trước: Figma `294:134` icon thừa `298:210`; ảnh Phạm Hoài Nam / Lệ Quyên là ảnh album; lời nhắn backend tiếng Việt; shuffle/prev/repeat/thiết bị chưa chạy; tài khoản `demo` đã Skip khảo sát.
+- `.claude/settings.json` (cá nhân) và `docs/*.pptx`, `docs/script-*`, `docs/figma/`, `emotion-scanner/docs/` cố ý không commit.
+
+## 6. Bước tiếp theo
+1. Người dùng mở web xem màn lời bài, góp ý (màu, cỡ chữ).
+2. **H6 trợ lý giọng nói** (Figma `284:120`) — chốt Web Speech API hay cách khác; luật từ khoá hay LLM; đặt lại nút mic.
+3. **Giai đoạn B phần cứng HIC (hạn 15/10)**: LD2410C, đồng bộ Pi qua git + migrate DB + `fetch-images`/`fetch-lyrics`, vỏ hộp, systemd + kiosk, sửa slide ("đèn LED" → OLED + nút chạm + cảm biến), tập demo.
+4. Hỏi yêu cầu nộp môn *Xây dựng hệ thống thông minh*.
 
 ---
 

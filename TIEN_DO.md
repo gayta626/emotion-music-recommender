@@ -6,6 +6,7 @@
 
 ## 📍 Đang ở đâu
 
+**09/10 (laptop):** H8, H10, H11 xong và đã commit `7ee0951`. Chiều 09/10: **H12 màn lời bài hát `/lyrics` ✅** (Figma `91:283` vẽ lại kiểu NhacCuaTui; nền đổi màu theo ảnh bìa từng bài; đã commit + push). Tiếp theo: H6 trợ lý giọng nói → **giai đoạn B (Pi), hạn 15/10**.
 **08/10 (PC):** H7 trang chủ kiểu Spotify xong bản đầu (chờ người dùng góp ý từng mục, chưa thử 390px), **H9 ảnh bìa + ảnh ca sĩ thật ✅**, H8 trang ca sĩ ✅ 09/10 (code + thử trình duyệt, chưa commit). Việc 08/10 **đã commit `93c2b9e` + push**. **Phiên sau dùng laptop → làm NOTES.md "🧭 TỔNG KẾT NGÀY 08/10" mục 0 trước** (pull, `.env`, migrate `migrate_images.sql`, `npm run fetch-images`). Sau đó H8 → H6 trợ lý giọng nói → giai đoạn B (Pi).
 Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng cũ giữ nguyên để làm lịch sử). Task 6 + 7 (hộp nhạc) **để sau**; dự phòng nếu không kịp: Pi tự đăng nhập bằng tài khoản `demo`.
 
@@ -17,7 +18,7 @@ Từ 07/10 **vibe coding**: Claude tự viết code (cột "Ai" ở các dòng c
 | A. Backend: nhiều tài khoản + đăng nhập | trước 15/10 (phần ⭐) | 🔄 8 / 11 |
 | F. Giao diện (frontend) | trước 15/10 (phần ⭐) | 🔄 18 / 20 (còn F5 Figma, F11 hộp nhạc) |
 | P. Playlist cá nhân (chế độ không quét) | trước 15/10 nếu kịp | ✅ 6 / 6 |
-| H. Trang chủ duyệt nhạc + luồng quét mới | trước 15/10 | 🔄 5 / 7 (còn làm lại trang chủ cho sát design, trợ lý giọng nói) |
+| H. Trang chủ duyệt nhạc + luồng quét mới | trước 15/10 | 🔄 11 / 12 (còn H6 trợ lý giọng nói) |
 | B. Hoàn thiện phần cứng + demo HIC | **15/10/2026** | ⬜ 0 / 8 |
 | C. Môn Xây dựng hệ thống thông minh | chưa biết | ⬜ 0 / 11 |
 
@@ -136,6 +137,8 @@ Spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` · 
 | H10 | **Icon cảm xúc động** thay emoji + chữ: happy = mặt trời, sad = mây mưa, angry = lửa, neutral = bông tuyết, surprise = mặt đeo kính (SVG + CSS animation, `components/MoodIcon.jsx/.scss`); dùng ở khung chọn cảm xúc, thẻ "Your mood", "Last scan", trang `/stats` | Claude | ✅ 09/10: lint + build OK, đã chụp thử 5 icon; chưa thử trong trình duyệt thật |
 | H11 | **Thanh phát theo Figma `queue-screen`** (frame `186:4`, thanh `186:214`): cao 96px, nền `#131218` + viền trên, 3 cột 320/560/320; ảnh 56px, tên bài DM Sans 15px, tim gạch chéo (= Not for me), 5 nút điều khiển + nút Play vòng tròn trắng, thanh thời gian/âm lượng 4px tím; cột phải: lời bài hát, hàng đợi (menu cũ), thiết bị, loa. Icon mới `assets/icons/bar_*.svg` | Claude | ✅ 09/10: Playwright 1440/1000/390px, thử Play/Pause, tua, tắt tiếng, bấm ảnh mở /now-playing. Lời bài hát, thiết bị, shuffle/prev/repeat chưa có chức năng (làm mờ); nút mic trợ lý giọng nói bỏ khỏi thanh (làm lại ở H6) |
 
+| H12 | **Màn lời bài hát** `/lyrics` (nút Lyrics trên thanh phát; Figma `91:283` vẽ lại kiểu NhacCuaTui): phủ toàn màn hình, trái ảnh bìa + tên + ca sĩ + "Not for me", phải lời chữ to; **lời chạy theo nhạc** (dòng đang hát sáng, tự cuộn, bấm dòng để tua); **nền = màu chủ đạo của ảnh bìa** (mỗi bài 1 màu, chuyển màu mượt) + ảnh bìa mờ. Lời tải bằng `npm run fetch-lyrics` (LRCLIB, chọn bản dài khớp mp3) vào `emotune-backend/lyrics/` (không đưa lên git) | Claude | ✅ 09/10: 6/8 bài có lời chạy theo nhạc; thiếu *Giá Như*, *Khó Giữ Chân Thành* (LRCLIB không có → tự bỏ file `.lrc`). Playwright 1440 + 390px: 3 bài 3 màu nền, tua theo dòng, đóng về trang trước nhạc vẫn chạy |
+
 ---
 
 ## B. Hoàn thiện phần cứng + demo HIC (hạn 15/10)
@@ -175,6 +178,7 @@ Spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` · 
 
 | Ngày | Xong |
 |---|---|
+| 09/10 | H8 trang ca sĩ · H10 icon cảm xúc động · H11 thanh phát queue-screen · H12 màn lời bài hát (nền theo màu ảnh bìa) |
 | 08/10 | H9 ảnh bìa bài hát + ảnh ca sĩ cỡ lớn (`npm run fetch-images`) |
 | 07/10 (khuya 2) | H1–H5: trang chủ duyệt nhạc (Figma 58:112), /now-playing, /scan, icon record-circle, tự quét lại khi rảnh 60s, /songs/for-you, /stats |
 | 07/10 (khuya) | F12 khảo sát gu + C1 điểm thưởng · F13 chữ viết tắt ca sĩ · P6 trang playlist (tạo/đổi tên/xoá, Recommended, nhạc không tắt khi đổi trang) · F15 👎 + xin bài · F16 trang Your mood · C9 buồn+giận · C10 quét không chồng lệnh · F17 tìm kiếm · F14 điện thoại · lint sạch |

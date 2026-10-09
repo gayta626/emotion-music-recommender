@@ -415,7 +415,8 @@ body:has(.player-bar) {
     .bar-center { grid-area: center; }
 
     // hàng trên chỉ giữ hàng đợi (lời bài hát, thiết bị, loa/âm lượng chưa dùng được ở màn hẹp)
-    .bar-extra > .icon-btn,
+    // điện thoại: giữ nút lời bài hát, ẩn các nút phụ còn lại
+    .bar-extra > .icon-btn:not(.lyrics-btn),
     .bar-volume { display: none; }
 
     .bar-cover { width: 48px; height: 48px; }

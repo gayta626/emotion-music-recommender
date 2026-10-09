@@ -10,6 +10,7 @@
     "db:setup": "node scripts/db-setup.js",
     "db:migrate": "node scripts/db-migrate.js",
     "fetch-images": "node scripts/fetch-images.js",
+    "fetch-lyrics": "node scripts/fetch-lyrics.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [

@@ -113,8 +113,10 @@ const PlayerHost = () => {
     }
 
     const onNowPlaying = pathname === "/now-playing";
-    // vao thang /now-playing (go URL / F5) khi chua co bai -> ve trang chu
-    if (onNowPlaying && !suggestResult) return <Navigate to="/" replace />;
+    // man loi bai hat: MusicPlayer phu len toan man hinh, thanh phat van o duoi
+    const onLyrics = pathname === "/lyrics";
+    // vao thang /now-playing, /lyrics (go URL / F5) khi chua co bai -> ve trang chu
+    if ((onNowPlaying || onLyrics) && !suggestResult) return <Navigate to="/" replace />;
     if (!suggestResult) return null;
 
     const inQueue = mode === "playlist" && queue;
@@ -128,6 +130,7 @@ const PlayerHost = () => {
                 playlist={inQueue ? { name: queue.name, songs: queue.songs, index } : null}
                 onJump={jumpTo}
                 onRequest={playRequested}
+                showLyrics={onLyrics}
             />
         </div>
     )

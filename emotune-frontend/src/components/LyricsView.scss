@@ -1,0 +1,332 @@
+// Màn lời bài hát toàn màn hình (Figma 91:283, kiểu NhacCuaTui).
+// Màu nền theo MÀU CHỦ ĐẠO của ảnh bìa: JS đặt --ly-h (sắc độ), --ly-s (độ đậm), --ly-glow-l (độ sáng vệt sáng);
+// độ sáng do CSS giữ ở mức tối vừa phải -> chữ trắng luôn đọc rõ, nhưng không "đen xì".
+// @property: khai báo kiểu cho biến -> đổi bài thì nền chuyển màu mượt (biến thường không chuyển dần được)
+@property --ly-h {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 270;
+}
+
+@property --ly-s {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+
+@property --ly-glow-l {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 38%;
+}
+
+// đang mở lời bài: trang phía sau không cuộn theo con lăn chuột
+body:has(.lyrics-view) {
+  overflow: hidden;
+}
+
+// thanh phát nằm trên nền màu của bài (như NhacCuaTui), chỉ phủ tối nhẹ để chữ/icon vẫn rõ
+.player.lyrics-open .player-bar {
+  background: rgba(8, 7, 12, 0.18);
+  border-top-color: transparent;
+}
+
+.lyrics-view {
+  position: fixed;
+  inset: 0;
+  z-index: 19;               // dưới thanh phát (20), trên header + sidebar
+  isolation: isolate;
+  overflow: hidden;
+  padding-bottom: var(--player-bar-h);
+  color: #fff;
+  text-align: left;          // khung cha (.home-page) căn giữa -> đặt lại theo Figma
+  background:
+    radial-gradient(55% 65% at 28% 32%, hsla(var(--ly-h), var(--ly-s), var(--ly-glow-l), 0.85), transparent 72%),
+    radial-gradient(50% 60% at 82% 72%, hsla(calc(var(--ly-h) + 24), var(--ly-s), 26%, 0.75), transparent 70%),
+    linear-gradient(160deg, hsl(var(--ly-h), var(--ly-s), 22%), hsl(var(--ly-h), var(--ly-s), 9%) 78%);
+  transition: --ly-h 0.9s ease, --ly-s 0.9s ease, --ly-glow-l 0.9s ease;
+  animation: lyrics-in 0.25s ease-out;
+
+  // tối dần ra mép + dưới đáy (chỗ thanh phát) cho chữ nổi
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(rgba(8, 7, 12, 0.16), rgba(8, 7, 12, 0.16)),
+      radial-gradient(120% 95% at 45% 40%, transparent 45%, rgba(8, 7, 12, 0.55)),
+      linear-gradient(transparent 70%, rgba(8, 7, 12, 0.45));
+  }
+}
+
+// ảnh bìa phóng to, làm mờ -> nền có "chất" của bài (như NhacCuaTui), màu vẫn do gradient quyết định
+.lyrics-backdrop {
+  position: absolute;
+  inset: -12%;
+  z-index: -2;
+  background-size: cover;
+  background-position: center;
+  filter: blur(80px) saturate(1.25);
+  opacity: 0.24;
+}
+
+.lyrics-close {
+  position: absolute;
+  top: 28px;
+  right: 40px;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+// 2 cột: 300px (ảnh bìa + tên) | lời bài (Figma: cách nhau 48px, cả khối ~1070px ở giữa)
+.lyrics-content {
+  height: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 120px 40px 0;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 48px;
+}
+
+.lyrics-song {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lyrics-cover {
+  width: 300px;
+  height: 300px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.lyrics-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 20px;
+  min-width: 0;
+}
+
+.lyrics-title {
+  font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lyrics-artist {
+  width: fit-content;
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+}
+
+a.lyrics-artist:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.lyrics-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 22px;
+}
+
+// nút tròn dưới ảnh bìa (vd "Not for me")
+.lyrics-action {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover { background: rgba(255, 255, 255, 0.22); }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+// ---------- cột lời bài ----------
+.lyrics-text {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lyrics-lines {
+  position: relative;        // offsetTop của từng dòng tính theo khung này (để tự cuộn)
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  // chừa khoảng dưới để dòng cuối vẫn cuộn lên được tới 1/3 trên
+  padding: 4px 8px 45vh 0;
+  scrollbar-width: none;
+  // mờ dần ở mép trên / dưới khi cuộn
+  mask-image: linear-gradient(transparent 0, #000 5%, #000 78%, transparent 100%);
+
+  &::-webkit-scrollbar { display: none; }
+
+  li {
+    font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+    font-size: clamp(22px, 2.4vw, 34px);
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    margin-bottom: 18px;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  li.gap {
+    font-size: 22px;
+  }
+
+  // lời chạy theo nhạc: dòng chưa hát / đã hát mờ, dòng đang hát trắng sáng
+  &.is-synced li {
+    color: rgba(255, 255, 255, 0.58);
+    transition: color 0.3s, opacity 0.3s;
+  }
+
+  &.is-synced li.is-active {
+    color: #fff;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.28), 0 2px 14px rgba(0, 0, 0, 0.3);
+  }
+
+  &.is-synced li.gap { opacity: 0.6; }
+  &.is-synced li.gap.is-active { opacity: 1; }
+
+  // bấm 1 dòng -> tua tới đó
+  button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { color: #fff; }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+  }
+}
+
+.lyrics-note {
+  font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.lyrics-hint {
+  padding-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@keyframes lyrics-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+// ---------- màn nhỏ: 1 cột, ảnh bìa nhỏ + tên bài nằm ngang trên cùng ----------
+@media (max-width: 900px) {
+  .lyrics-close {
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .lyrics-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 72px 16px 0;
+  }
+
+  .lyrics-song {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lyrics-cover {
+    width: 64px;
+    height: 64px;
+    border-radius: 6px;
+  }
+
+  .lyrics-meta {
+    padding-top: 0;
+    gap: 2px;
+  }
+
+  .lyrics-title { font-size: 17px; }
+  .lyrics-artist { font-size: 13px; }
+  .lyrics-actions { padding-top: 0; }
+
+  .lyrics-text { flex: 1; }
+
+  .lyrics-lines li {
+    font-size: 22px;
+    margin-bottom: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyrics-view {
+    animation: none;
+    transition: none;
+  }
+
+  .lyrics-lines.is-synced li { transition: none; }
+}

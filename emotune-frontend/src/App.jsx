@@ -28,6 +28,8 @@ const App = () => {
                 <Route path='/scan' element={<ScanPage />} />
                 {/* khung phát lớn do PlayerHost (luôn sống trong MainLayout) tự vẽ */}
                 <Route path='/now-playing' element={null} />
+                {/* màn lời bài hát cũng do PlayerHost vẽ (phủ toàn màn hình, thanh phát vẫn ở dưới) */}
+                <Route path='/lyrics' element={null} />
                 <Route path='/artist/:id' element={<ArtistPage />} />
                 <Route path='/playlist/:id' element={<PlaylistPage />} />
                 <Route path='/stats' element={<MoodPage />} />

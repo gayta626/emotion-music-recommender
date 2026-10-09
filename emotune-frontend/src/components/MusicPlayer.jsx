@@ -3,7 +3,7 @@ import { API_URL } from '../config'
 import { songImageUrl } from '../utils/images'
 import api from '../api'
 import { useCallback, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useHardwareButtons } from '../hardware'
 import ShuffleIcon from '../assets/icons/bar_shuffle.svg?react'
 import PrevIcon from '../assets/icons/bar_prev.svg?react'
@@ -17,6 +17,7 @@ import DevicesIcon from '../assets/icons/bar_devices.svg?react'
 import VolumeIcon from '../assets/icons/bar_volume.svg?react'
 import DislikeIcon from '../assets/icons/bar_heart_off.svg?react'
 import AudioVisualizer from './AudioVisualizer'
+import LyricsView from './LyricsView'
 import { Cover, QueueMenu, QueuePanel, UpNextCard } from './PlayerOverlays'
 import './MusicPlayer.scss'
 
@@ -32,9 +33,11 @@ const formatTime = (seconds) => {
 
 const MusicPlayer = (props) => {
     // playlist: { name, songs, index } khi dang phat playlist, null o che do cam xuc
-    const { data, onFinish, playlist, onJump, onRequest } = props;
+    // showLyrics: dang o /lyrics -> phu man loi bai hat len tren (thanh phat van o duoi)
+    const { data, onFinish, playlist, onJump, onRequest, showLyrics } = props;
     const audioRef = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
     // het bai va bam Next co the xay ra cung luc -> chi gui report 1 lan
     const reportedRef = useRef(false);
 
@@ -139,6 +142,18 @@ const MusicPlayer = (props) => {
         setMuted(value === 0);
     }
 
+    // bam 1 dong loi -> tua toi dong do
+    const seekTo = (seconds) => {
+        audioRef.current.currentTime = seconds;
+    }
+
+    // dong man loi: quay lai trang truoc (mo tu trang nao thi ve trang do)
+    const closeLyrics = () => {
+        if (location.key !== "default") navigate(-1);
+        else navigate("/");
+    }
+    const toggleLyrics = () => (showLyrics ? closeLyrics() : navigate("/lyrics"));
+
     const toggleMute = () => {
         const next = !muted;
         audioRef.current.muted = next;
@@ -175,7 +190,7 @@ const MusicPlayer = (props) => {
     const volumeLevel = muted ? 0 : volume * 100;
 
     return (
-        <div className="player" data-vibe={vibe}>
+        <div className={`player ${showLyrics ? "lyrics-open" : ""}`} data-vibe={vibe}>
             {/* crossOrigin: nhac o cong 8080 khac trang web -> can CORS de song am doc duoc du lieu (thieu thi mat tieng) */}
             <audio ref={audioRef}
                 crossOrigin="anonymous"
@@ -213,6 +228,21 @@ const MusicPlayer = (props) => {
                     <QueuePanel playlist={playlist} onJump={onJump} onClose={() => setQueueOpen(false)} />
                 )}
             </section>
+
+            {showLyrics && (
+                <LyricsView
+                    song={data.song}
+                    coverSrc={coverSrc}
+                    currentTime={currentTime}
+                    onSeek={seekTo}
+                    onClose={closeLyrics}
+                    actions={!playlist && (
+                        <button className="lyrics-action" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
+                            <DislikeIcon />
+                        </button>
+                    )}
+                />
+            )}
 
             {/* thanh phat nhac co dinh duoi cung man hinh */}
             <footer className="player-bar">
@@ -268,7 +298,15 @@ const MusicPlayer = (props) => {
                 </div>
 
                 <div className="bar-extra">
-                    <button className="icon-btn" disabled title="Lyrics: coming soon" aria-label="Lyrics"><LyricsIcon /></button>
+                    <button
+                        className={`icon-btn lyrics-btn ${showLyrics ? "active" : ""}`}
+                        onClick={toggleLyrics}
+                        aria-pressed={!!showLyrics}
+                        aria-label="Lyrics"
+                        title={showLyrics ? "Hide lyrics" : "Lyrics"}
+                    >
+                        <LyricsIcon />
+                    </button>
                     <div className="queue-anchor">
                         <button
                             className={`icon-btn ${menuOpen || queueOpen ? "active" : ""}`}
