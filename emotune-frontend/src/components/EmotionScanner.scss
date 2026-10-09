@@ -85,10 +85,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 44px;
-    padding: 0 18px;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    padding: 0;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: 50%;
     background: var(--chip);
     color: #fff;
     font-family: 'DM Sans', sans-serif;
@@ -96,10 +98,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.15s, transform 0.15s;
-
-    .mood-chip-emoji {
-      font-size: 20px;
-    }
 
     &:hover:not(:disabled) {
       border-color: var(--accent);

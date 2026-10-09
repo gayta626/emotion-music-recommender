@@ -21,6 +21,7 @@ let initWebRoutes = (app) => {
     });
 
     router.get('/artists', artistController.getArtists);
+    router.get('/artists/:id/stats', requireAuth, artistController.getArtistStats);
     router.get('/genres', genreController.getGenres);
     router.get('/profile', requireAuth, profileController.getProfile);
     router.post('/profile', requireAuth, profileController.saveProfile);

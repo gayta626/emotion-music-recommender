@@ -7,6 +7,7 @@
 //      Ca si:    avatars/photos/<ten khong dau>.jpg  vd avatars/photos/son-tung-m-tp.jpg
 //   2. Chua co -> tim tren iTunes Search API (mien phi, khong can key) theo TEN BAI + TEN CA SI,
 //      tai anh ve, luu file roi ghi vao DB. Anh ca si lay tu trang ca si tren Apple Music.
+//      iTunes khong co -> thu Deezer API (mien phi, khong can key; anh ca si 1000x1000, anh bia album 1000x1000).
 //   3. Khong tim thay / khong chac dung -> in ra cuoi de ban tu bo anh vao dung ten file roi chay lai.
 // Anh tai ve co ban quyen cua hang dia / ca si: chi dung cho do an, demo.
 const fs = require('fs');
@@ -47,6 +48,15 @@ const itunesSearch = async (params) => {
     return (await res.json()).results;
 };
 
+// Deezer: khong gioi han chat nhu iTunes. Co the bi chan DNS o 1 so mang nha (api.deezer.com -> 127.0.0.1) -> loi thi bo qua.
+const deezerSearch = async (what, query) => {
+    const res = await fetch(`https://api.deezer.com/search/${what}?` + new URLSearchParams({ q: query, limit: "10" }));
+    if (!res.ok) throw new Error(`Deezer tra loi ${res.status}`);
+    return (await res.json()).data || [];
+};
+// Deezer tra link anh co "//" (khong co ma anh) khi ca si/album chua co anh -> khong dung
+const hasImage = (url) => !!url && !/\/(artist|cover)\/\//.test(url);
+
 const download = async (url, file) => {
     const res = await fetch(url);
     const type = res.headers.get("content-type") || "";
@@ -63,10 +73,26 @@ const pickTrack = (results, title, artist) => {
         || null;
 };
 
+// Deezer: ca si khop, ten bai khop (khong lay ban remix/live) -> anh bia album 1000x1000
+const fetchSongCoverDeezer = async (song) => {
+    const results = await deezerSearch("track", `artist:"${song.artist}" track:"${baseTitle(song.title)}"`);
+    const byArtist = results.filter((r) => plain(r.artist.name).includes(plain(song.artist)) || plain(song.artist).includes(plain(r.artist.name)));
+    const hit = byArtist.find((r) => plain(r.title) === plain(song.title))
+        || byArtist.find((r) => plain(baseTitle(r.title)) === plain(baseTitle(song.title)) && !ALT_VERSION.test(r.title));
+    const url = hit?.album?.cover_xl;
+    if (!hit || !hasImage(url)) return null;
+    const file = path.basename(song.file_path, path.extname(song.file_path)) + ".jpg";
+    await download(url, path.join(COVERS_DIR, file));
+    return { file, source: `Deezer: ${hit.title} — ${hit.artist.name} (album: ${hit.album.title})` };
+};
+
 const fetchSongCover = async (song) => {
     const results = await itunesSearch({ term: `${baseTitle(song.title)} ${song.artist}`, entity: "song" });
     const hit = pickTrack(results, song.title, song.artist);
-    if (!hit) return { error: "khong tim thay ban goc tren iTunes" };
+    if (!hit) {
+        const dz = await fetchSongCoverDeezer(song).catch(() => null);
+        return dz || { error: "khong tim thay ban goc tren iTunes lan Deezer" };
+    }
     // artworkUrl100 la anh 100x100 -> doi so trong link de lay ban 600x600 (du net cho the lon nhat)
     const url = hit.artworkUrl100.replace(/\/\d+x\d+bb\./, "/600x600bb.");
     const file = path.basename(song.file_path, path.extname(song.file_path)) + ".jpg";
@@ -74,7 +100,25 @@ const fetchSongCover = async (song) => {
     return { file, source: `${hit.trackName} — ${hit.artistName} (album: ${hit.collectionName})` };
 };
 
+// Deezer co anh chan dung ca si (picture_xl 1000x1000): lay ket qua trung ten (khong dau, khong phan biet hoa thuong)
+const fetchArtistPhotoDeezer = async (artist) => {
+    const results = await deezerSearch("artist", artist.name);
+    const hit = results.find((r) => plain(r.name) === plain(artist.name));
+    if (!hit || !hasImage(hit.picture_xl)) return null;
+    const file = slug(artist.name) + ".jpg";
+    await download(hit.picture_xl, path.join(PHOTOS_DIR, file));
+    return { file, source: `Deezer: ${hit.link}` };
+};
+
+// iTunes truoc, khong co thi thu Deezer
 const fetchArtistPhoto = async (artist) => {
+    const viaItunes = await fetchArtistPhotoItunes(artist);
+    if (!viaItunes.error) return viaItunes;
+    const dz = await fetchArtistPhotoDeezer(artist).catch(() => null);
+    return dz || { error: viaItunes.error + " (Deezer cung khong co)" };
+};
+
+const fetchArtistPhotoItunes = async (artist) => {
     const results = await itunesSearch({ term: artist.name, entity: "musicArtist", limit: "5" });
     const hit = results.find((r) => plain(r.artistName) === plain(artist.name));
     if (!hit?.artistLinkUrl) return { error: "khong co ca si nay tren iTunes" };

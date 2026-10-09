@@ -2,11 +2,11 @@
 
 // thu tu co dinh (mau theo cam xuc, khong theo thu hang) — mau da kiem tra mu mau tren nen toi
 export const EMOTIONS = [
-    { key: 'happy', label: 'Happy', emoji: '😊' },
-    { key: 'surprise', label: 'Surprised', emoji: '😲' },
-    { key: 'neutral', label: 'Neutral', emoji: '😐' },
-    { key: 'sad', label: 'Sad', emoji: '😢' },
-    { key: 'angry', label: 'Angry', emoji: '😠' },
+    { key: 'happy', label: 'Happy' },
+    { key: 'surprise', label: 'Surprised' },
+    { key: 'neutral', label: 'Neutral' },
+    { key: 'sad', label: 'Sad' },
+    { key: 'angry', label: 'Angry' },
 ];
 export const NEGATIVE = ['sad', 'angry'];
 

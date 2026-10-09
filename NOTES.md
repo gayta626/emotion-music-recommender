@@ -1,10 +1,88 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **08/10/2026** (trên PC) — xem **"🧭 TỔNG KẾT NGÀY 08/10/2026"** ngay bên dưới; **mai làm tiếp trên laptop → làm mục 0 trước**. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: phần mềm gần xong; trang chủ kiểu Spotify (H7, chờ góp ý), **ảnh bìa + ảnh ca sĩ thật** (H9, `npm run fetch-images`), thiết kế trang ca sĩ trên Figma `294:134` (H8, chờ duyệt). Còn: trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Việc 08/10 **đã commit `93c2b9e` + push** lên GitHub (laptop chỉ cần `git pull`).
+> Phiên gần nhất: **09/10/2026** (trên LAPTOP) — xem **"🧭 PHIÊN 09/10/2026"** ngay bên dưới. Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: phần mềm gần xong — trang chủ kiểu Spotify (H7), ảnh thật đủ 10/10 bài + 11/11 ca sĩ (H9), **icon cảm xúc động** (H10), **trang ca sĩ `/artist/:id`** (H8), **thanh phát theo Figma `queue-screen`** (H11). Còn: **chép mp3 vào `emotune-backend/music/`** (đang trống → không phát được nhạc), trợ lý giọng nói (H6), hộp nhạc + phần cứng (giai đoạn B). Việc 09/10 đã commit + push.
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# 🧭 PHIÊN 09/10/2026 (laptop) — icon cảm xúc động, ảnh Deezer, trang ca sĩ, thanh phát queue-screen
+
+## 1. Mục tiêu
+1. Làm mục 0 của phiên 08/10 trên laptop (pull, cài, migrate DB, ảnh).
+2. Đổi emoji + chữ mô tả cảm xúc thành **icon động, không chữ**: vui = mặt trời, buồn = mây mưa, giận = lửa, bình thường ("chill") = bông tuyết, bất ngờ = mặt đeo kính.
+3. Lấy ảnh ca sĩ / bìa còn thiếu bằng **Deezer API** (người dùng gọi là "dever"), không để khung trống.
+4. Sửa thiết kế Figma trang ca sĩ (icon thay emoji), rồi **code trang ca sĩ (H8)**.
+5. Làm lại **thanh phát nhạc giống Figma `queue-screen`** và sửa lỗi thanh phát.
+
+## 2. Việc đã làm xong
+| Việc | File |
+|---|---|
+| Mục 0: `git pull` (2123c39 → a4352df), `npm install` BE/FE, `db:migrate` `migrate_playlists.sql` + `migrate_images.sql`, `npm run fetch-images` | — (DB laptop) |
+| **H10 icon cảm xúc động** (SVG + CSS animation, tắt khi "giảm chuyển động"; tên cảm xúc chỉ ở `aria-label`/`title`) — dùng ở khung chọn cảm xúc (nút tròn chỉ icon), thẻ "Your mood", "Last scan", ô "Most common mood" `/stats`; bỏ trường `emoji` trong `EMOTIONS` | mới `emotune-frontend/src/components/MoodIcon.jsx/.scss`; sửa `EmotionScanner.jsx/.scss`, `pages/BrowsePage.jsx`, `pages/MoodPage.jsx`, `utils/moodStats.js` |
+| **Deezer** làm nguồn dự phòng trong `fetch-images` (iTunes không có → Deezer) → ảnh **Phạm Hoài Nam**, **Lệ Quyên** (Deezer chỉ có ảnh album của 2 người này). Bìa tự vẽ cho 2 bài không có ca sĩ | `emotune-backend/scripts/fetch-images.js`; ảnh mới `avatars/photos/pham-hoai-nam.jpg`, `le-quyen.jpg`, `covers/meditation.png`, `covers/reduce_stress.png` |
+| Figma trang ca sĩ `294:134`: chip/pill/thanh mood dùng icon thay emoji + chữ, "Chill" → "Neutral"; 5 component `Mood icon/*` (`303:2`), icon import thừa dời sang `304:222` | Figma `lycGTr71v02BpzYgjmZZS3` |
+| **H8 trang ca sĩ** `/artist/:id`: hero ảnh + tên, Play / Shuffle / Follow (= thêm vào gu qua `POST /profile`), Popular (xếp theo lượt nghe của mình), "Fits your mood now" (theo lần quét gần nhất; buồn/giận kéo dài → bài vui), Songs + chip lọc icon, Mixes (+ Radio), Fans also like (ưu tiên cùng thể loại), About + "You & ca sĩ" (% cảm xúc khi nghe). Bấm ca sĩ ở trang chủ / thanh bên / Fans also like đều mở trang này | mới `pages/ArtistPage.jsx/.scss`, `utils/artistPage.js` (hàm thuần), `components/BrowseCards.jsx` (SongCard, SongCover, ArtistCard, MixCard, PlayBadge tách từ BrowsePage), `utils/mixes.js`; sửa `App.jsx`, `SideBar.jsx`, `Shelf.jsx` (prop `toolbar`), `BrowsePage.jsx/.scss` (`.vibe-radio`) |
+| API **`GET /artists/:id/stats`** (cần đăng nhập): `{plays:{songId:{total,month}}, monthTotal, total, moods:[{emotion,count}]}` — lượt nghe từ `recently_played`, cảm xúc khi nghe từ `mood_history` action good/neutral/bad; 400 id sai, 404 không có ca sĩ | `emotune-backend/src/model/artistModel.js`, `services/artistService.js` (`summarizePlays` thuần), `controllers/artistController.js`, `routes/web.js`, test `test/artistStats.test.js` |
+| **H11 thanh phát theo Figma `queue-screen`** (`186:4`, thanh `186:214`): cao 96px, nền `#131218` + viền `#26242c`, 3 cột 320/560/320, ảnh 56px, tên DM Sans 15px, tim gạch chéo = "Not for me", nút Play vòng trắng 42px, thanh 4px tím `#c9a9f5`/`#5f5d64`; phải: lời bài hát, hàng đợi (menu cũ), thiết bị, loa + âm lượng 80px | `components/MusicPlayer.jsx/.scss`, 11 icon mới `assets/icons/bar_*.svg` (Play, Pause, hàng đợi tự vẽ) |
+| Sửa lỗi: icon Play thiếu tam giác (SVG Figma xuất thiếu) | `assets/icons/bar_play.svg` |
+| Sửa lỗi: **file mp3 không tải được → trước đây tự nhảy bài ngay** (thanh phát hiện rồi biến mất, về màn quét). Giờ dừng lại, báo đỏ "Can't play this song: the music file is missing…", khoá Play; Next = sang bài khác **không chấm điểm** | `components/MusicPlayer.jsx/.scss` (`loadError`) |
+| Bảng tiến độ: H8 ✅, H9 cập nhật, thêm H10, H11 | `TIEN_DO.md` |
+
+Đã thử: `npm test` 15/15, `npx eslint src` sạch, `npm run build` OK; Playwright 1440/1000/390px cho trang chủ, `/stats`, khung chọn cảm xúc, trang ca sĩ (có/không dữ liệu, ca sĩ không có bài, id lạ, Follow), thanh phát (Play/Pause, tua, tắt tiếng, menu, mở /now-playing). **Chưa thử trên trình duyệt** bản sửa `loadError` (Playwright mất kết nối) — chỉ lint/build.
+
+## 3. Quyết định và lý do
+| Quyết định | Lý do |
+|---|---|
+| Icon cảm xúc tự vẽ SVG + CSS (không thư viện, không Lottie) | Nhẹ, cùng 1 bộ hình cho code và Figma (`createNodeFromSvg` cùng SVG) |
+| Chú giải biểu đồ / tiêu đề bảng ở `/stats` **giữ chữ** | Đó là chú thích màu, không phải "icon kèm mô tả" |
+| Deezer chỉ là dự phòng sau iTunes; bài không có ca sĩ → **bìa tự vẽ**, không lấy đại kết quả tìm theo tên | Tránh gán nhầm bìa của người khác |
+| Trang ca sĩ **bỏ thời lượng bài và đoạn tiểu sử** có trong Figma | DB chưa có dữ liệu; không bịa thông tin người thật |
+| "Follow" = thêm ca sĩ vào khảo sát gu (`survey_artists`) | Tận dụng điểm thưởng gu có sẵn trong gợi ý, không thêm bảng |
+| `ArtistPage` bọc `key={id}` | Sang ca sĩ khác thì trạng thái (tải, chip lọc) về đầu, không cần setState trong effect (eslint) |
+| `@container` trong `ArtistPage.scss` giữ selector `.browse-page.artist-page …` | Selector ngắn hơn bị quy tắc gốc đè (lỗi tràn ngang 390px đã gặp) |
+| Thanh phát: bỏ nút mic (trợ lý giọng nói) | Frame `queue-screen` không có; đặt lại khi làm H6. Lời bài hát / thiết bị / shuffle / prev / repeat chỉ hiển thị (làm mờ, "coming soon") |
+| File nhạc lỗi → **không tự nhảy bài** | Tự nhảy làm thanh phát nhấp nháy, người dùng không biết lỗi gì; dễ lặp liên tục khi đang lướt |
+| Figma MCP: người dùng đăng nhập lại tài khoản khác giữa phiên (tài khoản cũ hết lượt Starter) | Gọi `get_metadata` theo id trang (`58:2`) để tìm id frame, rồi `get_design_context` 1 lần/frame |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/): .env đã có trên laptop; PostgreSQL 17 service đang chạy
+npm install && npm run dev                          # :8080
+npm run db:migrate -- db/migrate_playlists.sql      # an toàn chạy lại
+npm run db:migrate -- db/migrate_images.sql
+npm run fetch-images                                # iTunes → Deezer; có file sẵn thì chỉ ghi DB
+npm test                                            # 15 test
+# Frontend (emotune-frontend/)
+npm install && npm run dev                          # :5173 — đăng nhập demo/demo1234
+npx eslint src && npm run build
+# Thử API mới
+TOKEN=$(curl -s -X POST localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"demo","password":"demo1234"}' | node -pe "JSON.parse(require('fs').readFileSync(0)).token")
+curl -s localhost:8080/artists/4/stats -H "Authorization: Bearer $TOKEN"
+# Chép mp3 (bắt buộc để phát nhạc)
+scp "vinh@raspberrypi.local:~/emotion-music-recommender/emotune-backend/music/*.mp3" emotune-backend/music/
+npm run rename-music -- --apply                     # nếu tên file không khớp DB
+```
+Figma: file `lycGTr71v02BpzYgjmZZS3`, trang `58:2` "homepage signup": trang chủ `58:112`, screen play nhạc `92:301`, **queue-screen `186:4`** (thanh `186:214`), lyrics `91:283`, Page playlist `118:6` / `135:143`, **trang ca sĩ `294:134`**, icon cảm xúc `303:2`, trợ lý giọng nói `284:120`.
+
+## 5. Lỗi / việc còn dở
+- **`emotune-backend/music/` trống** → nhạc không phát (giờ thanh phát báo lỗi đỏ). Cần chép 10 mp3. ⚠ Trong phiên Claude đã tạo rồi xoá mp3 im lặng cùng tên để thử; nếu người dùng có chép mp3 thật vào khoảng 08:20–09:30 sáng 09/10 thì có thể đã mất → chép lại.
+- Bản sửa `loadError` chưa thử trên trình duyệt (Playwright MCP mất kết nối cuối phiên → `/mcp` kết nối lại).
+- Figma `294:134`: còn icon thừa `298:210` trên chữ "Popular" (lệnh dời nó sang `304:222` bị chặn do hết lượt → kéo tay ra ngoài hoặc gọi lại `use_figma`); dòng "You mostly play… when you feel ☀" trong thẻ About chưa chụp kiểm tra; "Fans also like" Da LAB / RPT MCK vẫn là chữ viết tắt trong Figma (Plugin API không đưa ảnh ngoài vào được).
+- Ảnh ca sĩ *Phạm Hoài Nam* / *Lệ Quyên* là ảnh album (có chữ), không phải chân dung.
+- Thanh phát: lời bài hát, thiết bị, shuffle, prev, repeat chưa có chức năng.
+- Lời nhắn cảm xúc (`message` từ backend) vẫn tiếng Việt, giao diện tiếng Anh.
+- Tài khoản `demo` đã bấm **Skip khảo sát** khi Claude thử (survey_done_at có giá trị).
+- `.claude/settings.json` đổi (cá nhân) — không commit. Các file `docs/*.pptx`, `docs/script-*`, `docs/figma/`, `emotion-scanner/docs/` của người dùng vẫn chưa track (cố ý không commit).
+
+## 6. Bước tiếp theo
+1. Chép mp3 vào `emotune-backend/music/` → thử trọn vòng: chọn cảm xúc → nghe → hết bài → chấm điểm → trang ca sĩ hiện lượt nghe / % cảm xúc.
+2. Kết nối lại Playwright (`/mcp`) → thử thanh phát khi thiếu file (dòng báo lỗi + Next).
+3. **H6 trợ lý giọng nói** (Figma `284:120`) — đặt lại nút mic.
+4. Giai đoạn B phần cứng HIC (hạn 15/10): LD2410C, đồng bộ Pi qua git + migrate DB, vỏ hộp, systemd + kiosk, sửa slide ("đèn LED" → OLED + nút chạm + cảm biến).
+5. Hỏi yêu cầu nộp môn *Xây dựng hệ thống thông minh*.
 
 ---
 

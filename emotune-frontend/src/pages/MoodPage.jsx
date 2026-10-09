@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
+import MoodIcon from '../components/MoodIcon';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import './MoodPage.scss';
 
@@ -52,7 +53,7 @@ const MoodPage = () => {
                 <div className="mood-tile">
                     <span className="tile-label">Most common mood</span>
                     <span className="tile-value">
-                        {weekTotal ? <>{top.emoji} {top.label}</> : '—'}
+                        {weekTotal ? <MoodIcon emotion={top.key} size={40} /> : '—'}
                     </span>
                 </div>
                 <div className={`mood-tile status ${status.on ? 'on' : ''}`}>

@@ -5,16 +5,17 @@ import api from '../api'
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHardwareButtons } from '../hardware'
-import ShuffleIcon from '../assets/icons/player_shuffle.svg?react'
-import PrevIcon from '../assets/icons/player_prev.svg?react'
-import PlayIcon from '../assets/icons/player_play.svg?react'
-import PauseIcon from '../assets/icons/player_pause.svg?react'
-import NextIcon from '../assets/icons/player_next.svg?react'
-import RepeatIcon from '../assets/icons/player_repeat.svg?react'
-import MicIcon from '../assets/icons/player_mic.svg?react'
-import QueueIcon from '../assets/icons/player_queue.svg?react'
-import VolumeIcon from '../assets/icons/player_volume.svg?react'
-import DislikeIcon from '../assets/icons/dislike_icon.svg?react'
+import ShuffleIcon from '../assets/icons/bar_shuffle.svg?react'
+import PrevIcon from '../assets/icons/bar_prev.svg?react'
+import PlayIcon from '../assets/icons/bar_play.svg?react'
+import PauseIcon from '../assets/icons/bar_pause.svg?react'
+import NextIcon from '../assets/icons/bar_next.svg?react'
+import RepeatIcon from '../assets/icons/bar_repeat.svg?react'
+import LyricsIcon from '../assets/icons/bar_lyrics.svg?react'
+import QueueIcon from '../assets/icons/bar_queue.svg?react'
+import DevicesIcon from '../assets/icons/bar_devices.svg?react'
+import VolumeIcon from '../assets/icons/bar_volume.svg?react'
+import DislikeIcon from '../assets/icons/bar_heart_off.svg?react'
 import AudioVisualizer from './AudioVisualizer'
 import { Cover, QueueMenu, QueuePanel, UpNextCard } from './PlayerOverlays'
 import './MusicPlayer.scss'
@@ -44,6 +45,8 @@ const MusicPlayer = (props) => {
     const [muted, setMuted] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [queueOpen, setQueueOpen] = useState(false);
+    // khong tai duoc file nhac (thieu mp3 / sai ten) -> bao tren thanh phat, khong tu nhay bai
+    const [loadError, setLoadError] = useState(false);
     // giu nguyen ham giua cac lan render (trinh phat render lai ~4 lan/giay theo thoi gian bai)
     const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -56,6 +59,12 @@ const MusicPlayer = (props) => {
     const finishAndSend = () => {
         if (reportedRef.current) return;
         reportedRef.current = true;
+
+        // bai khong phat duoc -> sang bai khac, khong cham diem (nghe 0% khong phai do nguoi dung khong thich)
+        if (loadError) {
+            onFinish();
+            return;
+        }
 
         // che do playlist khong cham diem: diem so thich gan voi cam xuc, playlist khong co cam xuc
         if (playlist) {
@@ -104,11 +113,12 @@ const MusicPlayer = (props) => {
         onRequest(result);
     }
 
-    // khong phat duoc file (sai ten / thieu mp3) -> bo qua bai, khong cham diem
+    // khong phat duoc file (sai ten / thieu mp3): truoc day tu nhay bai ngay -> thanh phat hien roi bien mat,
+    // nguoi dung khong biet vi sao (va de lap lai lien tuc). Gio dung lai, bao loi; bam Next de sang bai khac.
     const handleError = () => {
         console.log("Khong phat duoc file:", data.song.file_path)
-        reportedRef.current = true;
-        onFinish()
+        setLoadError(true);
+        setIsPlaying(false);
     }
 
     const togglePlay = () => {
@@ -217,7 +227,7 @@ const MusicPlayer = (props) => {
                     </button>
                     {/* che do playlist khong cham diem -> khong co nut nay */}
                     {!playlist && (
-                        <button className="icon-btn small dislike" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
+                        <button className="icon-btn dislike" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
                             <DislikeIcon />
                         </button>
                     )}
@@ -227,13 +237,18 @@ const MusicPlayer = (props) => {
                     <div className="bar-controls">
                         <button className="icon-btn" disabled title="Coming soon" aria-label="Shuffle"><ShuffleIcon /></button>
                         <button className="icon-btn" disabled title="Coming soon" aria-label="Previous song"><PrevIcon /></button>
-                        <button className="play-btn" onClick={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}>
+                        <button className="play-btn" onClick={togglePlay} disabled={loadError} aria-label={isPlaying ? "Pause" : "Play"}>
                             {isPlaying ? <PauseIcon /> : <PlayIcon />}
                         </button>
-                        <button className="icon-btn next" onClick={finishAndSend} aria-label="Next song"><NextIcon /></button>
+                        <button className="icon-btn" onClick={finishAndSend} aria-label="Next song"><NextIcon /></button>
                         <button className="icon-btn" disabled title="Coming soon" aria-label="Repeat"><RepeatIcon /></button>
                     </div>
 
+                    {loadError ? (
+                        <p className="bar-error" role="alert">
+                            Can't play this song: the music file is missing on the server. Press next to skip.
+                        </p>
+                    ) : (
                     <div className="bar-progress">
                         <span className="time">{formatTime(currentTime)}</span>
                         <input
@@ -249,19 +264,21 @@ const MusicPlayer = (props) => {
                         />
                         <span className="time">{formatTime(duration)}</span>
                     </div>
+                    )}
                 </div>
 
                 <div className="bar-extra">
-                    <button className="icon-btn small" disabled title="Coming soon" aria-label="Voice"><MicIcon /></button>
+                    <button className="icon-btn" disabled title="Lyrics: coming soon" aria-label="Lyrics"><LyricsIcon /></button>
                     <div className="queue-anchor">
                         <button
-                            className={`icon-btn small ${menuOpen || queueOpen ? "active" : ""}`}
+                            className={`icon-btn ${menuOpen || queueOpen ? "active" : ""}`}
                             // chan mousedown de "bam ra ngoai thi dong menu" khong dong roi mo lai ngay
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={() => setMenuOpen((open) => !open)}
                             aria-haspopup="menu"
                             aria-expanded={menuOpen}
                             aria-label="Playlist options"
+                            title="Queue and playlist"
                         >
                             <QueueIcon />
                         </button>
@@ -276,20 +293,23 @@ const MusicPlayer = (props) => {
                             />
                         )}
                     </div>
-                    <button className="icon-btn small" onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"}>
-                        <VolumeIcon />
-                    </button>
-                    <input
-                        type="range"
-                        className="slider volume"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={muted ? 0 : volume}
-                        onChange={handleVolume}
-                        style={{ "--fill": `${volumeLevel}%` }}
-                        aria-label="Volume"
-                    />
+                    <button className="icon-btn" disabled title="Devices: coming soon" aria-label="Devices"><DevicesIcon /></button>
+                    <div className="bar-volume">
+                        <button className="icon-btn" onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"} title={muted ? "Unmute" : "Mute"}>
+                            <VolumeIcon />
+                        </button>
+                        <input
+                            type="range"
+                            className="slider volume"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={muted ? 0 : volume}
+                            onChange={handleVolume}
+                            style={{ "--fill": `${volumeLevel}%` }}
+                            aria-label="Volume"
+                        />
+                    </div>
                 </div>
             </footer>
         </div>

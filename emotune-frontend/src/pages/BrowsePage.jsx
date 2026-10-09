@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import ArtistAvatar from '../components/ArtistAvatar';
+import MoodIcon from '../components/MoodIcon';
+import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
+import { MIXES } from '../utils/mixes';
 import Shelf from '../components/Shelf';
 import { usePlayback } from '../contexts/playbackContext';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import { timeAgo } from '../utils/moodSession';
-import { coverUrl } from '../utils/images';
 import PlayIcon from '../assets/icons/player_play.svg?react';
 import RecordIcon from '../assets/icons/record_circle_icon.svg?react';
 import bannerImg from '../assets/images/create_playlist_banner.png';
@@ -29,59 +30,8 @@ const useLoad = (url, deps = []) => {
     return state;
 }
 
-// ten + mo ta cho moi "mix" theo vibe bai hat (hang kieu "Popular radio" cua Spotify)
-const MIXES = {
-    happy: { title: 'Good Vibes', desc: 'Upbeat songs to keep the smile going' },
-    surprise: { title: 'Something New', desc: 'Songs with a twist you did not see coming' },
-    neutral: { title: 'Easy Listening', desc: 'Calm tracks for any time of day' },
-    sad: { title: 'Rainy Day', desc: 'Slow songs for quiet, heavy moments' },
-    angry: { title: 'Let It Out', desc: 'Loud enough to let the steam out' },
-};
-
 const LOAD_ERROR = "Couldn't load this section.";
 const EMPTY_GENRE = 'No song in this genre yet.';
-
-// bo "(feat. ...)" cho ten bai tren anh bia
-const shortTitle = (title) => title.replace(/\s*\(.*\)\s*$/, '');
-
-// danh sach ca si cua cac bai -> "With A, B and more"
-const withArtists = (songs) => {
-    const names = [...new Set(songs.map((s) => s.artist).filter(Boolean))];
-    if (!names.length) return 'Songs from the NYX library';
-    if (names.length === 1) return `With ${names[0]}`;
-    return `With ${names.slice(0, 2).join(', ')}${names.length > 2 ? ' and more' : ''}`;
-}
-
-// nut ▶ tron hien khi re chuot vao the (trong the la <button> thi chi de trang tri)
-const PlayBadge = () => (
-    <span className="card-play" aria-hidden="true"><PlayIcon /></span>
-)
-
-// Anh bia bai hat: co anh bia that (covers/) thi dung; chua co (hoac file loi) -> tu ve:
-// nen theo vibe bai, ten bai chu to, anh ca si tron nho o goc.
-const SongCover = ({ song }) => {
-    const [failed, setFailed] = useState(false);
-    const src = coverUrl(song);
-    if (src && !failed) {
-        return <img className="cover cover-img" src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
-    }
-    return (
-        <span className={`cover vibe-${song.emotion || 'neutral'}`}>
-            <span className="cover-brand">NYX</span>
-            {song.artist && <ArtistAvatar className="cover-face" name={song.artist} avatar={song.artist_avatar} />}
-            <span className="cover-title">{shortTitle(song.title)}</span>
-        </span>
-    )
-}
-
-// the bai hat: bam = phat ngay
-const SongCard = ({ song, playing, onPlay }) => (
-    <button className={`card ${playing ? 'playing' : ''}`} onClick={() => onPlay(song)} title={`Play ${song.title}`}>
-        <span className="card-art"><SongCover song={song} /><PlayBadge /></span>
-        <span className="card-title">{song.title}</span>
-        <span className="card-sub">{song.artist || 'Unknown artist'}</span>
-    </button>
-)
 
 // the playlist: bam the = mo trang playlist, nut ▶ = phat luon (2 nut rieng, khong long nhau)
 const PlaylistCard = ({ playlist, onOpen, onPlay }) => (
@@ -135,7 +85,7 @@ const BrowsePage = () => {
         return { lists, fill };
     }, [playlists.data, forYou.data]);
 
-    // ca si co bai dung truoc (bam = phat bai cua ca si); ca si chua co bai mo di o cuoi
+    // ca si co bai dung truoc (bam = mo trang ca si); ca si chua co bai o cuoi
     // (cho ca 2 API xong moi ve, tranh hang bi sap lai ngay sau khi hien)
     const artistTiles = useMemo(() => (artists.data && songs.data ? artists.data : [])
         .map((a) => ({ ...a, songs: songs.data.filter((s) => s.artist_id === a.id) }))
@@ -209,22 +159,7 @@ const BrowsePage = () => {
             </Shelf>
 
             <Shelf title="Popular artists" note={artists.error ? LOAD_ERROR : null}>
-                {artistTiles.map((a) => (
-                    <button
-                        key={a.id}
-                        className="card artist"
-                        onClick={() => playQueue({ name: a.name, songs: a.songs })}
-                        disabled={!a.songs.length}
-                        title={a.songs.length ? `Play ${a.name}` : `${a.name} has no songs yet`}
-                    >
-                        <span className="card-art round">
-                            <ArtistAvatar className="artist-photo" name={a.name} avatar={a.avatar} />
-                            {a.songs.length > 0 && <PlayBadge />}
-                        </span>
-                        <span className="card-title">{a.name}</span>
-                        <span className="card-sub">Artist</span>
-                    </button>
-                ))}
+                {artistTiles.map((a) => <ArtistCard key={a.id} artist={a} onOpen={(artist) => navigate(`/artist/${artist.id}`)} />)}
             </Shelf>
 
             <Shelf
@@ -239,21 +174,7 @@ const BrowsePage = () => {
                 title="Mixes for every mood"
                 note={songs.error ? LOAD_ERROR : songs.data && !mixes.length ? EMPTY_GENRE : null}
             >
-                {mixes.map((m) => (
-                    <button key={m.key} className="card mix" onClick={() => playQueue({ name: m.title, songs: m.songs })} title={`Play ${m.title}`}>
-                        <span className={`card-art mix-art vibe-${m.key}`}>
-                            <span className="mix-label">MIX</span>
-                            <span className="mix-faces">
-                                {[...new Map(m.songs.filter((s) => s.artist).map((s) => [s.artist, s])).values()].slice(0, 3).map((s) => (
-                                    <ArtistAvatar key={s.artist} className="mix-face" name={s.artist} avatar={s.artist_avatar} />
-                                ))}
-                            </span>
-                            <span className="mix-title">{m.title}</span>
-                            <PlayBadge />
-                        </span>
-                        <span className="card-sub two-lines">{withArtists(m.songs)} · {m.desc}</span>
-                    </button>
-                ))}
+                {mixes.map((m) => <MixCard key={m.key} mix={m} onPlay={(mix) => playQueue({ name: mix.title, songs: mix.songs })} />)}
             </Shelf>
 
             {/* 2 the lon cuoi trang (vi tri the podcast #471824 + khung xam trong Figma) */}
@@ -261,7 +182,7 @@ const BrowsePage = () => {
                 <article className="feature mood-feature">
                     <div className="feature-top">
                         <span className={`feature-thumb vibe-${moodSummary?.total ? moodSummary.top.key : 'neutral'}`} aria-hidden="true">
-                            {moodSummary?.total ? moodSummary.top.emoji : '🙂'}
+                            <MoodIcon emotion={moodSummary?.total ? moodSummary.top.key : 'neutral'} size={72} />
                         </span>
                         <div>
                             <h3>{moodSummary?.total ? `Mostly ${moodSummary.top.label.toLowerCase()} this week` : 'No scans this week yet'}</h3>
@@ -306,7 +227,7 @@ const BrowsePage = () => {
                     <div className="feature-panel">
                         <p className="feature-line big">
                             {lastMoodInfo
-                                ? <>Last scan: {lastMoodInfo.emoji} {lastMoodInfo.label} · {timeAgo(now - lastMood.at)}</>
+                                ? <>Last scan: <MoodIcon emotion={lastMoodInfo.key} size={28} /> · {timeAgo(now - lastMood.at)}</>
                                 : 'No scan in this session yet'}
                         </p>
                         <p className="feature-line">

@@ -1,8 +1,10 @@
-// Trình phát nhạc theo Figma "screen play nhạc" (92:301):
-// khung lớn gradient (đổi màu theo vibe của bài, data-vibe trên .player) + thanh phát cố định dưới cùng
+// Trình phát nhạc: khung lớn theo Figma "screen play nhạc" (92:301) — gradient đổi màu theo vibe của bài
+// (data-vibe trên .player); thanh phát cố định dưới cùng theo Figma "queue-screen" (186:4, "Now Playing control bar" 186:214)
 :root {
-  --player-bar-h: 112px;
-  --bar-grey: #8b8989;
+  --player-bar-h: 96px;
+  --bar-grey: #8b8989;       // chữ phụ + icon xám
+  --bar-track: #5f5d64;      // phần chưa chạy của thanh thời gian / âm lượng
+  --bar-purple: #c9a9f5;     // phần đã chạy
 }
 
 // đang phát nhạc -> sidebar ngắn lại và nội dung mọi trang chừa chỗ, để không bị thanh phát che
@@ -109,7 +111,7 @@ body:has(.player-bar) {
   line-height: 1;
 }
 
-// ---------- thanh phát dưới cùng ----------
+// ---------- thanh phát dưới cùng (Figma 186:214: cao 96px, 3 cột 320 / 560 / 320) ----------
 .player-bar {
   position: fixed;
   left: 0;
@@ -118,23 +120,24 @@ body:has(.player-bar) {
   z-index: 20;
   height: var(--player-bar-h);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 780px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 320px) minmax(0, 560px) minmax(0, 320px);
+  justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  padding: 0 32px 0 50px;
-  background: #000;
+  padding: 16px 32px;
+  background: #131218;
+  border-top: 1px solid #26242c;
   text-align: left;
 
+  // cột trái: ảnh 56px + tên bài / ca sĩ + tim gạch chéo (= "Not for me")
   .bar-song {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 16px;
     min-width: 0;
   }
 
   .dislike {
     flex-shrink: 0;
-    margin-left: 4px;
   }
 
   // nút trong suốt bọc ảnh + tên bài (bấm -> /now-playing)
@@ -142,7 +145,7 @@ body:has(.player-bar) {
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: inherit;
+    gap: 16px;
     padding: 0;
     border: none;
     background: none;
@@ -158,25 +161,24 @@ body:has(.player-bar) {
     &:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 4px;
-      border-radius: 10px;
+      border-radius: 6px;
     }
   }
 
   .bar-cover {
     flex-shrink: 0;
-    width: 80px;
-    height: 80px;
-    border-radius: 10px;
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
     object-fit: cover;
   }
 
   .bar-text {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
-    font-family: 'Inter', sans-serif;
-    color: #fff;
+    font-family: 'DM Sans', sans-serif;
   }
 
   .bar-title,
@@ -187,44 +189,44 @@ body:has(.player-bar) {
   }
 
   .bar-title {
-    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-
-  // tên ca sĩ nhỏ + mờ hơn tên bài
-  .bar-artist {
     font-size: 15px;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.55);
+    font-weight: 700;
+    color: #fff;
   }
 
+  .bar-artist {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--bar-grey);
+  }
+
+  // cột giữa: 5 nút (cách nhau 24px) + thanh thời gian
   .bar-center {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    min-width: 0;
   }
 
   .bar-controls {
     display: flex;
     align-items: center;
-    gap: 23px;
+    gap: 24px;
   }
 
   .bar-progress {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 
     .time {
-      min-width: 44px;
-      font-family: 'Inter', sans-serif;
-      font-size: 20px;
+      min-width: 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
       font-variant-numeric: tabular-nums;
-      color: #fff;
+      color: var(--bar-grey);
 
       &:last-child {
         text-align: right;
@@ -233,50 +235,67 @@ body:has(.player-bar) {
 
     .seek {
       flex: 1;
-      height: 6px;
     }
   }
 
+  // không tải được file nhạc: câu báo lỗi thay cho thanh thời gian
+  .bar-error {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: #f2a7a7;
+  }
+
+  // cột phải: lời bài hát, hàng đợi, thiết bị, loa + thanh âm lượng 80px
   .bar-extra {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 16px;
+  }
+
+  .bar-volume {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
     .volume {
-      width: 120px;
-      height: 4px;
-      margin-left: 10px;
+      width: 80px;
+    }
+
+    .icon-btn {
+      width: 16px;
+      height: 16px;
     }
   }
 }
 
-// nút icon trong suốt (shuffle, prev, next, repeat, mic, queue, loa)
+// nút icon trong suốt (shuffle, prev, next, repeat, lời bài hát, hàng đợi, thiết bị, loa)
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
   transition: transform 0.15s, opacity 0.15s;
 
-  &.small {
-    width: 30px;
-    height: 30px;
-  }
-
-  // icon next trong Figma = icon prev xoay 180°
-  &.next svg {
-    transform: rotate(180deg);
+  // icon bên phải + tim cỡ 18px trong Figma
+  .bar-extra &,
+  &.dislike {
+    width: 18px;
+    height: 18px;
   }
 
   &:hover:not(:disabled) {
-    transform: scale(1.08);
-    filter: brightness(1.6);
+    transform: scale(1.12);
+    filter: brightness(1.5);
   }
 
   // chưa có chức năng
@@ -287,36 +306,43 @@ body:has(.player-bar) {
 
   // menu/hàng đợi đang mở
   &.active {
-    filter: brightness(2.4);
+    filter: brightness(1.8);
   }
 }
 
+// nút Play: vòng tròn trắng, icon 18px màu tối
 .play-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 65px;
-  height: 65px;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
   padding: 0;
   border: none;
-  border-radius: 50%;
-  background: #d9d9d9;
+  border-radius: 24px;
+  background: #fff;
   cursor: pointer;
-  transition: transform 0.15s, background 0.15s;
+  transition: transform 0.15s;
 
-  &:hover {
-    transform: scale(1.05);
-    background: #fff;
+  &:hover:not(:disabled) {
+    transform: scale(1.06);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 }
 
-// thanh trượt (thời gian + âm lượng): phần đã chạy màu trắng, phần còn lại xám
+// thanh trượt (thời gian + âm lượng): cao 4px, phần đã chạy tím, phần còn lại xám tối
 .slider {
   appearance: none;
-  border-radius: 30px;
+  height: 4px;
+  border-radius: 2px;
   outline: none;
   cursor: pointer;
-  background: linear-gradient(to right, #fff var(--fill, 0%), var(--bar-grey) var(--fill, 0%));
+  background: linear-gradient(to right, var(--bar-purple) var(--fill, 0%), var(--bar-track) var(--fill, 0%));
 
   &::-webkit-slider-thumb {
     appearance: none;
@@ -345,19 +371,15 @@ body:has(.player-bar) {
   }
 }
 
-// màn hẹp: thu nhỏ chữ, ẩn cụm mic/queue/âm lượng
+// màn vừa (≤ 1100px): cột phải gọn lại, bỏ thanh âm lượng
 @media (max-width: 1100px) {
   .player-bar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
-    padding: 0 20px;
+    gap: 20px;
+    padding: 16px 20px;
 
-    // giữ nút ☰ (menu playlist), ẩn mic + thanh âm lượng
-    .bar-extra .volume,
-    .bar-extra > .icon-btn:first-child { display: none; }
-    .bar-title { font-size: 18px; }
-    .bar-artist { font-size: 13px; }
-    .bar-cover { width: 64px; height: 64px; }
-    .bar-progress .time { font-size: 14px; min-width: 34px; }
+    .bar-extra { gap: 12px; }
+    .bar-volume .volume { display: none; }
   }
 }
 
@@ -375,9 +397,9 @@ body:has(.player-bar) {
   }
 }
 
-// điện thoại: thanh phát 2 hàng — [ảnh, tên bài, 👎 | ☰] trên, [nút + thanh thời gian] dưới
+// điện thoại: thanh phát 2 hàng — [ảnh, tên bài, tim | hàng đợi] trên, [nút + thanh thời gian] dưới
 @media (max-width: 640px) {
-  :root { --player-bar-h: 168px; }
+  :root { --player-bar-h: 132px; }
 
   .player-bar {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -385,40 +407,23 @@ body:has(.player-bar) {
       "song extra"
       "center center";
     align-content: center;
-    gap: 6px 10px;
-    padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+    gap: 8px 10px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
 
     .bar-song { grid-area: song; gap: 10px; }
-    .bar-extra { grid-area: extra; }
+    .bar-extra { grid-area: extra; gap: 14px; }
     .bar-center { grid-area: center; }
 
+    // hàng trên chỉ giữ hàng đợi (lời bài hát, thiết bị, loa/âm lượng chưa dùng được ở màn hẹp)
+    .bar-extra > .icon-btn,
+    .bar-volume { display: none; }
+
     .bar-cover { width: 48px; height: 48px; }
-    .bar-title { font-size: 16px; }
+    .bar-title { font-size: 14px; }
     .bar-artist { font-size: 12px; }
     .bar-text { gap: 2px; }
 
-    .bar-controls {
-      gap: 14px;
-
-      .icon-btn {
-        width: 34px;
-        height: 34px;
-
-        svg { width: 30px; height: 30px; }
-      }
-
-      .play-btn {
-        width: 50px;
-        height: 50px;
-
-        svg { width: 30px; height: 30px; }
-      }
-    }
-
-    .bar-progress .time {
-      min-width: 30px;
-      font-size: 12px;
-    }
+    .bar-controls { gap: 20px; }
   }
 }
 

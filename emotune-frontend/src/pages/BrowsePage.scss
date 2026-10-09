@@ -314,6 +314,7 @@
     &.vibe-neutral { background: var(--vibe-neutral); }
     &.vibe-sad { background: var(--vibe-sad); }
     &.vibe-angry { background: var(--vibe-angry); }
+    &.vibe-radio { background: linear-gradient(145deg, #b58cf5 0%, #7a49d6 50%, #2d1861 100%); }
 
     .mix-label {
       font-size: 6.5cqw;

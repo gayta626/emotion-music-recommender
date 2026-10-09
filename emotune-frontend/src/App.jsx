@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SurveyPage from './pages/SurveyPage'
 import HomeRoute from './pages/HomeRoute'
+import ArtistPage from './pages/ArtistPage'
 import ScanPage from './pages/ScanPage'
 import './App.css'
 
@@ -27,6 +28,7 @@ const App = () => {
                 <Route path='/scan' element={<ScanPage />} />
                 {/* khung phát lớn do PlayerHost (luôn sống trong MainLayout) tự vẽ */}
                 <Route path='/now-playing' element={null} />
+                <Route path='/artist/:id' element={<ArtistPage />} />
                 <Route path='/playlist/:id' element={<PlaylistPage />} />
                 <Route path='/stats' element={<MoodPage />} />
                 <Route path='/mood' element={<Navigate to='/stats' replace />} />

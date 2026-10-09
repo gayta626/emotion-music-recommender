@@ -77,13 +77,18 @@ const SideBar = () => {
 
             <div className="playlist-list">
                 {tab === 'artists' && artists.map((item) => (
-                    <div className="playlist-item" key={item.id}>
+                    <button
+                        className={`playlist-item ${pathname === `/artist/${item.id}` ? 'active' : ''}`}
+                        key={item.id}
+                        onClick={() => navigate(`/artist/${item.id}`)}
+                        title={item.name}
+                    >
                         <ArtistAvatar className="cover" name={item.name} avatar={item.avatar} />
                         {!collapsed && <div className="info">
                             <span className="name">{item.name}</span>
                             <span className="subtitle">Artist</span>
                         </div>}
-                    </div>
+                    </button>
                 ))}
 
                 {/* bam vao playlist -> mo trang playlist (nut Play o do moi phat) */}

@@ -3,8 +3,8 @@ import './Shelf.scss'
 
 // Mot hang tren trang chu kieu Spotify: tieu de to + "Show all" ben phai, the xep 1 hang cuon ngang,
 // re chuot hien mui ten ‹ › de cuon. "Show all" -> xep thanh luoi (nhieu dong), bam lai "Show less".
-// note: chuoi bao loi / trong -> hien thay cho hang the.
-const Shelf = ({ title, eyebrow, note, className = '', children }) => {
+// note: chuoi bao loi / trong -> hien thay cho hang the. toolbar: hang chip loc, nam giua tieu de va hang the.
+const Shelf = ({ title, eyebrow, note, toolbar, className = '', children }) => {
     const nodeRef = useRef(null)
     const [edges, setEdges] = useState({ left: false, right: false })
     const [expanded, setExpanded] = useState(false)
@@ -59,6 +59,8 @@ const Shelf = ({ title, eyebrow, note, className = '', children }) => {
                     </button>
                 )}
             </div>
+
+            {toolbar}
 
             {note ? (
                 <p className="shelf-note">{note}</p>

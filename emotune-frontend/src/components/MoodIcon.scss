@@ -1,0 +1,62 @@
+// Chuyen dong cua icon cam xuc (MoodIcon.jsx). Tat het khi nguoi dung chon "giam chuyen dong".
+.mood-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  overflow: visible;
+  vertical-align: middle;
+
+  // mat troi: tia quay cham, loi "tho"
+  .sun-rays { transform-origin: 32px 32px; animation: mi-spin 12s linear infinite; }
+  .sun-core { transform-origin: 32px 32px; animation: mi-pulse 2.4s ease-in-out infinite; }
+
+  // may mua: may nhun nhe, 3 hat mua roi lech pha
+  .cloud { animation: mi-bob 3s ease-in-out infinite; }
+  .drop { animation: mi-rain 1.2s linear infinite; }
+  .d2 { animation-delay: 0.4s; }
+  .d3 { animation-delay: 0.8s; }
+
+  // lua: ca ngon lua chao, lop trong nhap nhay nhanh hon
+  .flame { transform-origin: 32px 58px; animation: mi-flicker 1.1s ease-in-out infinite; }
+  .flame-mid { transform-origin: 32px 50px; animation: mi-flicker 0.7s ease-in-out infinite reverse; }
+  .flame-core { transform-origin: 32px 47px; animation: mi-flicker 0.5s ease-in-out infinite; }
+
+  // bong tuyet: xoay cham + hoi phong
+  .snow { transform-origin: 32px 32px; animation: mi-spin 14s linear infinite; }
+  &.mi-neutral { animation: mi-pulse 4s ease-in-out infinite; }
+
+  // mat deo kinh: nay len, kinh tut xuong roi keo len, mieng "o" co gian
+  .cool { transform-origin: 32px 32px; animation: mi-hop 2.6s ease-in-out infinite; }
+  .glasses { animation: mi-glasses 2.6s ease-in-out infinite; }
+  .mouth { transform-origin: 32px 46px; animation: mi-mouth 2.6s ease-in-out infinite; }
+}
+
+@keyframes mi-spin { to { transform: rotate(360deg); } }
+@keyframes mi-pulse { 50% { transform: scale(1.1); } }
+@keyframes mi-bob { 50% { transform: translateY(-2px); } }
+@keyframes mi-rain {
+  0% { transform: translateY(-4px); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(12px); opacity: 0; }
+}
+@keyframes mi-flicker {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); }
+  25% { transform: scale(0.94, 1.07) rotate(-3deg); }
+  50% { transform: scale(1.05, 0.95) rotate(2deg); }
+  75% { transform: scale(0.96, 1.05) rotate(3deg); }
+}
+@keyframes mi-hop {
+  0%, 60%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-3px) scale(1.06); }
+}
+@keyframes mi-glasses {
+  0%, 15% { transform: translateY(-9px); }
+  35%, 100% { transform: translateY(0); }
+}
+@keyframes mi-mouth {
+  0%, 15% { transform: scale(1.3); }
+  35%, 100% { transform: scale(0.8, 0.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mood-icon, .mood-icon * { animation: none !important; }
+}

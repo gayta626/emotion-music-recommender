@@ -1,14 +1,15 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../api';
+import MoodIcon from './MoodIcon';
 import './EmotionScanner.scss';
 
 // chon cam xuc bang tay (khong co camera / AI doan sai) -> goi /suggest thay cho /scan-and-suggest
 const MOODS = [
-    { emotion: "happy", emoji: "😊", label: "Happy" },
-    { emotion: "sad", emoji: "😢", label: "Sad" },
-    { emotion: "angry", emoji: "😠", label: "Angry" },
-    { emotion: "surprise", emoji: "😲", label: "Surprised" },
-    { emotion: "neutral", emoji: "😐", label: "Neutral" },
+    { emotion: "happy", label: "Happy" },
+    { emotion: "sad", label: "Sad" },
+    { emotion: "angry", label: "Angry" },
+    { emotion: "surprise", label: "Surprised" },
+    { emotion: "neutral", label: "Neutral" },
 ]
 
 const EmotionScanner = (props) => {
@@ -114,9 +115,8 @@ const EmotionScanner = (props) => {
                     <div className="mood-picker-title">How do you feel?</div>
                     <div className="mood-picker-list">
                         {MOODS.map((m) => (
-                            <button key={m.emotion} className="mood-chip" disabled={picking} onClick={() => pickMood(m.emotion)}>
-                                <span className="mood-chip-emoji">{m.emoji}</span>
-                                {m.label}
+                            <button key={m.emotion} className="mood-chip" disabled={picking} onClick={() => pickMood(m.emotion)} aria-label={m.label} title={m.label}>
+                                <MoodIcon emotion={m.emotion} size={40} />
                             </button>
                         ))}
                     </div>
