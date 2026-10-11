@@ -26,7 +26,8 @@
     gap: 28px;
     padding: 28px;
     border-radius: 12px;
-    background: linear-gradient(180deg, #4a3d5c 0%, #2a2433 60%, var(--surface) 100%);
+    // trong dần xuống dưới -> nhập vào nền trang (PageAmbient) thay vì dừng ở ô xám đặc
+    background: linear-gradient(180deg, rgb(74 61 92 / 0.9) 0%, rgb(42 36 51 / 0.6) 60%, rgb(26 24 34 / 0.35) 100%);
   }
 
   .pl-cover {
@@ -526,5 +527,42 @@
 @media (prefers-reduced-motion: reduce) {
   .playlist-page .eq i {
     animation: none;
+  }
+}
+
+// ---------- trang Liked Songs (/liked, I1): dùng lại giao diện playlist ----------
+.liked-page {
+  .liked-cover {
+    background: linear-gradient(135deg, #5b3fd6, #b07cf0 55%, #e9d5ff);
+    color: #fff;
+
+    svg { width: 42%; height: 42%; }
+  }
+
+  .liked-empty {
+    margin-top: 8px;
+    max-width: 560px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  // ♥ ở cuối dòng: luôn hiện (khác nút ✕ của playlist chỉ hiện khi rê chuột), bấm = bỏ thích
+  .row-unlike {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--liked);
+    cursor: pointer;
+    transition: transform 0.12s;
+
+    svg { width: 18px; height: 18px; }
+
+    &:hover,
+    &:focus-visible { transform: scale(1.15); }
   }
 }

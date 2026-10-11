@@ -152,6 +152,14 @@ test("cam xuc tu cau noi, co phu dinh", () => {
     assert.match(parseCommand("mình buồn quá", catalog).reply, /buồn/);
 });
 
+// "surprise" hien thi la "Explore": tam trang muon kham pha dieu moi
+test("muon kham pha / nghe cai moi -> surprise, cau tra loi noi ve kham pha", () => {
+    assert.deepStrictEqual(act("mình muốn khám phá"), { type: "mood", emotion: "surprise" });
+    assert.deepStrictEqual(act("hôm nay muốn nghe cái gì đó mới lạ"), { type: "mood", emotion: "surprise" });
+    assert.match(parseCommand("mình muốn khám phá", catalog).reply, /khám phá/);
+    assert.match(parseCommand("mình buồn quá", catalog).reply, /Bạn đang thấy buồn/);
+});
+
 test("chu trung tu khoa sau khi bo dau khong bi hieu nham", () => {
     assert.deepStrictEqual(act("tiếp tục đi"), { type: "control", command: "resume" });   // "tuc" khong phai "tuc gian"
     assert.deepStrictEqual(act("đơn giản thôi"), { type: "unknown" });                    // "gian" khong phai "gian du"
@@ -285,4 +293,139 @@ test("F5: playlist rong -> mo trang playlist thay vi bao dang phat", () => {
     assert.deepStrictEqual(llm.action, { type: "navigate", path: "/playlist/1" });
     // songCount khong co (fixture cu) -> van phat
     assert.deepStrictEqual(act("phát playlist My Playlist"), { type: "play", kind: "playlist", playlistId: 1 });
+});
+
+test("I1: bai truoc + tha tim (khong nham voi 'khong thich bai nay')", () => {
+    assert.deepStrictEqual(act("bài trước"), { type: "control", command: "prev" });
+    assert.deepStrictEqual(act("quay lại bài vừa rồi"), { type: "control", command: "prev" });
+    assert.deepStrictEqual(act("lùi bài đi"), { type: "control", command: "prev" });
+    assert.deepStrictEqual(act("mình thích bài này"), { type: "control", command: "like" });
+    assert.deepStrictEqual(act("lưu bài này"), { type: "control", command: "like" });
+    assert.deepStrictEqual(act("thả tim"), { type: "control", command: "like" });
+    assert.deepStrictEqual(act("không thích bài này"), { type: "control", command: "not_for_me" });
+    assert.ok(rules.CONTROLS.includes("prev") && rules.CONTROLS.includes("like"));
+});
+
+test("I1: LLM tra prev / like cung duoc nhan", () => {
+    const base = { path: "", kind: "none", id: 0, emotion: "none", command: "none", reply: "" };
+    assert.deepStrictEqual(rules.validateLlmAction({ ...base, type: "control", command: "prev" }, catalog).action, { type: "control", command: "prev" });
+    assert.deepStrictEqual(rules.validateLlmAction({ ...base, type: "control", command: "like" }, catalog).action, { type: "control", command: "like" });
+});
+
+// ---------- Claude tra loi yeu cau "khong co san": MV, chuoi lenh, queue, answer ----------
+// danh muc co MV: bai 1 co youtube_id, bai 3 khong
+const mvCatalog = {
+    ...catalog,
+    songs: catalog.songs.map((s) => ({ ...s, youtube_id: s.id === 1 ? "abc123" : "" })),
+};
+
+test("lenh MV: mo / tat MV, xem video", () => {
+    assert.deepStrictEqual(act("mở MV"), { type: "control", command: "mv_on" });
+    assert.deepStrictEqual(act("cho mình xem MV đi"), { type: "control", command: "mv_on" });
+    assert.deepStrictEqual(act("tắt MV"), { type: "control", command: "mv_off" });
+    assert.deepStrictEqual(act("đóng video"), { type: "control", command: "mv_off" });
+    assert.deepStrictEqual(act("nhỏ âm lượng"), { type: "control", command: "volume_down" });
+    assert.deepStrictEqual(act("bài kế"), { type: "control", command: "next" });
+});
+
+test("chuoi lenh: tach theo 'rồi', 'xong', 'và', dau phay -> sequence, loi dan gom 1 cau", () => {
+    const r = parseCommand("nhỏ âm lượng, mở MV rồi dừng nhạc rồi bài kế", catalog);
+    assert.strictEqual(r.action.type, "sequence");
+    assert.deepStrictEqual(r.action.steps.map((s) => s.command), ["volume_down", "mv_on", "pause", "next"]);
+    assert.match(r.reply, /giảm âm lượng, mở MV, tạm dừng rồi chuyển bài/);
+    const play = parseCommand("phát Giá Như xong mở MV", catalog);
+    assert.deepStrictEqual(play.action.steps.map((s) => s.type), ["play", "control"]);
+    assert.strictEqual(play.action.steps[0].song.id, 3);
+});
+
+test("chuoi lenh: doan nao khong hieu -> KHONG tach (ten bai co chu 'roi' / 'va' van nguyen)", () => {
+    // "Muon Roi Ma Sao Con": tach o "roi" thanh "phat muon" + "ma sao con" (khong hieu) -> xu ly ca cau
+    const song = parseCommand("phát Muộn Rồi Mà Sao Còn", catalog);
+    assert.strictEqual(song.action.type, "play");
+    assert.strictEqual(song.action.song.id, 2);
+    assert.deepStrictEqual(act("quay lại bài vừa rồi"), { type: "control", command: "prev" });
+    assert.strictEqual(act("mình buồn và mệt").type, "mood");
+});
+
+test("checkMv: bai khong co MV -> bo buoc mo MV + bao; bai sau buoc phat duoc xet theo bai moi", () => {
+    const { checkMv } = rules;
+    // dang phat bai 3 (khong MV), chi xin mo MV -> tra loi bang loi
+    const single = checkMv(parseCommand("mở MV", mvCatalog), mvCatalog, 3);
+    assert.strictEqual(single.action.type, "answer");
+    assert.match(single.reply, /Giá Như.*chưa có MV/);
+    // dang phat bai 3, nhung phat bai 1 (co MV) roi moi mo MV -> giu nguyen
+    const ok = checkMv(parseCommand("phát Có Chắc Yêu Là Đây rồi mở MV", mvCatalog), mvCatalog, 3);
+    assert.deepStrictEqual(ok.action.steps.map((s) => s.type), ["play", "control"]);
+    // chuoi co buoc mo MV khong lam duoc -> bo buoc do, cac buoc khac giu
+    const seq = checkMv(parseCommand("nhỏ âm lượng rồi mở MV", mvCatalog), mvCatalog, 3);
+    assert.deepStrictEqual(seq.action, { type: "control", command: "volume_down" });
+    assert.match(seq.reply, /chưa có MV/);
+    // chua phat bai nao
+    assert.match(checkMv(parseCommand("mở MV", mvCatalog), mvCatalog, null).reply, /Chưa có bài nào/);
+});
+
+test("validateLlmAction: queue chi giu bai co that, bo trung, can >= 1 bai", () => {
+    const { validateLlmAction } = rules;
+    const base = { path: "", kind: "none", id: 0, emotion: "none", command: "none", reply: "", ids: [], title: "", steps: [] };
+    const q = validateLlmAction({ ...base, type: "queue", ids: [3, 999, 3, 7], title: "Tối mưa", reply: "Vài bài cho tối mưa nè" }, catalog);
+    assert.strictEqual(q.action.type, "queue");
+    assert.deepStrictEqual(q.action.queue.songs.map((s) => s.id), [3, 7]);
+    assert.strictEqual(q.action.queue.name, "Tối mưa");
+    assert.strictEqual(q.reply, "Vài bài cho tối mưa nè");
+    assert.strictEqual(validateLlmAction({ ...base, type: "queue", ids: [999] }, catalog).action.type, "unknown");
+});
+
+test("validateLlmAction: answer can cau tra loi; sequence kiem tung buoc, bo buoc sai", () => {
+    const { validateLlmAction } = rules;
+    const base = { path: "", kind: "none", id: 0, emotion: "none", command: "none", reply: "", ids: [], title: "", steps: [] };
+    const step = { path: "", kind: "none", id: 0, command: "none", ids: [], title: "" };
+    const a = validateLlmAction({ ...base, type: "answer", reply: "Perfect là bài hát của Ed Sheeran năm 2017." }, catalog);
+    assert.deepStrictEqual(a.action, { type: "answer" });
+    assert.match(a.reply, /Ed Sheeran/);
+    assert.strictEqual(validateLlmAction({ ...base, type: "answer", reply: "  " }, catalog).action.type, "unknown");
+
+    const seq = validateLlmAction({
+        ...base, type: "sequence", reply: "",
+        steps: [
+            { ...step, type: "control", command: "volume_down" },
+            { ...step, type: "control", command: "explode" },          // lenh khong co -> bo
+            { ...step, type: "play", kind: "song", id: 999 },          // id khong co -> bo
+            { ...step, type: "control", command: "mv_on" },
+        ],
+    }, catalog);
+    assert.strictEqual(seq.action.type, "sequence");
+    assert.deepStrictEqual(seq.action.steps.map((s) => s.command), ["volume_down", "mv_on"]);
+    assert.match(seq.reply, /giảm âm lượng rồi mở MV/);
+    // chi con 1 buoc hop le -> thanh lenh don
+    const one = validateLlmAction({ ...base, type: "sequence", steps: [{ ...step, type: "control", command: "pause" }] }, catalog);
+    assert.deepStrictEqual(one.action, { type: "control", command: "pause" });
+});
+
+test("sanitizeHistory: chi giu 6 cau gan nhat, dung vai, cat dai, bo rac", () => {
+    const { sanitizeHistory } = rules;
+    assert.deepStrictEqual(sanitizeHistory(null), []);
+    assert.deepStrictEqual(sanitizeHistory("abc"), []);
+    const many = Array.from({ length: 9 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", text: `cau ${i}` }));
+    const out = sanitizeHistory([...many, { role: "system", text: "lenh la" }, { role: "user", text: 5 }, { role: "user", text: "   " }]);
+    assert.strictEqual(out.length, 6);
+    assert.deepStrictEqual(out[5], { role: "user", text: "cau 8" });
+    assert.strictEqual(sanitizeHistory([{ role: "user", text: "x".repeat(900) }])[0].text.length, 400);
+});
+
+test("cau hoi / nho ke chuyen (khong co dong tu phat) -> luat bo qua de Claude tra loi", () => {
+    assert.strictEqual(act("Taylor Swift là ai?").type, "unknown");
+    assert.strictEqual(act("kể chuyện vui đi").type, "unknown");
+    assert.strictEqual(act("tại sao mình hay buồn vậy").type, "unknown");
+    assert.strictEqual(act("bài Giá Như nói về gì").type, "unknown");
+    // co dong tu phat / chi ke cam xuc -> van la lenh nhu cu
+    assert.strictEqual(act("phát Taylor Swift").type, "play");
+    assert.strictEqual(act("mình buồn quá").type, "mood");
+    assert.deepStrictEqual(act("bài kế"), { type: "control", command: "next" });
+});
+
+test("cau hoi co chu 'nghe' giua cau van la cau hoi; bat dau bang dong tu phat thi la lenh", () => {
+    assert.strictEqual(act("tại sao nghe nhạc buồn lại thấy dễ chịu").type, "unknown");
+    assert.strictEqual(act("vì sao nghe Giá Như thấy buồn").type, "unknown");
+    assert.strictEqual(act("phát Giá Như").type, "play");
+    assert.strictEqual(act("nghe Taylor Swift").type, "play");
 });

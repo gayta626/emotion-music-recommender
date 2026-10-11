@@ -1,10 +1,292 @@
 # NOTES.md — EmoTune Project Session Log
 
-> Phiên gần nhất: **09/10/2026 tối** (trên LAPTOP) — xem **"🧭 PHIÊN 09/10/2026 (tối, laptop) — H6 trợ lý giọng nói, H13 Mix, trang thống kê `/stats` + giao diện neon"** ngay bên dưới (liền sau là phiên chiều: H12 màn lời bài hát). Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: phần mềm gần xong — H7 trang chủ, H8 trang ca sĩ, H9 ảnh thật, H10 icon cảm xúc, H11 thanh phát, H12 lời bài hát, **H6 trợ lý giọng nói ✅ (tối 09/10, đã chỉnh theo góp ý: lời dẫn + nghỉ, icon thanh phát to, sóng âm theo giọng, nền trong suốt)**. **H13 trang Mix/Radio ✅ (tối 09/10, Figma frame 25 `79:75`).** **C12 trang thống kê `/stats` mới ✅ + `npm run seed-demo` + giao diện neon (biểu đồ hoa hồng).** Còn: giai đoạn B (Pi), C13. Toàn bộ việc tối 09/10 **đã commit + push cuối phiên** (xem `git log`).
+> Phiên gần nhất: **10/10 khuya → 11/10/2026 (máy `C:\Users\Hi`)** — đọc **"🧭 TỔNG KẾT PHIÊN 10/10 khuya → 11/10"** ngay bên dưới (chi tiết từng phần ở các mục "khuya 2", "khuya" tiếp theo). Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
+> Trạng thái: người dùng chốt **làm xong phần mềm trước, phần cứng (giai đoạn B) sau**. Giai đoạn H xong (thêm H6c trợ lý Gemini, H17 thẻ trang chủ), **I1 xong**. **Toàn bộ việc 10–11/10 CHƯA COMMIT (~216 file)**. Việc tiếp theo: commit (khi người dùng yêu cầu) → I2 → giai đoạn B (hạn HIC 15/10, còn 4 ngày).
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
 > **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 > Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
+
+---
+
+# 🧭 TỔNG KẾT PHIÊN 10/10 khuya → 11/10/2026 (máy `C:\Users\Hi`)
+
+## 1. Mục tiêu
+Đọc NOTES/TIEN_DO, tóm tắt tình trạng → người dùng chọn làm lần lượt: **I1** (nút "chết" + ♥) → sửa **ảnh bìa bài nước ngoài** + **ảnh Lệ Quyên vỡ** → hướng dẫn **import nhạc** → **trợ lý dùng AI** cho yêu cầu không có sẵn + chuỗi lệnh + MV (Claude → đổi sang **Gemini miễn phí**) → vẽ lại **2 thẻ cuối trang chủ** theo ảnh mẫu "Infographic Chart".
+
+## 2. Việc đã làm xong (TẤT CẢ CHƯA COMMIT)
+| Việc | File chính |
+|---|---|
+| **I1** ♥ thích bài (bảng `liked_songs`, `GET/POST/DELETE /likes`, `LIKE_BONUS` +1 khi gợi ý + `/songs/for-you`, trang `/liked`, dòng "Liked Songs" ở sidebar) · **Prev / Shuffle / Repeat** · chuông **"What NYX noticed"** (`GET /insights`, hàm thuần `buildInsights`) · "Explore Premium" → **"Your week"** · bỏ nút Devices · trợ lý "bài trước" / "thích bài này" | backend `db/migrate_likes.sql`, `src/model/likeModel.js`, `src/services/likeService.js`, `insightService.js`, `src/controllers/likeController.js`, `insightController.js`, `src/routes/web.js`, `suggestModel.js`, `songModel.js`, `songService.js`; frontend `components/HeartIcon.jsx`, `NotificationMenu.jsx/.scss`, `pages/LikedPage.jsx`, `PlayerHost.jsx`, `MusicPlayer.jsx/.scss`, `PlaybackProvider.jsx`, `Header.jsx/.scss`, `SideBar.jsx/.scss` (chi tiết: mục "khuya" bên dưới) |
+| **Ảnh bìa giả**: 41 bài có bìa = logo NhacCuaTui nhúng trong mp3 → `scripts/lib/coverCheck.js` (md5 logo đã biết hoặc cùng 1 ảnh ở ≥ 3 bài); `import-music` không chép, `fetch-images` tự xoá + tải bìa thật → 31/41 có bìa thật, 10 bài dùng ảnh ca sĩ | `emotune-backend/scripts/lib/coverCheck.js`, `scripts/import-music.js`, `scripts/fetch-images.js`, `test/coverCheck.test.js`; `covers/*.jpg` mới |
+| **Ảnh Lệ Quyên vỡ** (avatar 84px bị phóng to) → cắt chân dung 480px từ bìa album, `artists.photo = 'photos/le-quyen-portrait.jpg'` | `emotune-backend/avatars/photos/le-quyen-portrait.jpg` (mới, chưa có trong git) |
+| `import-music --apply` tự chạy thêm **`fetch-mv`** (nếu có `YOUTUBE_API_KEY`) | `scripts/import-music.js` |
+| **H6c trợ lý AI**: Gemini (`@google/genai`, model `gemini-3.5-flash-lite`) trả `queue` (gợi ý theo mô tả → phát), `answer` (hỏi đáp / trò chuyện, trợ lý vẫn mở), `sequence`; ngữ cảnh bài đang phát + cảm xúc + 6 câu gần nhất; luật: lệnh **`mv_on`/`mv_off`**, **chuỗi lệnh** ("nhỏ âm lượng, mở MV rồi bài kế"), `checkMv`, câu hỏi (`ASK_WORDS`) → Gemini; **âm lượng giữ qua các bài**; nhãn "✦ Trả lời bởi Gemini" | backend `src/services/assistantLlm.js`, `assistantRules.js`, `assistantService.js`, `src/controllers/assistantController.js`, `test/assistantLlm.test.js`, `test/assistantRules.test.js`, `.evn.example`, `package.json`; frontend `components/VoiceAssistant.jsx/.scss`, `MusicPlayer.jsx`, `PlayerHost.jsx` (chi tiết: mục "khuya 2") |
+| **H17 2 thẻ cuối trang chủ** theo ảnh mẫu: thẻ neon; 7 cột mảnh + vòng số nối vạch trắng + quầng sáng + donut tổng số lần quét; lưới chấm mỗi chấm 1 lần quét; bảng màu tách ra file chung với `/stats` | mới `emotune-frontend/src/components/HomeMood.jsx/.scss`, `src/styles/_moodPalette.scss`; sửa `pages/BrowsePage.jsx/.scss`, `components/stats/Stats.scss` |
+| Tài liệu | `TIEN_DO.md` (I1, H6c, H17), `CLAUDE.md` (API `/likes`, `/insights`, `/assistant` mới, Gemini, `HomeMood`, `coverCheck`), `NOTES.md`; bộ nhớ Claude: "ưu tiên AI miễn phí" |
+
+Kiểm tra cuối: backend `npm test` **117/117**; frontend `npx eslint src` sạch + `npm run build` OK; Playwright từng phần (1440 / 1920 / 390px); Gemini thử thật 12 câu (~1.2–2.4s/câu).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| ♥ = Liked Songs **+ AI cộng +1** (chỉ trong nhóm bài hợp cảm xúc đang quét) | Thể hiện "hệ thống học từ phản hồi" cho môn Hệ thống thông minh, không phát nhầm vibe |
+| Chuông = nhận xét sinh ở backend bằng hàm thuần + ngưỡng (≥ 3 lần quét/tuần, ≥ 10 điểm, khung 3 giờ ≥ 40%) | Test được; ít dữ liệu thì không kết luận bừa |
+| **Gemini thay Claude, bỏ hẳn code Claude** (người dùng chọn) | Không có ngân sách trả phí; Groq giới hạn token/phút quá thấp, Ollama máy yếu + tiếng Việt kém |
+| Model **`gemini-3.5-flash-lite`** + **tắt retry của SDK** | Đo thật: 3.8-flash > 20s không trả lời ở gói free, SDK tự thử lại mãi → treo; flash-lite ~1.5s |
+| Luật trước, AI sau; kết quả AI luôn kiểm lại với kho | Nhanh + miễn phí cho lệnh thường gặp; AI không bịa được bài / trang |
+| Chuỗi lệnh: luật chỉ tách khi MỌI đoạn đều hiểu được | Tên bài có "rồi"/"và" không bị cắt nhầm |
+| Ảnh bìa giả nhận bằng md5 + "cùng ảnh ở ≥ 3 bài" | Bắt được cả logo trang nhạc khác, vẫn giữ bìa chung của 2 bài cùng album |
+| Thẻ trang chủ dùng **chung bảng màu `/stats`** (file `_moodPalette.scss`) | Màu đã kiểm tra mù màu; 2 trang luôn đồng bộ |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/) — người dùng chạy sẵn npm run dev ở 8080 (nodemon), frontend 5173: dùng chung, KHÔNG tắt
+npm install                                   # máy mới: đã gỡ @anthropic-ai/sdk, thêm @google/genai
+npm run db:migrate -- db/migrate_likes.sql     # máy khác / Pi: bảng liked_songs (an toàn chạy lại)
+npm run fetch-images                           # máy khác: tự xoá bìa giả (logo NCT) + tải bìa thật
+#   chạy xong: UPDATE artists SET photo = NULL WHERE name = 'Phạm Hoài Nam';  (Lệ Quyên đã có photo riêng, không bị đè)
+npm test                                       # 117/117
+# .env cần: GEMINI_API_KEY=... (aistudio.google.com -> Get API key, miễn phí; key dạng mới bắt đầu bằng "AQ")
+#           tuỳ chọn GEMINI_MODEL=...;  sửa .env xong gõ "rs" trong cửa sổ npm run dev (nodemon không theo dõi .env)
+# Nhập nhạc mới: npm run import-music -- --from "<thư mục mp3>"  -> sửa import/plan.json -> npm run import-music -- --apply
+# Frontend (emotune-frontend/)
+npx eslint src && npm run build
+```
+- Playwright MCP bị profile Chrome cũ giữ → phiên này dùng script `playwright-core` (`~/AppData/Local/npm-cache/_npx/9833c18b2d85bc59/node_modules/playwright-core`, `chromium.launch({ channel: 'chrome' })`); trang chủ chỉ hiện khi `sessionStorage.emotune_scanned = "1"`.
+- Bash tool: lệnh có heredoc Python dài chứa backtick / `\\` hay lỗi "unexpected EOF" → ghi script ra file trong `%TEMP%` rồi chạy.
+
+## 5. Lỗi / việc còn dở
+- **CHƯA COMMIT** toàn bộ việc 10–11/10 (~216 file, gồm `covers/` mới, `avatars/photos/le-quyen-portrait.jpg`). Người dùng chưa yêu cầu commit; cần quyết định có đưa ảnh lên git không.
+- Ảnh **Phạm Hoài Nam** vẫn 84px bị vỡ ở chỗ ảnh lớn — chờ người dùng chọn: cắt từ bìa album / dùng nguyên bìa / người dùng tự tìm ảnh `avatars/photos/pham-hoai-nam.jpg`.
+- 10 bài chưa có bìa thật (Beauty And A Beat, Biển Cạn, Chiều Nay Không Có Em, Chỉ Một Đêm Nữa Thôi, Dấu Tình Sầu, IDK, Lời Cuối Cho Em, Wtf Bby I'm Lit, Xa Xôi, Đánh Đổi) → bỏ ảnh `covers/<tên>.jpg` rồi `npm run fetch-images`.
+- Gemini gói free: giới hạn vài trăm câu/ngày (xem trong AI Studio); dữ liệu gói free có thể được Google dùng để cải thiện sản phẩm (nói rõ khi bảo vệ).
+- Người dùng chưa thử bằng **micro thật** (trợ lý, quả cầu sóng); chưa nghe karaoke bằng tai.
+- Còn từ trước: kho lệch vibe (angry, surprise ít), thiếu ảnh Nhan Nguyen / Groovie Lã Thắng, `gayta626` có độ tự tin AI giả, karaoke phần chấm điểm hát chưa làm.
+
+## 6. Bước tiếp theo
+1. Người dùng xem trang chủ mới (H17), thử trợ lý bằng giọng nói, góp ý.
+2. **Commit** khi người dùng yêu cầu.
+3. **I2 "Vì sao NYX chọn bài này?"** (dùng `score`, `taste_bonus`, `like_bonus`, `isEncourage` có sẵn trong `suggestModel` / `suggestService`) — ăn điểm bảo vệ, công sức nhỏ.
+4. **Giai đoạn B (Pi, hạn HIC 15/10)**: LD2410C, đồng bộ Pi qua git + `npm install` + migrate (`migrate_likes.sql`, `migrate_mv.sql`…) + `import-music` / `fetch-lyrics` / `fetch-images` / `fetch-mv`, `.env` có `GEMINI_API_KEY`, vỏ hộp, systemd + kiosk, slide, tập demo.
+
+---
+
+# 🧭 PHIÊN 10/10/2026 (khuya 2) — trợ lý dùng AI (Claude → **Gemini Flash miễn phí**) cho yêu cầu không có sẵn + chuỗi lệnh + MV
+
+## 1. Mục tiêu
+Người dùng: "tích hợp API Claude để trả lời những yêu cầu không có sẵn" + "trợ lý mở nhỏ âm lượng, mở MV rồi dừng nhạc rồi bài kế". Brainstorm (bounded) → chốt: cả 3 loại (gợi ý theo mô tả → phát, hỏi đáp về nhạc / bài đang phát, trò chuyện chung), nhớ vài lượt, **giữ Claude Haiku 5.5** → duyệt thiết kế + phần bổ sung (MV, `sequence`).
+
+## 2. Việc đã làm xong (CHƯA COMMIT)
+| Việc | File |
+|---|---|
+| Luật: `mv_on`/`mv_off`, thêm "bài kế", "nhỏ/to âm lượng"; **chuỗi lệnh** `parseSequence` (tách theo "rồi/xong/và/sau đó"/dấu phẩy, chỉ khi MỌI đoạn là lệnh hiểu được, ≤ 5 bước, lời dẫn gom 1 câu "Ok, mình sẽ giảm âm lượng, mở MV, tạm dừng rồi chuyển bài."); `checkMv`; `ASK_WORDS` (câu hỏi / nhờ kể không có động từ phát → để Claude); `sanitizeHistory`; `validateLlmAction` nhận `queue` / `answer` / `sequence` | `emotune-backend/src/services/assistantRules.js`, `test/assistantRules.test.js` |
+| Claude: schema mới (`queue`, `answer`, `sequence` + `steps`), prompt (trả lời tiếng Việt ≤ 60 từ, không bịa, không tra web, từ chối khéo câu ngoài lề), hàm thuần `buildRequest` (kho nhạc kèm vibe/thể loại/có MV trong `system` + `cache_control`; bài đang phát, cảm xúc, lịch sử trong tin nhắn user), timeout 8s, log `usage` mỗi lần gọi | `src/services/assistantLlm.js`, mới `test/assistantLlm.test.js` |
+| Service / controller: nhận `history`, `nowPlayingId`, `mood`; `checkMv` cho cả luật lẫn LLM | `src/services/assistantService.js`, `src/controllers/assistantController.js` |
+| Frontend: `runStep` / `runSteps` (cách 0.8s), `queue` → phát hàng đợi, `answer` → giữ trợ lý mở, `mv_on` → sang `/now-playing`; gửi lịch sử 6 câu + `nowPlayingId` + `mood`; dòng "✦ Trả lời bởi Claude"; gợi ý mới "Mở nhạc cho buổi tối mưa", "Nhỏ tiếng rồi mở MV" | `emotune-frontend/src/components/VoiceAssistant.jsx/.scss` |
+| `MusicPlayer.runControl`: `mv_on` / `mv_off`; **âm lượng + tắt tiếng giữ qua các bài** (trước đây mỗi bài về 100%) | `components/MusicPlayer.jsx`, `PlayerHost.jsx` (`savedVolume`), `contexts/playbackContext.js` |
+
+Đã kiểm tra: `npm test` **116/116**; lint + build sạch; Playwright: "nhỏ âm lượng, mở MV rồi dừng nhạc rồi bài kế" → âm lượng 1 → 0.8, MV mở ở `/now-playing`, tạm dừng, chuyển bài, âm lượng vẫn 0.8; "kể chuyện vui đi" không còn phát nhạc vui; frontend với câu trả lời backend giả: `answer` (giữ mở + nhãn Claude), câu 2 gửi kèm lịch sử + `nowPlayingId: 46`, `queue` phát 3 bài rồi đóng.
+
+**Đổi sang Gemini (cuối phiên):** người dùng không muốn trả phí Claude → chọn **Gemini Flash** (so với Groq: giới hạn token/phút quá thấp cho kho ~70 bài; Ollama: máy yếu + tiếng Việt kém), **bỏ hẳn code Claude** (gỡ `@anthropic-ai/sdk`, cài `@google/genai` 2.28). `assistantLlm.js`: `client.interactions.create({ model, system_instruction, input, response_format: {type:"text", mime_type:"application/json", schema}, generation_config: {thinking_level:"low", max_output_tokens:2048}, store:false }, { timeout_ms: 8000 })` (tên tham số đọc từ `dist/genai.d.ts`, model `gemini-3.8-flash` theo ai.google.dev/gemini-api/docs/models); log `usage` + lý do lỗi Google trả (`googleMessage`), 429 = hết lượt free. `.evn.example`: `GEMINI_API_KEY`, `GEMINI_MODEL` (tuỳ chọn). Nhãn "✦ Trả lời bởi Gemini". Thử bằng key giả: Google trả "API key not valid" → `null`, không sập. **Lưu ý khi bảo vệ:** gói free của Google có thể dùng dữ liệu gửi lên để cải thiện sản phẩm; thứ gửi đi chỉ là câu nói, kho nhạc, cảm xúc gần nhất (không thông tin cá nhân).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| Vẫn **luật trước, AI sau**; kết quả Claude luôn kiểm lại với kho | Lệnh thường gặp nhanh + miễn phí + có test; Claude không bịa được bài / trang |
+| Chuỗi lệnh: luật chỉ tách khi **mọi đoạn đều hiểu được** | Tên bài có "rồi"/"và" (*Muộn Rồi Mà Sao Còn*) không bị cắt nhầm; câu lủng củng để Claude |
+| Lịch sử hội thoại do **client giữ**, server không lưu (tối đa 6 câu, đóng trợ lý là quên) | Đơn giản, không thêm bảng; đủ cho câu hỏi nối tiếp |
+| Lịch sử + ngữ cảnh gửi trong **1 tin nhắn user**, kho nhạc trong `system` có `cache_control` | Phần cố định giống nhau giữa các câu → cache được; lịch sử dạng văn bản không làm lẫn định dạng JSON của câu trả lời |
+| Nhãn "✦ Trả lời bởi Claude" | Khi bảo vệ chỉ rõ đâu là luật tự viết, đâu là LLM |
+| Âm lượng giữ ở `PlayerHost` (state) | MusicPlayer tạo lại mỗi bài; lint cấm đọc ref lúc render |
+
+## 4. Lệnh / cách chạy lại
+```bash
+# emotune-backend/.env: GEMINI_API_KEY=...   (aistudio.google.com -> Get API key; nodemon KHÔNG theo dõi .env -> gõ "rs" + Enter trong cửa sổ npm run dev)
+npm test          # 116/116
+```
+
+## 5. Lỗi / việc còn dở
+- **Đã thử Gemini thật** (người dùng tạo key, dạng mới bắt đầu bằng `AQ`): `gemini-3.8-flash` quá 20s không trả lời (gói free) và SDK tự thử lại mãi → treo → đổi mặc định sang **`gemini-3.5-flash-lite`** (~1.2–2.4s, chọn bài hợp lý, schema JSON được chấp nhận) + `retries: {strategy: "none"}`. 12 câu thử đúng kiểu. Chỉnh prompt: lời dẫn lệnh bắt đầu "Mình sẽ…" (không nói "đã"), `answer` không hứa bật nhạc. Sửa luật: câu có từ hỏi xét TRƯỚC tên bài, chỉ là lệnh khi bắt đầu bằng động từ phát ("tại sao nghe nhạc buồn…" trước đây bị phát *Khúc Nhạc Buồn*). `npm test` 117/117. Khi có key: thử ~10 câu (gợi ý theo mô tả, hỏi "bài này của ai", hỏi nối tiếp, chào hỏi, câu ngoài lề, chuỗi lệnh lủng củng), xem log `Gemini: N in / M out` (miễn phí, chỉ để biết còn bao nhiêu lượt).
+- Chưa commit.
+
+## 6. Bước tiếp theo
+1. ✅ Đã có key + thử thật. Người dùng thử bằng giọng nói thật (micro) trên web.
+2. I2 "Vì sao NYX chọn bài này?" → giai đoạn B (Pi, hạn 15/10).
+
+---
+
+# 🧭 PHIÊN 10/10/2026 (khuya, máy `C:\Users\Hi`) — I1: nút "chết" chạy thật + ♥ + chuông nhận xét
+
+## 1. Mục tiêu
+Đọc NOTES/TIEN_DO, tóm tắt; người dùng chọn làm **I1** trước. Brainstorm (bounded) → 3 câu hỏi → người dùng chốt: ♥ = **Liked Songs + AI học**, "Explore Premium" → **"Your week"**, **bỏ** nút Devices → duyệt thiết kế → làm 4 bước.
+
+## 2. Việc đã làm xong (CHƯA COMMIT)
+| Việc | File |
+|---|---|
+| ① ♥ thích bài: bảng `liked_songs` (đã migrate DB máy này), `GET /likes`, `POST/DELETE /likes/:songId`; `LIKE_BONUS` +1 khi gợi ý theo cảm xúc + `/songs/for-you` (`rankForYou`); nút ♥ thanh phát + màn lời, `toggleLike` lạc quan trong `PlaybackProvider`, trang `/liked` + dòng "Liked Songs" ở sidebar | mới `emotune-backend/db/migrate_likes.sql`, `src/model/likeModel.js`, `src/services/likeService.js`, `src/controllers/likeController.js`; sửa `db/setup.sql`, `src/routes/web.js`, `src/model/suggestModel.js`, `src/model/songModel.js`, `src/services/songService.js`, `test/forYou.test.js`; frontend mới `components/HeartIcon.jsx`, `pages/LikedPage.jsx`; sửa `contexts/PlaybackProvider.jsx`, `playbackContext.js`, `components/MusicPlayer.jsx/.scss`, `LyricsView.scss`, `SideBar.jsx/.scss`, `pages/PlaylistPage.scss`, `App.jsx`, `index.css` (`--liked`) |
+| ② Prev / Shuffle / Repeat | `components/PlayerHost.jsx` (lịch sử `history` 20 bài, `toggleShuffle`, `cycleRepeat`, Repeat all quay về bài đầu), `MusicPlayer.jsx/.scss` (`handlePrev`, `handleEnded`, `scoredRef`) |
+| ③ Chuông "What NYX noticed" | mới `emotune-backend/src/services/insightService.js`, `src/controllers/insightController.js`, `test/insights.test.js`; frontend mới `components/NotificationMenu.jsx/.scss`; sửa `Header.jsx/.scss` |
+| ④ "Your week", bỏ Devices (xoá `assets/icons/bar_devices.svg`), trợ lý "bài trước" / "thích bài này" | `Header.jsx/.scss`, `MusicPlayer.jsx`; backend `src/services/assistantRules.js`, `assistantLlm.js`, `test/assistantRules.test.js` |
+| Tài liệu | `TIEN_DO.md` (I1), `CLAUDE.md` (API `/likes`, `/insights`, bảng `liked_songs`, thanh phát, header, test `insights`), `NOTES.md` |
+
+Đã kiểm tra: `npm test` **101/101**; `npx eslint src` sạch + `npm run build` OK; curl `/likes` 9 trường hợp (2 tài khoản), `/insights` 3 tài khoản; Playwright (script `playwright-core`, tài khoản `demo`, đã dọn Liked Songs về rỗng): ♥ → sidebar → `/liked` → phát → bỏ thích; Prev 3 trường hợp; lặp 1 bài 2 vòng vẫn 1 `/listen-report`; Shuffle on/off; Repeat all; chuông (chấm đỏ, đóng = đã xem, F5 vẫn nhớ, bấm "On repeat" phát bài); trợ lý gõ "thích bài này", "bài trước"; 390px không tràn ngang.
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| `LIKE_BONUS` = +1 (bằng 1 lần nghe hết), chỉ trong nhóm bài hợp cảm xúc đang quét | Phản hồi tích cực rõ ràng mạnh hơn khảo sát (+0.5); không phát bài vui khi đang buồn chỉ vì đã thích |
+| "Liked Songs" ở sidebar **mở trang** `/liked` (thiết kế duyệt ghi "bấm là phát") | Giống các playlist khác trong sidebar (đều mở trang) |
+| Prev không chấm điểm bài đang nghe; lặp 1 bài chấm 1 lần | Lùi bài không có nghĩa là không thích; lặp nhiều vòng không được cộng điểm ảo |
+| Shuffle chỉ cho hàng đợi | Ở chế độ cảm xúc thứ tự do AI quyết định |
+| Nhận xét chuông sinh ở backend bằng hàm thuần + ngưỡng (≥ 3 lần quét/tuần, ≥ 10 điểm, khung 3 giờ ≥ 40%) | Test được; ít dữ liệu thì không kết luận bừa (giải thích được khi bảo vệ) |
+| Chữ chuông bằng tiếng Anh | Khớp phần còn lại của giao diện |
+| "Đã xem" lưu `localStorage` theo tài khoản, đánh dấu khi **đóng** menu | Chỉ là tiện ích từng máy; lint cấm setState trong effect; đọc theo username (lúc header vừa hiện tài khoản có thể chưa tải xong) |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend: server người dùng đang chạy sẵn ở 8080 (nodemon), frontend 5173: dùng chung, không tắt
+npm run db:migrate -- db/migrate_likes.sql   # máy khác / Pi cũng phải chạy (an toàn chạy lại)
+npm test                                     # 101/101
+# Frontend
+npx eslint src && npm run build
+```
+
+## 5. Lỗi / việc còn dở
+- **Đã sửa (người dùng hỏi "bài không phải nhạc Việt không có hình"):** 41 bài nhập bằng `import-music` có ảnh bìa = **logo NhacCuaTui** nhúng trong mp3 (41 file giống hệt nhau, md5 `0baadc14…`), `fetch-images` thấy "đã có bìa" nên bỏ qua. Thêm `scripts/lib/coverCheck.js` (+ 4 test, `npm test` 105/105): `import-music` không chép ảnh giả; `fetch-images` tự xoá ảnh giả rồi tải bìa thật → **31/41 có bìa thật**; 10 bài không có trên iTunes/Deezer (Beauty And A Beat, Biển Cạn, Chiều Nay Không Có Em, Chỉ Một Đêm Nữa Thôi, Dấu Tình Sầu, IDK, Lời Cuối Cho Em, Wtf Bby I'm Lit, Xa Xôi, Đánh Đổi) → hiện ảnh ca sĩ / bìa tự vẽ; muốn bìa thật thì bỏ ảnh vào `covers/<tên>.jpg` rồi chạy lại `fetch-images`. Đã đặt lại `photo = NULL` cho Phạm Hoài Nam / Lệ Quyên sau khi chạy. Máy khác / Pi: chạy `npm run fetch-images` là tự dọn.
+- **Đã sửa (người dùng: "ảnh Lệ Quyên bị vỡ"):** `photo` NULL → dùng `avatar` 84×84 px phóng to ở trang ca sĩ / Popular artists. Cắt chân dung 480px từ bìa album 1000px (không lấy chữ) → `avatars/photos/le-quyen-portrait.jpg`, `UPDATE artists SET photo = 'photos/le-quyen-portrait.jpg'`. File này mới, chưa có trong git; máy khác cần chép file + chạy lại câu UPDATE. **Phạm Hoài Nam cũng bị y hệt** (chưa sửa, chờ người dùng chọn).
+- **Chưa commit** (toàn bộ việc 10/10). Người dùng chưa yêu cầu.
+- Bật Shuffle rồi mới chọn hàng đợi: bài được chọn phát trước, Prev không lùi về các bài đứng trước nó trong thứ tự gốc (chấp nhận).
+- Prev ở chế độ cảm xúc không quay lại bài của playlist vừa phát trước đó (lịch sử chỉ nhớ bài cảm xúc).
+
+## 6. Bước tiếp theo
+1. Người dùng thử I1 (♥, Prev/Shuffle/Repeat, chuông), góp ý.
+2. **I2** "Vì sao NYX chọn bài này?" (dùng `score`, `taste_bonus`, `like_bonus`, `isEncourage`).
+3. Commit khi người dùng yêu cầu → giai đoạn B (Pi, hạn 15/10).
+
+---
+
+# 🧭 PHIÊN 10/10/2026 (tối, máy `C:\Users\Hi`) — H15 Karaoke, H16 MV + cột phải kiểu Spotify
+
+## 1. Mục tiêu
+1. Đọc NOTES/TIEN_DO rồi làm tiếp: **H15 Karaoke** (đã chốt từ phiên trước), sau đó **H16 MV YouTube** (người dùng tạo `YOUTUBE_API_KEY` giữa phiên).
+2. Chỉnh MV theo góp ý liên tục (5 lượt) cho giống Spotify.
+
+## 2. Việc đã làm xong (CHƯA COMMIT)
+| Việc | File |
+|---|---|
+| **H15 Karaoke**: nút Karaoke (khung lớn `/now-playing` + màn `/lyrics`, chỉ khi bài có lời đồng bộ). **Bỏ giọng ca sĩ trên trình duyệt**: L − R (giọng ở giữa bị triệt) + bù bass (L+R)/2 qua 2 tầng lọc thông thấp 150Hz; trái = bass + side, phải = bass − side; bật/tắt kéo dần dry ↔ wet ~0.3s. **Lời tô vàng dần từng chữ** (rAF ghi biến CSS `--p`; LRC chỉ có mốc theo dòng → chia đều thời gian dòng cho từng chữ, tối đa số chữ × 0.55s + 1s). Trạng thái karaoke giữ ở `PlayerHost` (sang bài vẫn bật). Màn lời cuộn lại dòng đang hát khi đổi cỡ cửa sổ | mới `emotune-frontend/src/utils/audioGraph.js` (tách `getGraph` khỏi `AudioVisualizer`, `setVocalCut`, `buildVocalCut`), `hooks/useLyrics.js`, `components/KaraokeLine.jsx`, `components/MicIcon.jsx`; sửa `AudioVisualizer.jsx`, `LyricsView.jsx/.scss`, `MusicPlayer.jsx/.scss`, `PlayerHost.jsx`, `utils/lyrics.js` (`karaokeWords`, `lineSpan`, `wordFill`), `index.css` (`--karaoke-fill`) |
+| **H16 MV — backend**: cột `songs.youtube_id` (`NULL` = chưa tìm, `''` = không có MV); `npm run fetch-mv` tìm MV chính thức bằng YouTube Data API v3, hàm thuần `pickVideo` (tên bài nguyên cụm + thừa ≤ 3 chữ, ca sĩ khớp tên video/kênh kể cả kênh viết liền kiểu `LanaDelReyVEVO`, bỏ cover/karaoke/remix/live/making/awards/upscale/phụ đề Trung-Hàn, bản lyrics/audio chỉ nhận từ kênh ca sĩ) + **12 test**. Đã chạy: **60/67 bài có MV**. 4 model trả thêm `youtube_id` | mới `emotune-backend/db/migrate_mv.sql`, `scripts/fetch-mv.js`, `scripts/lib/youtube.js`, `test/youtube.test.js`; sửa `db/setup.sql`, `package.json`, `.evn.example` (dòng `YOUTUBE_API_KEY`), `src/model/songModel.js`, `playlistModel.js`, `requestSongModel.js`, `suggestModel.js` |
+| **H16 MV — frontend (bản chốt sau 5 lượt góp ý)**: bấm **MV ở khung sóng âm** → MV **phủ hết vùng giữa** (chỉ chừa header, thư viện, thanh phát; class `.player.mv-on`). Rời `/now-playing` → MV sang **cột phải kiểu Spotify** (video khung vuông + tên bài + thẻ Lyrics tĩnh + About the artist; nút **thu gọn** → dải mỏng có nút ‹ để mở lại; ✕ = tắt MV). **Chỉ 1 trình phát YouTube, không bao giờ tạo lại**: nằm trong lớp nổi `.mv-float` (portal vào `.app-shell`), vòng `requestAnimationFrame` bám theo ô video đang hiện → đổi chỗ / thu gọn nhạc liền mạch; thu gọn thì MV vẫn chạy (ẩn). Video không bấm được (`controls: 0`, `pointer-events: none`), **chỉ điều khiển bằng thanh phát** (Play/Pause, tua, âm lượng, trợ lý giọng nói, nút cứng). Dừng → ẩn trình phát, hiện thumbnail. Tắt phụ đề tự bật (`unloadModule("captions")`). Chế độ MV giữ khi sang bài. Chỉ về mp3 khi Close MV / ✕ / mở `/lyrics` / MV lỗi (quy đổi thời điểm theo tỉ lệ thời lượng `mapTime`). Điểm nghe = max(mp3 đã nghe, MV xem liền mạch) | mới `utils/youtube.js`, `components/MvPlayer.jsx`, `components/NowPlayingPanel.jsx/.scss` (+ `NowPlayingStrip`), `contexts/panelSlotContext.js`; sửa `layouts/MainLayout.jsx/.scss` (ô `.right-panel-slot` cột lưới thứ 3, `--main-pad`), `MusicPlayer.jsx/.scss`, `PlayerHost.jsx` (`mvWanted`, `panelCollapsed`) |
+| Tài liệu | `TIEN_DO.md` (H15, H16, tổng quan H 17/17, nhật ký), `CLAUDE.md` (kiến trúc Karaoke/MV, lệnh `fetch-mv`, test `youtube`), `NOTES.md` |
+
+Đã kiểm tra: backend `npm test` **89/89**; frontend `npx eslint src` sạch + `npm run build` OK; Playwright 1440 / 1000 / 390px cho từng bước (không tràn ngang, không lỗi console). Bộ bỏ giọng đo bằng `OfflineAudioContext`: giọng giả ở giữa 440Hz còn 1.5%, 2kHz 0%, nhạc cụ lệch trái giữ 96%, bass giữ. MV: cùng 1 iframe suốt, thời gian MV chạy đều qua mọi lần đổi chỗ / thu gọn.
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| Karaoke tách giọng bằng **xử lý tín hiệu trên trình duyệt** (L − R + giữ bass), không dùng AI tách nguồn | Demucs/Spleeter cần GPU + vài phút mỗi bài; cách này chạy tức thì, giải thích được. **Hạn chế phải nói khi bảo vệ**: không sạch như beat chuẩn, còn vang giọng, bài mono gần như chỉ còn bass, nhạc cụ đặt giữa cũng nhỏ đi; thời gian từng chữ là nội suy |
+| `fetch-mv` chọn video bằng **luật + test**, không lấy kết quả đầu | Lần chạy đầu lấy nhầm 4 bài (making MV, bản diễn AMA, bản 4K kênh lạ, lyric video kênh fan) → siết luật, đặt lại `NULL`, tìm lại riêng |
+| mp3 vẫn là **nguồn chính**, MV là tuỳ chọn | Sóng âm, karaoke, chấm điểm, chạy offline trên Pi đều dựa vào mp3 |
+| Giao diện MV qua 5 lượt: ô nhỏ góc → cột "Now playing" → **người dùng chốt**: MV thay khung sóng âm + cột phải chỉ để xem khi lướt trang khác + bỏ nút MV/nút cột trên thanh phát | Theo ảnh Spotify người dùng gửi |
+| Không vẽ gì đè lên trình phát YouTube; khi dừng thì **ẩn cả trình phát** (hiện thumbnail) thay vì che icon | Quy định nhúng YouTube cấm overlay lên player |
+| **Lớp giới thiệu YouTube ~5s lúc MV bắt đầu: giữ nguyên** (người dùng chọn) | Che đi = phát video bị giấu, trái điều khoản |
+| Cột phải thu gọn: **MV vẫn chạy ẩn** (người dùng yêu cầu để mở lại khớp nhạc) | Đã nói rõ với người dùng là phát ẩn cũng trái điều khoản YouTube → nếu bị hỏi khi bảo vệ thì đây là đánh đổi có chủ ý |
+| Khung video cột phải **vuông** | YouTube yêu cầu khung nhúng ≥ 200×200px |
+| 1 trình phát YouTube duy nhất trong lớp nổi bám theo ô video | Gỡ ra / gắn lại iframe vào chỗ khác làm trình phát tải lại (đứng 1–2s, lùi nhạc) |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/) — server người dùng đang chạy sẵn ở 8080 (nodemon), frontend 5173: dùng chung, không tắt
+npm run db:migrate -- db/migrate_mv.sql      # đã chạy trên DB máy này (an toàn chạy lại)
+npm run fetch-mv                             # đã chạy: 60/67 bài; chỉ tìm bài youtube_id NULL; --retry tìm lại bài ''
+npm test                                     # 89/89
+# Frontend (emotune-frontend/)
+npx eslint src && npm run build
+```
+- `.env` của backend đã có `YOUTUBE_API_KEY` (giới hạn chỉ YouTube Data API v3). Quota ngày 10/10 đã dùng ~7.300/10.000 (mỗi lần tìm 100).
+- Máy khác / Pi: `git pull` → `npm run db:migrate -- db/migrate_mv.sql` → `npm run fetch-mv` (cần key + mạng). Pi không mạng → bấm MV báo "Can't load the MV" sau ≤ 10s, nhạc vẫn chạy.
+- Thử: đăng nhập `demo30` / `demo1234`, tìm "perfect" → Enter → bấm ảnh bài ở thanh phát → `/now-playing` → nút **MV** / **Karaoke** góc phải trên.
+- Playwright MCP bị 1 Chrome của phiên Claude trước giữ profile (`mcp-chrome-401e365`) → phiên này chạy Playwright bằng script `playwright-core` riêng (`~/AppData/Local/npm-cache/_npx/9833c18b2d85bc59/node_modules/playwright-core`, `chromium.launch({ channel: 'chrome' })`).
+
+## 5. Lỗi / việc còn dở
+- **Chưa commit** toàn bộ việc 10/10 (~168 file, gồm 60 ảnh bìa + 15 ảnh ca sĩ mới chưa quyết có đưa lên git không). Người dùng chưa yêu cầu commit.
+- **Chưa nghe thử karaoke bằng tai** (Playwright chạy không loa). Karaoke phần 3 (micro + chấm điểm hát) chưa làm; trợ lý giọng nói chưa hiểu "bật karaoke" / "xem MV".
+- 7 bài chưa có MV (6 bài RPT MCK / Nhan Nguyen + *Xích Thêm Chút (XTC Remix)*) → tự `UPDATE songs SET youtube_id = '<id>' WHERE title = '...';`.
+- Lớp giới thiệu YouTube (~5s) vẫn hiện mỗi lần MV bắt đầu — chấp nhận theo điều khoản.
+- Còn từ trước: vibe kho nhạc lệch (angry 6, surprise 4); thiếu ảnh ca sĩ Nhan Nguyen, Groovie Lã Thắng; thiếu lời *Giá Như*, *Khó Giữ Chân Thành*; `fetch-images` ghi ảnh album cho Phạm Hoài Nam / Lệ Quyên (chạy xong `UPDATE artists SET photo = NULL ...`); chưa thử micro thật với quả cầu trợ lý; tài khoản `gayta626` có độ tự tin AI giả; chưa có `ANTHROPIC_API_KEY`, `LASTFM_API_KEY`.
+
+## 6. Bước tiếp theo
+1. Người dùng nghe thử Karaoke + xem MV, góp ý.
+2. Commit khi người dùng yêu cầu (quyết định có đưa `covers/` + `avatars/photos/` mới lên git không).
+3. Chọn tiếp trong "💡 Ý tưởng chờ làm" (`TIEN_DO.md`): đề xuất **I1** (Shuffle / Prev / Repeat / ♥ chạy thật) → **I2** "Vì sao NYX chọn bài này?" (ăn điểm bảo vệ) → I3 lời chào cá nhân → I4 playlist chuyển cảm xúc.
+4. Giai đoạn B (Pi, hạn HIC 15/10): LD2410C, đồng bộ Pi qua git + `import-music` / `fetch-lyrics` / `fetch-images` / `fetch-mv`, vỏ hộp, systemd + kiosk, slide, tập demo.
+
+---
+
+# 🧭 PHIÊN 10/10/2026 (cả ngày, máy `C:\Users\Hi`) — giao diện "bầu trời đêm", import nhạc hàng loạt, màn đang phát mới
+
+## 1. Mục tiêu
+1. Đọc NOTES/TIEN_DO, tóm tắt. Người dùng chốt: **phần mềm xong rồi mới qua phần cứng** (đã lưu vào bộ nhớ Claude + đầu `TIEN_DO.md`).
+2. Chỉnh giao diện theo góp ý liên tục: quả cầu trợ lý AI, header/sidebar dính khi cuộn, nền mỗi trang, trang `/stats` + Settings rộng hơn, sidebar rộng hơn, màn đang phát + sóng âm.
+3. Sửa "màn lời bài không có lời" + làm công cụ **nhập nhạc hàng loạt** (người dùng tải ~60 mp3 từ NCT về `Downloads`).
+4. Bàn ý tưởng mới: **MV, Karaoke, phát từ YouTube** → ghi lại để phiên sau làm.
+
+## 2. Việc đã làm xong (CHƯA COMMIT)
+| Việc | File |
+|---|---|
+| (sáng) F18 menu tài khoản + `/settings`, C12b 4 biểu đồ `/stats`, icon cảm xúc mới, "Surprised" → **"Explore"** (chỉ chữ hiển thị) | xem `TIEN_DO.md` F18 / C12b / H10 |
+| **H6b quả cầu sóng trợ lý AI** thay dải 43 vạch (theo ảnh mẫu "Infographic Chart"): canvas lưới tròn + 2 dải 22 sợi sóng 3 cánh (cam–hồng theo âm trầm, tím–xanh theo âm cao) + viền trắng gợn; nút micro ở lỗ giữa; nền tím than. **Phản ứng ngay khi nói**: micro mở 1 lần khi mở trợ lý, tự đo tiếng ồn nền (trung bình + độ dao động, vượt 3× độ dao động mới là giọng) — trước đây ngưỡng cố định làm micro nhỏ chỉ nhảy khi Web Speech ra chữ. **Không hiện lại lời người dùng nói** (câu dẫn của trợ lý là phần xác nhận). Quả cầu **to tới 600px / 58vh**, nghỉ 0.62 → nói 0.96 bán kính | mới `emotune-frontend/src/components/VoiceOrb.jsx`; xoá `VoiceWave.jsx`; sửa `VoiceAssistant.jsx/.scss`, `src/index.css` (`--assistant-bg #241d4f`, `--assistant-glow-rgb`) |
+| **F19** header + sidebar `sticky` (cuộn chỉ nội dung giữa trôi; header z-index 15) | `src/layouts/MainLayout.scss` |
+| **F20 nền "bầu trời đêm" theo trang**: lớp cố định 3 quầng cực quang trôi chậm + sao; màu theo trang bằng `body:has(.ten-trang)` (chào/quét tím–hồng, trang chủ theo cảm xúc quét gần nhất, Mix + now-playing theo vibe, trang ca sĩ theo màu ảnh ca sĩ `--artist-h`, `/stats` tím than, Playlist tím–hồng, Settings xám lam); `@property` → đổi trang chuyển màu 1s; header/sidebar kính mờ; tấm nền trang chủ / Mix / thẻ Settings / đầu Playlist hơi trong | mới `src/components/PageAmbient.jsx/.scss`; sửa `MainLayout.jsx/.scss`, `Header.scss`, `SideBar.scss`, `pages/BrowsePage.scss`, `MixPage.scss`, `SettingsPage.scss`, `PlaylistPage.scss`, `ArtistPage.jsx` |
+| **F21** `/stats` + Settings bỏ giới hạn rộng (1200/1088px) → trải hết; sidebar 240 → **300px** (ảnh 52px, chữ 13px), thanh cuộn sidebar mảnh tối | `components/stats/Stats.scss`, `pages/SettingsPage.scss`, `components/SideBar.scss` |
+| **Lời bài không hiện**: `emotune-backend/lyrics/` trên máy này **trống** (không có trong git) → chạy `npm run fetch-lyrics`. *Giá Như* (LRCLIB đánh dấu "không lời") và *Khó Giữ Chân Thành* (LRCLIB không có) vẫn thiếu → người dùng tự dán lời vào `lyrics/gia_nhu.lrc`, `kho_giu_chan_thanh.lrc` | — |
+| **C2 `npm run import-music`** (2 bước): `-- --from "<thư mục>"` = XEM TRƯỚC: đọc thẻ ID3 (tự viết, không thư viện), làm sạch (bỏ " - Vũ" cuối tên, album "NhacCuaTui.com", gộp "Vũ"/"Vũ."/"VU", "Ha Nhi"/"Hà Nhi", bỏ file trùng), tìm lời LRCLIB (cache `import/cache/`), **đoán vibe từ lời + tên bài** (từ điển cảm xúc Việt + Anh, từ mạnh ×2, tên bài ×5, mỗi từ tối đa 3 lần, "?" khi chưa chắc), đoán thể loại (thẻ NCT → pop/rap/ballad, theo ca sĩ, theo vibe) → `import/plan.json` (sửa được); `-- --apply` = chép mp3 → `music/`, ảnh bìa trong ID3 → `covers/`, lời → `lyrics/`, **chỉ THÊM** ca sĩ + bài vào DB (1 transaction), rồi tự chạy `fetch-images` + `fetch-song-info`. Tách phần LRCLIB của `fetch-lyrics` ra `scripts/lib/lrclib.js` | mới `emotune-backend/scripts/import-music.js`, `scripts/lib/id3.js`, `scripts/lib/importMusic.js`, `scripts/lib/lrclib.js`, `test/importMusic.test.js` (14 test), `import/.gitignore`; sửa `scripts/fetch-lyrics.js`, `package.json` |
+| **Nhập 59 bài** từ `C:\Users\Hi\Downloads` (13 vibe sửa tay theo gợi ý Claude, người dùng đồng ý) → kho **69 bài, 28 ca sĩ**, đủ bìa + thời lượng, 58 bài có lời; vibe: sad 35 · happy 15 · neutral 9 · angry 6 · surprise 4 | DB + `music/`, `covers/` (60 ảnh mới, **chưa commit, chưa quyết có đưa lên git không**), `avatars/photos/` (15 ảnh ca sĩ mới) |
+| Sửa tác dụng phụ: `fetch-images` ghi ảnh ALBUM của Phạm Hoài Nam / Lệ Quyên vào `artists.photo` (thay ảnh chân dung) → `UPDATE artists SET photo = NULL` cho 2 người (ghi chú trong `CLAUDE.md`) | DB |
+| **H14 màn đang phát**: nền khung lớn tối nhiều lớp (ảnh bìa nhoè + 4 quầng màu vibe trôi chậm + hạt nhiễu + viền tối) theo vibe (`--bg-a/b/c`, `--viz-1/2`, `--viz-glow`; vui = vàng kim) và **thể loại** (`data-genre`: rap = hạt gắt + vạch quét, ballad = đốm bokeh, chill = trôi chậm). **Sóng âm**: sau 2 lần thử (cột/sóng cong theo thể loại; "vệt sáng" theo ảnh mẫu) người dùng chốt **kiểu cột ban đầu làm đẹp**: trắng sáng giữa → màu vibe 2 đầu, quầng sáng elip cùng màu, **chấm đỉnh rơi chậm**, mượt hơn, **cao thấp theo độ to thật của bài** (so với đoạn to nhất của bài theo thang dB, nhớ ~30s; hình dạng theo phổ từng lúc). Backend trả thêm `genre` cho bài gợi ý | `src/components/MusicPlayer.jsx/.scss`, `src/components/AudioVisualizer.jsx`; backend `src/model/suggestModel.js`, `src/model/requestSongModel.js` |
+| Tài liệu | `TIEN_DO.md` (H6b, H14, H15, H16, F19–F21, C2, mục "💡 Ý tưởng chờ làm"), `CLAUDE.md`, `NOTES.md` |
+
+Đã kiểm tra: backend `npm test` **77/77**; frontend `npx eslint src` sạch + `npm run build` OK; Playwright 1440 / 1920 / 390px cho từng việc (không tràn ngang). Quả cầu + sóng âm thử bằng **micro giả / giọng đọc giả** trong Playwright (init script giả `getUserMedia`, `SpeechRecognition`, `speechSynthesis`).
+
+## 3. Quyết định quan trọng và lý do
+| Quyết định | Lý do |
+|---|---|
+| Phần mềm trước, phần cứng sau (người dùng chốt) | Người dùng muốn web hoàn chỉnh trước; đã nhắc 1 lần rủi ro hạn HIC 15/10 |
+| Màu nền theo trang viết **thuần CSS** (`body:has(...)`), không React | Trang nào cũng không phải sửa; thêm trang mới = 1 quy tắc trong `PageAmbient.scss` |
+| Micro của quả cầu: **ngưỡng tự thích nghi** (trung bình + 3× độ dao động tiếng ồn) | Ngưỡng cố định: micro nhỏ không nhảy, phòng ồn thì nhảy lung tung |
+| Đoán vibe bằng **từ điển cảm xúc trên lời bài** (không phải phân tích âm thanh) | Máy không có ffmpeg / librosa; LRCLIB có lời sẵn; giải thích được khi bảo vệ. Hạn chế: chỉ hiểu lời, không nghe giai điệu (vd *Baby* lời buồn nhạc vui) → bước xem trước + sửa tay |
+| **Không dùng Google search** để gán thể loại/cảm xúc | Custom Search JSON API đóng đăng ký mới, tắt 01/01/2027; cào Google vi phạm điều khoản. Thay bằng: iTunes `primaryGenreName`, **Last.fm `track.getTopTags`** (tag cộng đồng, cần key miễn phí — chưa có) |
+| **Không viết tool tự tải nhạc từ NhacCuaTui** (người dùng hỏi 2 lần, kể cả "thầy nói không sao") | Bản quyền + điều khoản NCT; giải pháp: người dùng tự có file, `import-music` lo phần còn lại |
+| `import-music` 2 bước + chỉ THÊM vào DB | Xem/sửa vibe trước khi ghi; không đụng dữ liệu thật của người dùng |
+| Sóng âm: độ cao theo **chênh lệch dB so với đoạn to nhất của bài** | Analyser trả thang dB nên tỉ lệ thường luôn ≈ 1 (thử thấy intro = điệp khúc); phải dùng hiệu số |
+| Không phát nhạc từ YouTube thay mp3 → **lai: mp3 chính + YouTube chỉ cho MV** | Xem mục "💡 Ý tưởng chờ làm" trong `TIEN_DO.md` (điều khoản, mất sóng âm, quảng cáo, cần mạng) |
+
+## 4. Lệnh đã chạy / cách chạy lại
+```bash
+# Backend (emotune-backend/) — server người dùng đang chạy sẵn ở 8080 (nodemon), frontend 5173: dùng chung, không tắt
+npm run fetch-lyrics                                        # máy mới / Pi: lyrics/ không có trong git
+npm run import-music -- --from "$USERPROFILE/Downloads"     # xem trước -> import/plan.json (sửa "vibe"/"genre")
+npm run import-music -- --apply                             # nhập thật + tự fetch-images + fetch-song-info
+npm test                                                    # 77/77
+# Frontend (emotune-frontend/)
+npx eslint src && npm run build
+```
+Đăng nhập thử: `demo30` / `demo1234` (dữ liệu mẫu). Máy mới / Pi muốn có 59 bài mới: chép mp3 rồi chạy lại `import-music` (DB máy khác chưa có các bài này).
+
+## 5. Lỗi / việc còn dở
+- **Chưa commit** toàn bộ việc 10/10 (147 file, gồm 60 ảnh bìa + 15 ảnh ca sĩ mới chưa quyết có đưa lên git). Người dùng chưa yêu cầu commit.
+- Vibe kho nhạc lệch: **angry 6, surprise 4** (mục tiêu ≥ 8) → cần thêm bài rap gắt / bài lạ tai.
+- Thiếu ảnh ca sĩ **Nhan Nguyen**, **Groovie Lã Thắng** → bỏ ảnh vào `avatars/photos/nhan-nguyen.jpg`, `groovie-la-thang.jpg` rồi `npm run fetch-images`.
+- Thiếu lời *Giá Như*, *Khó Giữ Chân Thành* (LRCLIB không có).
+- `npm run fetch-images` sẽ lại ghi ảnh album cho Phạm Hoài Nam / Lệ Quyên → chạy xong nhớ `UPDATE artists SET photo = NULL WHERE name IN ('Phạm Hoài Nam','Lệ Quyên')`.
+- **Chưa thử micro thật** với quả cầu mới (chỉ micro giả). Chưa có `ANTHROPIC_API_KEY`, `LASTFM_API_KEY`, `YOUTUBE_API_KEY`.
+- Còn từ trước: tài khoản `gayta626` có độ tự tin AI **giả** (lệnh gỡ ở phiên 09/10 tối mục 5); Smart App Control có thể chặn `postgres.exe`.
+
+## 6. Bước tiếp theo
+1. **H15 Karaoke** (người dùng đã đồng ý, làm ngay — chi tiết cách làm ở dòng H15 `TIEN_DO.md`): tách giọng L−R + giữ bass trên đồ thị Web Audio của `AudioVisualizer`, lời tô màu dần từng chữ, tuỳ chọn micro + chấm điểm.
+2. **H16 MV**: chờ người dùng tạo `YOUTUBE_API_KEY` → `npm run fetch-mv` + cột `songs.youtube_id` + nút "MV" nhúng YouTube IFrame.
+3. Hỏi người dùng chọn tiếp trong **"💡 Ý tưởng chờ làm"** (I1 nút chết + ♥, I2 "Vì sao NYX chọn bài này?", I3 lời chào, I4 playlist chuyển cảm xúc, I5 Mood Wrapped) — đề xuất thứ tự I1 → I2 → I3 → I4.
+4. Commit khi người dùng yêu cầu. Rồi giai đoạn B (Pi): LD2410C, đồng bộ Pi qua git + `import-music` / `fetch-lyrics` / `fetch-images`, vỏ hộp, systemd + kiosk, slide, tập demo.
 
 ---
 
@@ -92,6 +374,8 @@ Thử: Chrome/Edge (cần Internet cho Web Speech) → bấm logo AI → cho ph�
 
 ## 5. Lỗi / việc còn dở
 - **Sự cố tối 09/10 — Windows Smart App Control chặn `postgres.exe`**: tối 09/10 (sau 21:46; lúc 21:46 DB vẫn trả lời truy vấn), Code Integrity (policy `{0283ac0f-…}`, "did not meet the Enterprise signing level") chặn `postgres.exe`. Triệu chứng: PostgreSQL reset mọi kết nối, đăng nhập backend trả 500, rồi dịch vụ không khởi động được (Error 1067). **Cách sửa:** tắt Smart App Control (Windows Security → App & browser control), rồi Start dịch vụ `postgresql-x64-17`. Chẩn đoán: `Get-WinEvent -LogName "Microsoft-Windows-CodeIntegrity/Operational"` và chạy `& "C:\Program Files\PostgreSQL\17\bin\postgres.exe" -V` trong PowerShell (Git Bash: bỏ `&`) (hiện "An Application Control policy has blocked this file"). Nếu lặp lại thì kiểm tra Smart App Control trước.
+- **10/10 rạng sáng — vẽ lại 4 biểu đồ `/stats` theo 4 ảnh mẫu (C12b, chưa commit)**: `DailyChart` thanh ngang chồng; `HourlyChart` (mới, thay `DaypartGrid` đã xoá) sóng chồng theo giờ, nội suy đơn điệu `monotoneSample` để lớp không âm/không cắt nhau; `HitRateChart` vòng đường cong (nội suy bán kính theo góc, không dùng dây cung → không đè số giữa) + 4 sparkline; `ConfidenceRose` mỗi lần quét 1 cánh. Hàm vẽ: `components/stats/chartMath.js`. Backend: `hourly` (24 giờ, `buildHourly`) thay `dayparts`/`buildDayparts`/`daypartOf`; `getConfidence` trả từng lần quét, `buildConfidence` tính `avg`, `count`, `values` (60 lần gần nhất). Tooltip thử bằng chuột Playwright (`browser_hover`) chạy được.
+- **Độ tự tin GIẢ trên tài khoản thật `gayta626` (id 19), 09/10 23:45**: người dùng yêu cầu "fake cho lên biểu đồ" "How sure the face AI was" (tài khoản chỉ chọn cảm xúc bằng tay → `confidence` NULL hết). Đã điền `mood_history.confidence` cho 19 dòng `suggested` (happy ~0.89, surprise ~0.80, neutral ~0.72, sad ~0.66, angry ~0.53 — angry thấp nhất cho khớp điểm yếu thật của model). Chỉ biểu đồ này đọc cột `confidence`. **Gỡ:** `UPDATE mood_history SET confidence = NULL WHERE user_id = 19 AND id IN (30,31,39,41,42,47,49,51,83,84,92,93,95,96,100,101,103,104,105);`. Khi demo phải nói rõ đây là số mẫu.
 - **Giao diện neon `/stats`**: người dùng **chưa xem/góp ý**. Chuột Playwright phiên này không gửi được sự kiện (lỗi công cụ) → nút 7/30 và rê chuột chỉ thử bằng sự kiện DOM; nên tự bấm thử 1 lần trên trình duyệt thật.
 - Việc nhỏ hoãn ở `/stats`: `role="img"` bọc phần tử focus được; mốc ngày DB (`CURRENT_DATE`) và Node (`dayKey`) phải cùng múi giờ (1 máy thì ổn); `seed-demo` chạy 2 lần vắt qua mốc giờ có thể lệch số dòng; số liệu "got it right" gồm cả bài tự bấm phát ở chế độ cảm xúc (câu chữ đã ghi đúng). Quan sát 1 lần (chưa chắc): đổi cỡ 1000 → 390px khi xem 30 ngày thì nút về 7 ngày. Vite dev chạy lâu mà thiếu mục → khởi động lại `npm run dev` frontend.
 - **H13**: người dùng chưa xem trang Mix → chờ góp ý.

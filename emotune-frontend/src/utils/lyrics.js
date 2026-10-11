@@ -38,3 +38,24 @@ export const activeLineIndex = (lines, time) => {
     }
     return -1;
 };
+
+// ---------- karaoke (H15): to mau dan tung chu trong dong dang hat ----------
+// LRC chi co moc thoi gian dau moi DONG -> thoi gian tung chu phai noi suy:
+// moi chu (tieng Viet: 1 chu = 1 am tiet) chiem 1 phan bang nhau cua thoi gian hat dong do.
+const SECONDS_PER_WORD = 0.55;
+
+export const karaokeWords = (text) => text.split(/\s+/).filter(Boolean);
+
+// thoi gian hat dong i (giay) = toi dong ke tiep, nhung khong qua uoc luong theo so chu
+// (sau dong cuoi doan thuong la doan nhac dao dai -> khong de chu to dan suot 15 giay)
+export const lineSpan = (lines, i) => {
+    const line = lines[i];
+    const estimate = karaokeWords(line.text).length * SECONDS_PER_WORD + 1;
+    const next = lines[i + 1];
+    const gap = next ? next.time - line.time : Infinity;
+    return Math.max(0.5, Math.min(gap * 0.95, estimate));
+};
+
+// muc to cua chu thu `index` trong dong co `count` chu, khi dong da hat duoc `progress` (0..1) -> 0..1
+export const wordFill = (progress, index, count) =>
+    Math.min(1, Math.max(0, progress * count - index));

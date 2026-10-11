@@ -4,7 +4,7 @@
 // Thu tu xet: (cau tra loi cho lan hoi lai) -> dieu khien nhac -> trang co dinh -> ten bai/ca si/playlist -> cam xuc -> unknown
 
 const EMOTIONS = ["happy", "sad", "angry", "surprise", "neutral"];
-const CONTROLS = ["pause", "resume", "next", "volume_up", "volume_down", "mute", "not_for_me"];
+const CONTROLS = ["pause", "resume", "next", "prev", "volume_up", "volume_down", "mute", "not_for_me", "like", "mv_on", "mv_off"];
 
 // trang hop le cho navigate; words = cum tu (khong dau) nhan ra trang do
 const PAGES = [
@@ -20,14 +20,20 @@ const PAGES = [
 // xet theo DUNG thu tu nay: cum dai / de nham dung truoc ("khong thich bai nay" truoc "bai")
 const CONTROL_WORDS = [
     ["not_for_me", ["khong thich bai nay", "khong thich bai", "bai nay chan", "not for me"]],
-    ["next", ["bai tiep", "bai khac", "bai sau", "chuyen bai", "qua bai", "doi bai", "next"]],
+    // ♥ (I1): xet SAU not_for_me -> "khong thich bai nay" khong bi hieu thanh tha tim
+    ["like", ["thich bai nay", "luu bai nay", "tha tim", "like bai nay"]],
+    ["prev", ["bai truoc", "bai vua roi", "quay lai bai", "lui bai", "previous"]],
+    // MV (H16): "tat / dong" xet truoc "mo / xem"; chi chu "mv" trong cau cung hieu la muon xem MV
+    ["mv_off", ["tat mv", "dong mv", "bo mv", "tat video", "dong video", "tat music video"]],
+    ["mv_on", ["mo mv", "xem mv", "bat mv", "coi mv", "music video", "xem video", "mo video", "bat video", "coi video", "mv"]],
+    ["next", ["bai tiep", "bai ke", "bai khac", "bai sau", "chuyen bai", "qua bai", "doi bai", "next"]],
     // "dung phat (tiep) nua" / "tat nhac" xet TRUOC resume (trong cau co the co "phat tiep")
     ["pause", ["dung phat", "tat nhac"]],
     ["resume", ["tiep tuc", "phat tiep", "phat lai", "choi tiep", "resume"]],
     ["pause", ["tam dung", "dung lai", "dung nhac", "dung di", "ngung", "pause"]],
     // "bat / mo tieng": volume_up tren client da bo tat tieng -> co tieng lai sau "tat tieng"
-    ["volume_up", ["to len", "lon len", "tang am", "to hon", "lon hon", "bat tieng", "mo tieng"]],
-    ["volume_down", ["nho lai", "be lai", "giam am", "nho hon", "nho xuong", "nho di"]],
+    ["volume_up", ["to len", "lon len", "tang am", "to hon", "lon hon", "to am luong", "lon am luong", "to tieng", "bat tieng", "mo tieng"]],
+    ["volume_down", ["nho lai", "be lai", "giam am", "nho hon", "nho xuong", "nho di", "nho am luong", "be am luong", "nho tieng"]],
     ["mute", ["tat tieng", "tat am", "im lang", "mute"]],
 ];
 
@@ -44,15 +50,37 @@ const CONTROL_REPLIES = {
     volume_down: "Đã giảm âm lượng.",
     mute: "Đã tắt tiếng.",
     not_for_me: "Ok, mình bỏ qua bài này.",
+    prev: "Quay lại bài trước nhé.",
+    like: "Đã thêm vào Liked Songs, NYX sẽ nhớ bạn thích bài này.",
+    mv_on: "Mở MV cho bạn xem nhé.",
+    mv_off: "Tắt MV, quay lại nghe nhạc nhé.",
 };
+
+// ten ngan cua tung buoc khi gom loi dan cho chuoi lenh ("Ok, minh se giam am luong, mo MV roi chuyen bai.")
+const STEP_LABELS = {
+    pause: "tạm dừng", resume: "phát tiếp", next: "chuyển bài", prev: "quay lại bài trước",
+    volume_up: "tăng âm lượng", volume_down: "giảm âm lượng", mute: "tắt tiếng",
+    not_for_me: "bỏ qua bài này", like: "lưu bài vào Liked Songs", mv_on: "mở MV", mv_off: "tắt MV",
+};
+// tu noi giua cac lenh trong 1 cau (dau phay / cham phay cung tach); toi da 5 buoc
+const CONNECTORS = ["roi", "xong", "va"];
+const MAX_STEPS = 5;
+// loai hanh dong duoc lam 1 buoc (ke cam xuc / hoi dap / hoi lai chi dung 1 minh)
+const STEP_TYPES = ["control", "navigate", "play", "queue"];
 
 // "xem / vao / trang ..." = muon MO TRANG; "phat / nghe / bat / mo ..." = muon NGHE
 const NAV_VERBS = ["xem", "trang", "vao", "di toi", "di den", "chuyen sang", "chuyen toi", "mo trang", "mo man"];
 const PLAY_VERBS = ["phat", "nghe", "bat", "mo bai", "mo nhac", "cho nghe", "play", "mo"];
+// cau HOI / nho ke chuyen ("Taylor Swift la ai?", "ke chuyen vui di") -> khong phai lenh phat hay ke cam xuc:
+// luat bo qua (tru khi cau bat dau bang dong tu phat) de Gemini tra loi (answer)
+const ASK_WORDS = ["la ai", "la gi", "tai sao", "vi sao", "bao nhieu", "khi nao", "o dau", "nhu the nao", "the nao",
+    "giai thich", "y nghia", "noi ve", "ke chuyen", "ke cho", "ke ve", "co biet", "biet gi"];
+const startsWithPlayVerb = (words) => PLAY_VERBS.some((v) => findPhrase(words, v) === 0);
 
 // tu dien cam xuc (khong dau). Xet theo thu tu nay; cum de nham (vd "tuc" trong "tiep tuc") chi dung dang cum
 const MOOD_WORDS = [
-    ["surprise", ["bat ngo", "ngac nhien", "khong ngo", "soc", "wow"]],
+    // surprise hien thi la "Explore": mat ngac nhien / muon kham pha dieu moi
+    ["surprise", ["bat ngo", "ngac nhien", "khong ngo", "soc", "wow", "kham pha", "moi la", "cai gi moi", "cai moi", "dieu moi"]],
     // "tuc" / "chan" le KHONG dung ("tiep tuc", "Kho Giu Chan Thanh") -> chi dang cum
     ["angry", ["tuc gian", "tuc qua", "tuc minh", "minh tuc", "dang tuc", "tuc that", "gian du", "gian qua", "dang gian",
         "gian ghe", "buc minh", "buc qua", "buc boi", "cau qua", "cau gat", "kho chiu", "dien qua", "phat dien"]],
@@ -70,7 +98,14 @@ const MOODISH_WORDS = new Set([
     ...MOOD_WORDS.flatMap(([, phrases]) => phrases.flatMap((p) => p.split(" "))),
     "nhac", "bai", "hat", "list", "playlist", "nhung",
 ]);
-const MOOD_LABELS = { happy: "vui", sad: "buồn", angry: "bực bội", surprise: "bất ngờ", neutral: "bình thường" };
+// cau tra loi khi nghe ra cam xuc (surprise = tam trang muon kham pha)
+const MOOD_REPLIES = {
+    happy: "Bạn đang thấy vui",
+    sad: "Bạn đang thấy buồn",
+    angry: "Bạn đang thấy bực bội",
+    surprise: "Bạn đang muốn khám phá điều mới",
+    neutral: "Bạn đang thấy bình thường",
+};
 
 // so thu tu khi tra loi cau hoi lai ("cai thu hai")
 const ORDINALS = [
@@ -272,7 +307,7 @@ const detectEmotion = (words) => {
 
 const moodAction = (emotion) => ({
     action: { type: "mood", emotion },
-    reply: `Bạn đang thấy ${MOOD_LABELS[emotion]}, để mình chọn bài hợp tâm trạng nhé.`,
+    reply: `${MOOD_REPLIES[emotion]}, để mình chọn bài hợp tâm trạng nhé.`,
 });
 
 // pending gui tu client: chi giu dung dang, toi da 4 ung vien (id kiem lai voi danh muc o resolvePending)
@@ -283,6 +318,13 @@ const sanitizePending = (raw) => {
         .map((c) => ({ kind: c.kind, id: c.id, name: String(c.name || "") }));
     return candidates.length ? { intent: raw.intent, candidates } : null;
 };
+
+// lich su hoi thoai gui tu client (chi de Gemini hieu cau hoi noi tiep): 6 cau gan nhat, dung vai, moi cau <= 400 ky tu
+const MAX_HISTORY = 6;
+const sanitizeHistory = (raw) => (Array.isArray(raw) ? raw : [])
+    .filter((h) => h && ["user", "assistant"].includes(h.role) && typeof h.text === "string" && h.text.trim())
+    .slice(-MAX_HISTORY)
+    .map((h) => ({ role: h.role, text: h.text.trim().slice(0, 400) }));
 
 // cau tra loi cho lan hoi lai -> muc that trong danh muc (null = khong phai cau tra loi -> xu ly nhu cau moi)
 const resolvePending = (words, pending, catalog, pick) => {
@@ -304,6 +346,83 @@ const resolvePending = (words, pending, catalog, pick) => {
     return c ? entityOf(catalog, c.kind, c.id) : null;
 };
 
+// ---------- chuoi nhieu lenh trong 1 cau ----------
+// cat cau theo dau phay + tu noi ("roi", "xong", "va", "sau do") -> cac doan chu (khong dau)
+const splitParts = (text) => String(text).split(/[,;]+/).flatMap((chunk) => {
+    const parts = [[]];
+    const words = toWords(chunk);
+    for (let i = 0; i < words.length; i++) {
+        if (CONNECTORS.includes(words[i])) { parts.push([]); continue; }
+        if (words[i] === "sau" && words[i + 1] === "do") { parts.push([]); i++; continue; }
+        parts[parts.length - 1].push(words[i]);
+    }
+    return parts;
+}).filter((p) => p.length).map((p) => p.join(" "));
+
+const stepLabel = (step, catalog) => {
+    if (step.type === "control") return STEP_LABELS[step.command];
+    if (step.type === "queue") return `phát danh sách “${step.queue.name}”`;
+    if (step.type === "play") {
+        if (step.kind === "song") return `phát bài “${step.song.title}”`;
+        if (step.kind === "artist") return `phát nhạc của ${step.queue.name}`;
+        const pl = catalog.playlists.find((p) => p.id === step.playlistId);
+        return `phát playlist “${pl ? pl.name : "của bạn"}”`;
+    }
+    const page = PAGES.find((p) => p.path === step.path);
+    if (page) return `mở ${page.name}`;
+    const m = /^\/(artist|playlist)\/(\d+)$/.exec(step.path);
+    const entity = m && entityOf(catalog, m[1], Number(m[2]));
+    return entity ? `mở trang ${entity.name}` : "mở trang";
+};
+
+// "a, b, c rồi d"
+const joinSteps = (labels) => (labels.length > 1
+    ? `${labels.slice(0, -1).join(", ")} rồi ${labels[labels.length - 1]}`
+    : labels[0]);
+const sequenceReply = (steps, catalog) => `Ok, mình sẽ ${joinSteps(steps.map((s) => stepLabel(s, catalog)))}.`;
+
+// 1 buoc -> lenh don (giu cau cua lenh do); nhieu buoc -> sequence
+const sequenceResult = (results, catalog, reply = null) => {
+    if (results.length === 1) return results[0];
+    const steps = results.map((r) => r.action);
+    return { action: { type: "sequence", steps }, reply: reply || sequenceReply(steps, catalog) };
+};
+
+// MOI doan deu la lenh hieu duoc moi thanh chuoi (ten bai co chu "roi" / "va" bi cat sai -> co doan khong hieu -> bo)
+const parseSequence = (text, catalog) => {
+    const parts = splitParts(text);
+    if (parts.length < 2 || parts.length > MAX_STEPS) return null;
+    const results = parts.map((part) => parseCommand(part, catalog));
+    if (!results.every((r) => STEP_TYPES.includes(r.action.type))) return null;
+    return sequenceResult(results, catalog);
+};
+
+// Mo MV khi bai khong co MV -> bo buoc do va noi ro. Bai "luc do" = bai dang phat, hoac bai cua buoc phat dung truoc
+// (playlist: chua biet bai dau -> khong chan). Ham thuan, chay cho ca ket qua luat lan LLM.
+const checkMv = (result, catalog, nowPlayingId) => {
+    const steps = result.action.type === "sequence" ? result.action.steps : [result.action];
+    let current = catalog.songs.find((s) => s.id === nowPlayingId) || null;
+    let unsure = false;
+    let dropped = null;
+    const kept = [];
+    for (const step of steps) {
+        if (step.type === "play" || step.type === "queue") {
+            unsure = step.kind === "playlist";
+            current = step.kind === "song" ? step.song : step.queue ? step.queue.songs[0] : null;
+        }
+        if (step.type === "control" && step.command === "mv_on" && !unsure && !(current && current.youtube_id)) {
+            dropped = current;
+            continue;
+        }
+        kept.push(step);
+    }
+    if (kept.length === steps.length) return result;
+    const note = dropped ? `Bài “${dropped.title}” chưa có MV.` : "Chưa có bài nào đang phát để mở MV.";
+    if (!kept.length) return { action: { type: "answer" }, reply: note };
+    if (kept.length === 1) return { action: kept[0], reply: `${note} Mình sẽ ${stepLabel(kept[0], catalog)} nhé.` };
+    return { action: { type: "sequence", steps: kept }, reply: `${note} ${sequenceReply(kept, catalog)}` };
+};
+
 const parseCommand = (text, catalog, { pending = null, pick = null } = {}) => {
     const words = toWords(text);
 
@@ -313,6 +432,14 @@ const parseCommand = (text, catalog, { pending = null, pick = null } = {}) => {
         if (picked) return runIntent(pending.intent, catalog, picked);
     }
     if (!words.length) return unknownAction();
+
+    // 0'. nhieu lenh noi lien: "nho am luong, mo MV roi bai ke" (moi doan phai la lenh hieu duoc)
+    const sequence = parseSequence(text, catalog);
+    if (sequence) return sequence;
+
+    // 0''. cau hoi / nho ke chuyen -> de Gemini tra loi (khong hieu nham thanh phat bai / cam xuc), xet TRUOC ten bai.
+    // Chi la lenh khi cau BAT DAU bang dong tu phat ("phat bai noi ve mua"); "tai sao nghe nhac buon..." van la cau hoi
+    if (has(words, ASK_WORDS) && !startsWithPlayVerb(words)) return unknownAction();
 
     // 0. ten noi NGUYEN VEN, lien nhau + co dong tu -> uu tien truoc dieu khien
     // (khong de "phat bai Tiep Tuc Yeu" bi hieu thanh lenh "bai tiep")
@@ -359,9 +486,11 @@ const parseCommand = (text, catalog, { pending = null, pick = null } = {}) => {
 
 // Ket qua LLM KHONG duoc tin thang: chi nhan loai hanh dong, trang, id co trong danh muc; sai -> unknown
 // Cau tra loi cua LLM chi dung khi hanh dong giu nguyen loai (vd ca si chua co bai -> mo trang, dung cau cua luat)
+const MAX_QUEUE = 10;
 const validateLlmAction = (raw, catalog) => {
     if (!raw || typeof raw !== "object") return unknownAction();
-    const reply = typeof raw.reply === "string" ? raw.reply.trim().slice(0, 200) : "";
+    // hoi dap duoc dai hon (tro ly doc to ~60 tu); lenh chi can 1 cau ngan
+    const reply = typeof raw.reply === "string" ? raw.reply.trim().slice(0, raw.type === "answer" ? 400 : 200) : "";
     const withReply = (result) => (reply && result.action.type === raw.type ? { ...result, reply } : result);
 
     switch (raw.type) {
@@ -380,6 +509,26 @@ const validateLlmAction = (raw, catalog) => {
             return EMOTIONS.includes(raw.emotion) ? withReply(moodAction(raw.emotion)) : unknownAction();
         case "control":
             return CONTROLS.includes(raw.command) ? withReply(controlAction(raw.command)) : unknownAction();
+        // goi y theo mo ta: chi giu bai CO THAT trong kho, bo trung
+        case "queue": {
+            const ids = Array.isArray(raw.ids) ? [...new Set(raw.ids)] : [];
+            const songs = ids.map((id) => catalog.songs.find((s) => s.id === id)).filter(Boolean).slice(0, MAX_QUEUE);
+            if (!songs.length) return unknownAction();
+            const name = (typeof raw.title === "string" && raw.title.trim().slice(0, 40)) || "NYX chọn cho bạn";
+            return withReply({ action: { type: "queue", queue: { name, songs } }, reply: `Mình sẽ phát ${songs.length} bài “${name}” nhé.` });
+        }
+        // hoi dap / tro chuyen: chi can cau tra loi
+        case "answer":
+            return reply ? { action: { type: "answer" }, reply } : unknownAction();
+        // chuoi lenh: kiem tung buoc nhu 1 lenh rieng, bo buoc sai
+        case "sequence": {
+            const steps = (Array.isArray(raw.steps) ? raw.steps : []).slice(0, MAX_STEPS)
+                .filter((step) => step && STEP_TYPES.includes(step.type))
+                .map((step) => validateLlmAction({ ...step, reply: "" }, catalog))
+                .filter((r) => STEP_TYPES.includes(r.action.type));
+            if (!steps.length) return unknownAction();
+            return sequenceResult(steps, catalog, steps.length > 1 ? reply : null);
+        }
         default:
             return unknownAction();
     }
@@ -389,5 +538,5 @@ module.exports = {
     EMOTIONS, CONTROLS, PAGES, MIN_SCORE,
     normalize, toWords, findPhrase, has, scoreName, entityOf,
     playAction, navigateAction, runIntent, controlAction, unknownAction,
-    sanitizePending, moodAction, parseCommand, validateLlmAction,
+    sanitizePending, sanitizeHistory, moodAction, parseCommand, validateLlmAction, checkMv, splitParts, MAX_STEPS, STEP_TYPES,
 };

@@ -7,5 +7,9 @@ DB_NAME =
 # chuoi ngau nhien: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 JWT_SECRET = 
 JWT_EXPIRES_IN = 7d
-# Tro ly giong noi (H6): key Claude API cho phan du phong (bo trong = chi dung bo luat)
-ANTHROPIC_API_KEY = 
+# Tro ly giong noi (H6): key Gemini MIEN PHI cho phan du phong (aistudio.google.com -> Get API key; bo trong = chi dung bo luat)
+GEMINI_API_KEY =
+# (tuy chon) doi model Gemini, mac dinh gemini-3.5-flash-lite (nhanh nhat khi do 10/10)
+# GEMINI_MODEL =
+# MV (H16, `npm run fetch-mv`): console.cloud.google.com -> bat "YouTube Data API v3" -> Credentials -> API key
+YOUTUBE_API_KEY =

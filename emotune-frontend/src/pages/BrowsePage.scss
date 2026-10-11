@@ -1,3 +1,5 @@
+@use '../styles/moodPalette' as mp;
+
 // Trang chủ duyệt nhạc — nội dung theo Figma "Frame 13" (58:112), bố cục / mật độ thẻ theo Spotify web.
 // Số thẻ mỗi hàng (--cols) đổi theo độ rộng vùng nội dung (container query), thẻ chia đều chiều ngang.
 .browse-page {
@@ -30,7 +32,8 @@
   gap: 32px;
   padding: 18px 28px 40px;
   border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--tint) 0, var(--surface) 320px);
+  // hơi trong suốt -> thấy nền bầu trời đêm (PageAmbient) phía sau
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 78%, transparent) 0, rgb(18 17 24 / 0.58) 320px);
   color: #fff;
   text-align: left;
 
@@ -420,10 +423,12 @@
     }
   }
 
-  // ---- 2 thẻ lớn cuối trang (Figma: thẻ podcast #471824 + khung xám) ----
+  // ---- 2 thẻ lớn cuối trang: thẻ neon xanh tím than + bảng màu cảm xúc giống /stats (ảnh mẫu "Infographic Chart") ----
   .features {
+    @include mp.neon-mood;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;   // mỗi thẻ cao theo nội dung (thẻ quét ngắn hơn, không bị kéo dài để trống giữa thẻ)
     gap: 18px;
   }
 
@@ -431,11 +436,16 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    position: relative;
+    overflow: hidden;
     padding: 28px;
-    border-radius: 16px;
-
-    &.mood-feature { background: #471824; }
-    &.scan-feature { background: #1f2a44; }
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    // hơi trong để thấy nền "bầu trời đêm" phía sau (PageAmbient), quầng sáng tím ở góc như ảnh mẫu
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgba(163, 92, 240, 0.16), transparent 60%),
+      linear-gradient(160deg, rgba(42, 43, 72, 0.92) 0%, rgba(31, 32, 54, 0.92) 100%);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 
     h3 {
       font-family: 'Inter', sans-serif;
@@ -490,8 +500,30 @@
     justify-content: flex-end;
     gap: 12px;
     padding: 20px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--grid);
+    border-radius: 14px;
+    background: rgba(10, 10, 26, 0.28);
+  }
+
+  // thẻ quét: lưới chấm ở trên, "Last scan" + giải thích dồn xuống dưới (không để trống giữa thẻ)
+  .scan-feature .feature-panel {
+    justify-content: flex-start;
+
+    .hm-dots-wrap { flex: 1; }
+  }
+
+  // nhãn Cheer-up mode (bật: nền gradient neon)
+  .cheer-chip {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+
+    &.on { background: var(--neon); }
   }
 
   .feature-line {
@@ -512,65 +544,19 @@
     padding: 0 26px;
     border: none;
     border-radius: 999px;
-    background: #c9c9c9;
-    color: #1a1a1a;
+    background: var(--neon);
+    color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 6px 18px rgba(232, 69, 110, 0.3);
+    transition: filter 0.15s, transform 0.15s;
 
     &:hover {
-      background: #fff;
+      filter: brightness(1.12);
+      transform: translateY(-1px);
     }
-  }
-
-  // biểu đồ mini 7 ngày (cột chồng theo cảm xúc)
-  .mini-chart {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    height: 130px;
-  }
-
-  .mini-day {
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    justify-items: center;
-    gap: 6px;
-    height: 100%;
-  }
-
-  .mini-col {
-    width: 100%;
-    max-width: 28px;
-    height: 100%;
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .mini-bar {
-    width: 100%;
-    min-height: 3px;
-    display: flex;
-    flex-direction: column-reverse;
-    overflow: hidden;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.15);
-
-    .seg {
-      flex-basis: 0;
-
-      &.happy { background: var(--mood-happy); }
-      &.surprise { background: var(--mood-surprise); }
-      &.neutral { background: var(--mood-neutral); }
-      &.sad { background: var(--mood-sad); }
-      &.angry { background: var(--mood-angry); }
-    }
-  }
-
-  .mini-label {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
   }
 }
 

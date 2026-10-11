@@ -1,0 +1,278 @@
+// Trang Settings (Figma 329:393): thẻ #1a1a1a bo 20px trên nền --bg, tiêu đề Playfair như trang khảo sát.
+// Phần chọn gu dùng TastePicker.scss; ở đây chỉ chỉnh cho hợp nền thẻ (--picker-bg, --picker-field).
+.settings-page {
+  max-width: none;   // trải hết vùng nội dung như các trang khác
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 8px;
+  color: #fff;
+  text-align: left;
+
+  .settings-head {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 40px;
+      font-weight: 600;
+      line-height: 1.15;
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--muted);
+    }
+  }
+
+  .settings-error {
+    color: #ff8fa8;
+    font-size: 14px;
+  }
+
+  .settings-card {
+    --picker-bg: #17151f;   // viền quanh ảnh ca sĩ đã chọn = gần màu thẻ
+    --picker-field: rgba(255, 255, 255, 0.06);
+
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius);
+    background: rgb(22 20 30 / 0.72);   // kính mờ trên nền trang
+    backdrop-filter: blur(14px);
+
+    // tiêu đề mục: tên to, ghi chú xuống dòng dưới (Figma)
+    .section-heading {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+
+      h2 {
+        font-size: 20px;
+      }
+
+      span {
+        font-size: 14px;
+        line-height: 1.45;
+      }
+    }
+
+    .section-top {
+      align-items: flex-end;
+    }
+  }
+
+  // ---- Profile ----
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .profile-name {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    h2 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    span {
+      font-size: 14px;
+      color: var(--muted);
+    }
+  }
+
+  .profile-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .fact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    font-family: inherit;
+    text-align: left;
+
+    span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    b {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    &.link {
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+
+        b {
+          color: var(--accent);
+        }
+      }
+    }
+  }
+
+  // ---- nút ----
+  .btn-ghost,
+  .btn-primary {
+    flex-shrink: 0;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-ghost {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: none;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  .btn-primary {
+    border: none;
+    background: var(--accent);
+    color: var(--on-premium);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  // ---- thanh lưu: dính đáy màn hình khi còn thay đổi chưa lưu ----
+  .settings-savebar {
+    position: sticky;
+    bottom: 16px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border: 1px solid rgba(201, 169, 245, 0.35);
+    border-radius: 16px;
+    background: #1d1a22;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+    > i {
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    &.saved > i {
+      background: #3fd07f;
+    }
+
+    &.error {
+      border-color: rgba(255, 143, 168, 0.5);
+
+      > i {
+        background: #ff8fa8;
+      }
+    }
+  }
+
+  .savebar-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    b {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+}
+
+// đang phát nhạc: thanh lưu nằm trên thanh phát
+body:has(.player-bar) .settings-page .settings-savebar {
+  bottom: calc(var(--player-bar-h) + 16px);
+}
+
+@media (max-width: 640px) {
+  .settings-page {
+    .settings-head h1 {
+      font-size: 30px;
+    }
+
+    .settings-card {
+      padding: 20px 16px;
+    }
+
+    .profile-row {
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .settings-savebar {
+      flex-wrap: wrap;
+      padding: 14px 16px;
+
+      .savebar-text {
+        flex-basis: calc(100% - 20px);
+      }
+
+      .btn-ghost,
+      .btn-primary {
+        flex: 1;
+      }
+    }
+  }
+}

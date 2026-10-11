@@ -5,24 +5,27 @@ import { usePlayback } from '../contexts/playbackContext';
 import { useAIAssistant } from '../contexts/aiAssistantStore';
 import { markScanned } from '../utils/moodSession';
 import { isSpeechSupported, listen, speak, stopSpeaking } from '../utils/speech';
-import VoiceWave from './VoiceWave';
+import VoiceOrb from './VoiceOrb';
 import LogoIcon from '../assets/icons/assistant_logo.svg?react';
 import MicIcon from '../assets/icons/assistant_mic.svg?react';
 import './VoiceAssistant.scss';
 
 // Tro ly giong noi (H6, Figma 284:120): mo -> nghe ngay; noi xong -> POST /assistant -> chuan bi lenh -> doc loi dan.
 // Lenh da hieu (chuyen trang / phat / cam xuc / dieu khien): doc loi dan -> nghi 1 chut -> DONG man hinh -> roi moi lam lenh
-// (nhac khong phat chen luc tro ly dang noi). Hoi lai / chua hieu -> giu man hinh, nghe tiep.
+// (nhac khong phat chen luc tro ly dang noi). Hoi lai / chua hieu / hoi dap (answer) -> giu man hinh, nghe tiep.
+// Cau luat khong hieu -> backend hoi Gemini: goi y theo mo ta (queue), hoi dap (answer), nhieu lenh 1 cau (sequence).
 const PAUSE_AFTER_SPEECH = 1000;   // doc xong loi dan, nghi 1s roi moi dong
+const STEP_GAP = 800;              // chuoi lenh: moi buoc cach nhau 0.8s (doi bai xong moi mo MV cua bai moi)
+const MAX_HISTORY = 6;             // nho 6 cau gan nhat trong lan mo tro ly nay -> hoi noi tiep duoc
 const READ_TIME = 2500;            // khong doc to duoc (may khong co giong Viet) -> de chu hien 2.5s cho kip doc
-const SUGGESTIONS = ["Phát nhạc Sơn Tùng", "Hôm nay mình hơi buồn", "Mở trang thống kê"];
+const SUGGESTIONS = ["Phát nhạc Sơn Tùng", "Hôm nay mình hơi buồn", "Mở nhạc cho buổi tối mưa", "Nhỏ tiếng rồi mở MV"];
 const NO_SONG = "Chưa có bài nào đang phát.";
 const NO_PICK = "Mình chưa chọn được bài phù hợp, bạn thử lại nhé.";
 const MOOD_LEADS = {
     happy: "Thấy bạn đang vui",
     sad: "Nghe bạn hơi buồn",
     angry: "Mình hiểu bạn đang bực",
-    surprise: "Có chuyện bất ngờ à",
+    surprise: "Có vẻ bạn đang muốn khám phá",
     neutral: "Một ngày bình thường nhỉ",
 };
 
@@ -45,7 +48,7 @@ const SPEECH_ERRORS = {
 
 const VoiceAssistant = () => {
     const { closeAssistant } = useAIAssistant();
-    const { playSong, playQueue, playPlaylist, playScanResult, setLastMood, control, nowPlaying } = usePlayback();
+    const { playSong, playQueue, playPlaylist, playScanResult, setLastMood, control, nowPlaying, lastMood } = usePlayback();
     const navigate = useNavigate();
 
     const [phase, setPhase] = useState("idle");   // idle | listening | thinking | replying
@@ -54,6 +57,8 @@ const VoiceAssistant = () => {
     const [notice, setNotice] = useState(isSpeechSupported() ? "" : UNSUPPORTED);
     const [choices, setChoices] = useState(null);
     const [typed, setTyped] = useState("");
+    // cau tra loi hien tai do Gemini dua ra (khong phai bo luat tu viet) -> hien dong "✦ Trả lời bởi Gemini"
+    const [fromAi, setFromAi] = useState(false);
 
     const stopListenRef = useRef(null);
     const closeTimerRef = useRef(null);
@@ -64,6 +69,8 @@ const VoiceAssistant = () => {
     const deferredRef = useRef(null);             // lenh cho chay SAU khi overlay dong (phat nhac, chuyen trang...)
     const speechAtRef = useRef(-Infinity);        // luc Web Speech vua nghe ra chu -> song am nhay theo nguoi noi
     const nowPlayingRef = useRef(nowPlaying);
+    // hoi thoai trong lan mo nay [{ role: "user" | "assistant", text }]; dong tro ly la quen
+    const historyRef = useRef([]);
 
     const stopListening = () => {
         stopListenRef.current?.();
@@ -87,6 +94,27 @@ const VoiceAssistant = () => {
         });
     };
 
+    // lam 1 buoc (goi SAU khi man hinh da dong): mo trang / phat / hang doi goi y / dieu khien
+    const runStep = (step) => {
+        if (step.type === "navigate") navigate(step.path);
+        else if (step.type === "queue") playQueue(step.queue, 0);
+        else if (step.type === "play") {
+            if (step.kind === "song") playSong(step.song);
+            else if (step.kind === "artist") playQueue(step.queue, 0);
+            else playPlaylist(step.playlistId, 0);
+        } else if (step.type === "control") {
+            control(step.command);
+            // mo MV -> sang man dang phat de xem lon
+            if (step.command === "mv_on") navigate("/now-playing");
+        }
+    };
+    // chuoi lenh: lan luot tung buoc, cach nhau STEP_GAP (buoc sau chay tren bai moi neu buoc truoc vua doi bai)
+    const runSteps = (steps, i = 0) => {
+        if (i >= steps.length) return;
+        runStep(steps[i]);
+        setTimeout(() => runSteps(steps, i + 1), STEP_GAP);
+    };
+
     // CHUAN BI hanh dong backend tra ve, chua lam gi ca:
     // close = lenh hop le -> doc xong se dong man hinh; run = viec lam SAU khi man hinh da dong; reply = cau thay the
     const prepare = async (action) => {
@@ -96,16 +124,12 @@ const VoiceAssistant = () => {
                 if ((action.path === "/now-playing" || action.path === "/lyrics") && !playing) {
                     return { close: false, reply: NO_SONG };
                 }
-                return { close: true, run: () => navigate(action.path) };
+                return { close: true, run: () => runStep(action) };
             case "play":
-                return {
-                    close: true,
-                    run: () => {
-                        if (action.kind === "song") playSong(action.song);
-                        else if (action.kind === "artist") playQueue(action.queue, 0);
-                        else playPlaylist(action.playlistId, 0);
-                    },
-                };
+            case "queue":
+                return { close: true, run: () => runStep(action) };
+            case "sequence":
+                return { close: true, run: () => runSteps(action.steps) };
             case "mood": {
                 // cam xuc tu cau noi = kenh thu 2 ben canh khuon mat: chon bai truoc (chua phat) de loi dan noi duoc ten bai
                 const res = await api.post('/suggest', { emotion: action.emotion }).catch(() => null);
@@ -124,13 +148,15 @@ const VoiceAssistant = () => {
             }
             case "control":
                 if (!playing) return { close: false, reply: NO_SONG };
-                return { close: true, run: () => control(action.command) };
+                return { close: true, run: () => runStep(action) };
+            // hoi dap / tro chuyen: doc cau tra loi, man hinh van mo de hoi tiep
+            case "answer":
             default:
                 return { close: false };
         }
     };
 
-    const respond = async (turn, { action, reply: text }) => {
+    const respond = async (turn, { action, reply: text, source }) => {
         const stale = () => !aliveRef.current || turn !== turnRef.current;
         if (stale()) return;
         const isChoice = action.type === "choose";
@@ -140,6 +166,8 @@ const VoiceAssistant = () => {
         const result = await prepare(action);
         if (stale()) return;
         const say = result.reply || text;
+        historyRef.current = [...historyRef.current, { role: "assistant", text: say }].slice(-MAX_HISTORY);
+        setFromAi(source === "llm" && !result.reply);
         setReply(say);
         setPhase("replying");
         const spoken = await speak(say);
@@ -165,7 +193,16 @@ const VoiceAssistant = () => {
         setNotice("");
         if (body.text) setHeard(body.text);
         setPhase("thinking");
-        api.post('/assistant', { ...body, pending: pendingRef.current })
+        // ngu canh cho Gemini: cac cau truoc, bai dang phat ("bai nay"), cam xuc quet gan nhat
+        const history = historyRef.current;
+        if (body.text) historyRef.current = [...history, { role: "user", text: body.text }].slice(-MAX_HISTORY);
+        api.post('/assistant', {
+            ...body,
+            pending: pendingRef.current,
+            history,
+            nowPlayingId: nowPlayingRef.current?.songId ?? null,
+            mood: lastMood?.emotion ?? null,
+        })
             .then((res) => respond(turn, res.data))
             .catch(() => respond(turn, { action: { type: "unknown" }, reply: "Mình đang gặp lỗi, bạn thử lại sau nhé." }));
     };
@@ -246,19 +283,26 @@ const VoiceAssistant = () => {
             <LogoIcon className="va-logo" aria-hidden="true" />
 
             <div className="va-main">
-                <button
-                    className={`va-mic ${phase === "listening" ? "is-listening" : ""}`}
-                    onClick={toggleMic}
-                    disabled={!isSpeechSupported()}
-                    aria-label={phase === "listening" ? "Stop listening" : "Start listening"}
-                >
-                    <MicIcon />
-                </button>
+                {/* nut micro nam trong lo tron giua qua cau song */}
+                <div className="va-orb">
+                    <VoiceOrb mode={waveMode} activityRef={speechAtRef} />
+                    <button
+                        className={`va-mic ${phase === "listening" ? "is-listening" : ""}`}
+                        onClick={toggleMic}
+                        disabled={!isSpeechSupported()}
+                        aria-label={phase === "listening" ? "Stop listening" : "Start listening"}
+                    >
+                        <MicIcon />
+                    </button>
+                </div>
 
                 <div className="va-text" aria-live="polite">
-                    <p className="va-heard">{heard || (phase === "listening" ? "Mình đang nghe…" : "")}</p>
+                    {/* khong hien lai nguyen van cau nguoi dung noi: cau dan cua tro ly ("Mình sẽ phát bài …") da cho biet
+                        tro ly hieu dung yeu cau chua; heard chi dung de an cac cau goi y khi da noi */}
+                    <p className="va-heard">{phase === "listening" ? "Mình đang nghe…" : ""}</p>
                     {phase === "thinking" && <p className="va-reply is-thinking">Đang nghĩ…</p>}
                     {reply && phase !== "thinking" && <p className="va-reply">{reply}</p>}
+                    {reply && phase !== "thinking" && fromAi && <p className="va-source">✦ Trả lời bởi Gemini</p>}
                     {notice && <p className="va-notice">{notice}</p>}
                     {choices && (
                         <div className="va-choices">
@@ -278,8 +322,6 @@ const VoiceAssistant = () => {
                     )}
                 </div>
             </div>
-
-            <VoiceWave mode={waveMode} activityRef={speechAtRef} />
 
             <form className="va-type" onSubmit={submitTyped}>
                 <input

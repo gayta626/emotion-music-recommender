@@ -4,10 +4,13 @@ let getSongs = () => {
     return songModel.getAllSongs();
 }
 
-// Ham thuan (de viet unit test): diem = nghe that + thuong khao sat; hoa diem -> bai moi them (id lon) truoc.
-// Bo 2 cot tinh diem noi bo, chi tra `score` (so).
+// Ham thuan (de viet unit test): diem = nghe that + thuong khao sat + thuong ♥ (like_bonus); hoa diem -> bai moi them (id lon) truoc.
+// Bo cac cot tinh diem noi bo, chi tra `score` (so).
 let rankForYou = (rows, limit = 10) => rows
-    .map(({ listen_score, taste_bonus, ...song }) => ({ ...song, score: Number(listen_score) + Number(taste_bonus) }))
+    .map(({ listen_score, taste_bonus, like_bonus, ...song }) => ({
+        ...song,
+        score: Number(listen_score) + Number(taste_bonus) + Number(like_bonus || 0),
+    }))
     .sort((a, b) => b.score - a.score || b.id - a.id)
     .slice(0, limit);
 

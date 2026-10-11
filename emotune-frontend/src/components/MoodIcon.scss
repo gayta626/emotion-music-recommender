@@ -5,9 +5,13 @@
   overflow: visible;
   vertical-align: middle;
 
-  // mat troi: tia quay cham, loi "tho"
-  .sun-rays { transform-origin: 32px 32px; animation: mi-spin 12s linear infinite; }
-  .sun-core { transform-origin: 32px 32px; animation: mi-pulse 2.4s ease-in-out infinite; }
+  // vui: mat troi quay cham, toa sang nhe
+  .sun-spin { transform-origin: 32px 32px; animation: mi-spin 14s linear infinite; }
+  .happy-sun { filter: drop-shadow(0 0 3px rgba(255, 206, 49, 0.55)); }
+
+  // bat ngo: mat troi nap sau may -> bat ngo bung to ra giua, day may nho lai xuong goc -> may che lai, lap lai
+  .sun-reveal { transform-origin: 32px 32px; animation: mi-sun-surprise 4.5s cubic-bezier(0.3, 0.7, 0.3, 1) infinite; }
+  .sun-cloud { animation: mi-cloud-surprise 4.5s ease-in-out infinite; }
 
   // may mua: may nhun nhe, 3 hat mua roi lech pha
   .cloud { animation: mi-bob 3s ease-in-out infinite; }
@@ -23,14 +27,22 @@
   // bong tuyet: xoay cham + hoi phong
   .snow { transform-origin: 32px 32px; animation: mi-spin 14s linear infinite; }
   &.mi-neutral { animation: mi-pulse 4s ease-in-out infinite; }
-
-  // mat deo kinh: nay len, kinh tut xuong roi keo len, mieng "o" co gian
-  .cool { transform-origin: 32px 32px; animation: mi-hop 2.6s ease-in-out infinite; }
-  .glasses { animation: mi-glasses 2.6s ease-in-out infinite; }
-  .mouth { transform-origin: 32px 46px; animation: mi-mouth 2.6s ease-in-out infinite; }
 }
 
 @keyframes mi-spin { to { transform: rotate(360deg); } }
+// trang thai dau / cuoi = giong emojione_sun-behind-cloud.svg: mat troi nho o goc tren trai, may che
+@keyframes mi-sun-surprise {
+  0%, 22% { transform: translate(-9.5px, -6.5px) scale(0.55); opacity: 0.8; }
+  40% { transform: translate(0, 0) scale(1.12); opacity: 1; filter: drop-shadow(0 0 5px rgba(255, 206, 49, 0.8)); }
+  50%, 80% { transform: translate(0, 0) scale(1); opacity: 1; filter: drop-shadow(0 0 3px rgba(255, 206, 49, 0.55)); }
+  96%, 100% { transform: translate(-9.5px, -6.5px) scale(0.55); opacity: 0.8; }
+}
+// may bi day nho lai xuong goc duoi phai (khong bien mat) -> luc nao cung khac icon "vui"
+@keyframes mi-cloud-surprise {
+  0%, 24% { transform: translate(0, 0) scale(1); }
+  48%, 80% { transform: translate(34px, 38px) scale(0.45); }
+  96%, 100% { transform: translate(0, 0) scale(1); }
+}
 @keyframes mi-pulse { 50% { transform: scale(1.1); } }
 @keyframes mi-bob { 50% { transform: translateY(-2px); } }
 @keyframes mi-rain {
@@ -44,19 +56,9 @@
   50% { transform: scale(1.05, 0.95) rotate(2deg); }
   75% { transform: scale(0.96, 1.05) rotate(3deg); }
 }
-@keyframes mi-hop {
-  0%, 60%, 100% { transform: translateY(0) scale(1); }
-  30% { transform: translateY(-3px) scale(1.06); }
-}
-@keyframes mi-glasses {
-  0%, 15% { transform: translateY(-9px); }
-  35%, 100% { transform: translateY(0); }
-}
-@keyframes mi-mouth {
-  0%, 15% { transform: scale(1.3); }
-  35%, 100% { transform: scale(0.8, 0.6); }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .mood-icon, .mood-icon * { animation: none !important; }
+  // khong chuyen dong: "bat ngo" dung yen o hinh mat troi nap sau may (khac "vui")
+  .mood-icon .sun-reveal { transform: translate(-9.5px, -6.5px) scale(0.55); }
 }

@@ -1,42 +1,21 @@
 import { useEffect, useRef } from 'react'
+import { getGraph } from '../utils/audioGraph'
 
 // Song am chay theo nhac that: Web Audio API doc tan so cua <audio> moi khung hinh roi ve len canvas.
-// Am tram (bass) o giua, am cao ra hai ben; vong sang phia sau "dap" theo bass.
+// Am tram (bass) o giua, am cao ra hai ben; cot doi xung tren / duoi duong giua; vong sang phia sau "dap" theo bass.
+// Cot trang sang o giua, nga nhe sang mau vibe o 2 dau + quang sang cung mau (bien CSS --viz-1, --viz-glow
+// tren .player[data-vibe]); cham dinh nho tren / duoi moi cot bi day len roi roi tu tu (kieu may nghe nhac).
+// DO CAO THEO DO TO THAT CUA BAI: so voi doan to nhat cua bai (thang dB, nho ~30 giay) -> doan dao nho thi cot thap,
+// len dien khuc to thi cot vot cao; hinh dang (cot nao cao, cot nao thap) theo pho am tung luc.
 
 const BARS_PER_SIDE = 32;
 const MIN_FREQ = 50;      // Hz
 const MAX_FREQ = 10000;   // Hz
 const BASS_MAX_FREQ = 250;
-
-// 1 AudioContext dung chung; moi the <audio> chi duoc noi vao Web Audio 1 lan
-// (StrictMode chay effect 2 lan -> lan 2 lay lai tu WeakMap thay vi tao moi, tao lai se bao loi)
-let sharedCtx = null;
-const graphs = new WeakMap();
-
-const getGraph = (audio) => {
-    let graph = graphs.get(audio);
-    if (graph) return graph;
-    try {
-        if (!sharedCtx) sharedCtx = new AudioContext();
-        const source = sharedCtx.createMediaElementSource(audio);
-        const analyser = sharedCtx.createAnalyser();
-        analyser.fftSize = 1024;
-        analyser.smoothingTimeConstant = 0.75;
-        // khoang dB rong hon mac dinh -> cot it bi cham tran khi nhac to
-        analyser.minDecibels = -90;
-        analyser.maxDecibels = -12;
-        // audio -> analyser -> loa (khong noi ra loa thi mat tieng)
-        source.connect(analyser);
-        analyser.connect(sharedCtx.destination);
-        graph = { ctx: sharedCtx, analyser };
-        graphs.set(audio, graph);
-        return graph;
-    } catch (err) {
-        // trinh duyet khong ho tro -> van phat nhac binh thuong, song am nam yen
-        console.log("Khong tao duoc song am:", err);
-        return null;
-    }
-}
+// muc to nhat "nho" lau: moi khung hinh chi quen 0.05% (~30 giay o 60 khung/giay) -> giu duoc chenh lech doan nho / doan to
+const SONG_PEAK_DECAY = 0.9995;
+// analyser tra so theo thang dB (-90..-12 dB -> 0..1): 0.3 ~ 23 dB. Nho hon doan to nhat >= 23 dB -> cot thap nhat
+const LOUD_RANGE = 0.3;
 
 // chia dai tan 40Hz–10kHz thanh cac cot theo thang log (bass co nhieu cot hon, giong tai nguoi nghe)
 const buildBands = (sampleRate, binCount) => {
@@ -52,8 +31,27 @@ const buildBands = (sampleRate, binCount) => {
     return { bands, bassEnd: Math.max(2, Math.ceil(BASS_MAX_FREQ / hzPerBin)) };
 }
 
-const AudioVisualizer = ({ audioRef }) => {
+// "#ffb347" -> "255 179 71" (de ghep rgb(r g b / alpha))
+const hexToRgb = (hex, fallback) => {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) return fallback;
+    const n = parseInt(m[1], 16);
+    return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
+}
+
+const AudioVisualizer = ({ audioRef, vibe }) => {
     const canvasRef = useRef(null);
+    const themeRef = useRef(null);
+
+    // doi bai -> doc lai mau tu CSS (effect chay sau khi CSS cua data-vibe moi da ap dung)
+    useEffect(() => {
+        const cs = getComputedStyle(canvasRef.current);
+        const read = (name) => cs.getPropertyValue(name).trim();
+        themeRef.current = {
+            tint: hexToRgb(read('--viz-1'), '255 255 255'),
+            glow: read('--viz-glow') || '255 255 255',
+        };
+    }, [vibe]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -72,11 +70,12 @@ const AudioVisualizer = ({ audioRef }) => {
             ? buildBands(graph.ctx.sampleRate, analyser.frequencyBinCount)
             : { bands: [], bassEnd: 2 };
         const levels = new Array(BARS_PER_SIDE).fill(0);
+        const caps = new Array(BARS_PER_SIDE).fill(0);   // vi tri cham dinh (nua chieu cao cot, px)
         const raw = new Array(BARS_PER_SIDE).fill(0);
         let bass = 0;
-        // "tu can do lon": nho muc to nhat gan day roi chia cho no -> bai nho tieng van nhay ro, bai to khong cham tran
-        let peak = 0.3;
         let bassPeak = 0.3;
+        let loudness = 0;        // do to chung luc nay (0..1 so voi doan to nhat cua bai), lam muot
+        let loudPeak = 0.15;
 
         const ctx2d = canvas.getContext('2d');
         // ve net tren man hinh do phan giai cao
@@ -90,13 +89,8 @@ const AudioVisualizer = ({ audioRef }) => {
         const observer = new ResizeObserver(resize);
         observer.observe(canvas);
 
-        let frameId;
-        const draw = () => {
-            frameId = requestAnimationFrame(draw);
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            ctx2d.clearRect(0, 0, w, h);
-
+        // doc tan so -> levels[] (hinh dang 0..1), loudness (do cao chung 0..1), bass (0..1, "dap" theo trong)
+        const analyse = () => {
             if (analyser) analyser.getByteFrequencyData(data);
 
             // muc bass 0..1 (trung binh cac bin < 250Hz)
@@ -106,51 +100,86 @@ const AudioVisualizer = ({ audioRef }) => {
             bassPeak = Math.max(bassNow, bassPeak * 0.997, 0.15);
             // luy thua 3: chi nhung nhip trong manh moi day len; len nhanh, xuong cham -> "dap" ro
             const kick = Math.pow(bassNow / bassPeak, 3);
-            bass = kick > bass ? kick : bass * 0.88;
+            bass = kick > bass ? bass + (kick - bass) * 0.7 : bass * 0.9;
+
+            let frameMax = 0;
+            let sum = 0;
+            for (let i = 0; i < BARS_PER_SIDE; i++) {
+                let v = 0;
+                if (bands[i]) {
+                    const [start, end] = bands[i];
+                    let s = 0;
+                    for (let b = start; b < end; b++) s += data[b];
+                    v = s / ((end - start) * 255);
+                }
+                // am cao thuong nho hon -> nang len cho deu
+                raw[i] = v * (1 + (i / BARS_PER_SIDE) * 0.8);
+                frameMax = Math.max(frameMax, raw[i]);
+                sum += raw[i];
+            }
+
+            // DO CAO CHUNG = do to luc nay thap hon doan to nhat cua bai bao nhieu dB
+            const loudNow = sum / BARS_PER_SIDE;
+            loudPeak = Math.max(loudNow, loudPeak * SONG_PEAK_DECAY, 0.08);
+            const target = Math.max(0, Math.min(1, 1 - (loudPeak - loudNow) / LOUD_RANGE));
+            loudness = target > loudness ? loudness + (target - loudness) * 0.25 : loudness * 0.96 + target * 0.04;
+
+            // HINH DANG = pho am luc nay (dai nao to hon dai nao)
+            for (let i = 0; i < BARS_PER_SIDE; i++) {
+                const v = Math.pow(raw[i] / Math.max(frameMax, 0.05), 1.8);
+                // len nhanh, xuong em -> muot, khong giat tung khung hinh
+                levels[i] = v > levels[i] ? levels[i] + (v - levels[i]) * 0.55 : levels[i] * 0.86 + v * 0.14;
+            }
+        };
+
+        let frameId;
+        const draw = () => {
+            frameId = requestAnimationFrame(draw);
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            ctx2d.clearRect(0, 0, w, h);
+            analyse();
+            const theme = themeRef.current;
+            if (!theme) return;
 
             const cx = w / 2;
             const cy = h / 2;
 
-            // vong sang phia sau, phong to theo bass
-            const glowR = Math.min(w, h) * (0.28 + bass * 0.32);
-            const glow = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-            glow.addColorStop(0, `rgba(255, 255, 255, ${0.1 + bass * 0.3})`);
-            glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            // vong sang mau vibe phia sau (elip be ngang), phong to theo bass.
+            // Ban kinh doc <= nua chieu cao canvas -> mo han truoc khi cham mep (khong lo khung chu nhat)
+            const STRETCH = 1.8;
+            const glowR = Math.min(h / 2, w / 2 / STRETCH) * (0.55 + bass * 0.45);
+            ctx2d.save();
+            ctx2d.translate(cx, cy);
+            ctx2d.scale(STRETCH, 1);
+            const glow = ctx2d.createRadialGradient(0, 0, 0, 0, 0, glowR);
+            glow.addColorStop(0, `rgb(${theme.glow} / ${0.16 + bass * 0.3})`);
+            glow.addColorStop(0.55, `rgb(${theme.glow} / ${0.05 + bass * 0.08})`);
+            glow.addColorStop(1, `rgb(${theme.glow} / 0)`);
             ctx2d.fillStyle = glow;
-            ctx2d.fillRect(0, 0, w, h);
+            ctx2d.fillRect(-glowR, -glowR, glowR * 2, glowR * 2);
+            ctx2d.restore();
 
             // cac cot: doi xung trai/phai, keo dai len/xuong tu duong giua
             const areaW = Math.min(w * 0.9, 960);
             const slot = areaW / (BARS_PER_SIDE * 2);
             const barW = Math.max(2, slot * 0.62);
-            // ca dai song phong len theo bass -> cam giac "dap" theo nhip trong
-            const maxH = Math.min(h * 0.82, 380) * (0.7 + bass * 0.3);
+            // doan nho ~30% chieu cao, doan to nhat gan het khung; ca dai song phong len theo bass -> "dap" theo trong
+            const maxH = Math.min(h * 0.8, 380) * (0.3 + 0.7 * Math.pow(loudness, 1.2)) * (0.88 + bass * 0.12);
 
-            ctx2d.fillStyle = 'rgba(255, 255, 255, 0.92)';
-            ctx2d.shadowColor = 'rgba(255, 255, 255, 0.55)';
-            ctx2d.shadowBlur = 8 + bass * 18;
-
-            let frameMax = 0;
-            for (let i = 0; i < BARS_PER_SIDE; i++) {
-                let v = 0;
-                if (bands[i]) {
-                    const [start, end] = bands[i];
-                    let sum = 0;
-                    for (let b = start; b < end; b++) sum += data[b];
-                    v = sum / ((end - start) * 255);
-                }
-                // am cao thuong nho hon -> nang len cho deu
-                raw[i] = v * (1 + (i / BARS_PER_SIDE) * 0.8);
-                frameMax = Math.max(frameMax, raw[i]);
-            }
-            peak = Math.max(frameMax, peak * 0.997, 0.12);
+            // to mau doc: trang sang o giua, nga nhe sang mau vibe o 2 dau cot
+            const fill = ctx2d.createLinearGradient(0, cy - maxH / 2, 0, cy + maxH / 2);
+            fill.addColorStop(0, `rgb(${theme.tint} / 0.9)`);
+            fill.addColorStop(0.5, 'rgb(255 255 255 / 0.97)');
+            fill.addColorStop(1, `rgb(${theme.tint} / 0.9)`);
+            ctx2d.fillStyle = fill;
+            ctx2d.shadowColor = `rgb(${theme.glow} / 0.75)`;
+            ctx2d.shadowBlur = 10 + bass * 20;
 
             for (let i = 0; i < BARS_PER_SIDE; i++) {
-                // chia cho muc to nhat gan day; luy thua de cot cao/thap chenh nhau ro
-                const v = Math.pow(Math.min(1, raw[i] / peak), 1.5);
-                levels[i] = v > levels[i] ? v : levels[i] * 0.85 + v * 0.15;
-
                 const barH = Math.max(4, levels[i] * maxH);
+                // cham dinh: bi cot day len ngay, roi roi tu tu
+                caps[i] = Math.max(barH / 2, caps[i] - 0.6);
                 const offset = (i + 0.5) * slot;
                 for (const x of [cx - offset, cx + offset]) {
                     ctx2d.beginPath();
@@ -159,7 +188,22 @@ const AudioVisualizer = ({ audioRef }) => {
                     ctx2d.fill();
                 }
             }
+
+            // cham dinh tren / duoi (mo hon cot, khong quang sang)
             ctx2d.shadowBlur = 0;
+            ctx2d.fillStyle = `rgb(${theme.tint} / 0.8)`;
+            const capR = Math.max(1.2, barW * 0.32);
+            for (let i = 0; i < BARS_PER_SIDE; i++) {
+                const gap = caps[i] + capR * 2 + 3;
+                const offset = (i + 0.5) * slot;
+                for (const x of [cx - offset, cx + offset]) {
+                    for (const y of [cy - gap, cy + gap]) {
+                        ctx2d.beginPath();
+                        ctx2d.arc(x, y, capR, 0, Math.PI * 2);
+                        ctx2d.fill();
+                    }
+                }
+            }
         };
         draw();
 

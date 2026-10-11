@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { API_URL } from '../config';
-import { activeLineIndex, lyricsFileName, parseLrc } from '../utils/lyrics';
+import { activeLineIndex, lineSpan } from '../utils/lyrics';
 import { hueFromText, lyricsPalette } from '../utils/coverColor';
 import { useCoverColor } from '../hooks/useCoverColor';
 import { Cover } from './PlayerOverlays';
+import KaraokeLine from './KaraokeLine';
+import MicIcon from './MicIcon';
 import './LyricsView.scss';
 
 // nguoi dung tu cuon loi -> 3 giay khong tu cuon theo nhac (khong giat ve dong dang hat)
@@ -14,27 +15,15 @@ const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)")
 // Man loi bai hat toan man hinh (Figma 91:283, kieu NhacCuaTui): nen = mau chu dao cua anh bia
 // (moi bai 1 mau) + anh bia mo; trai: anh bia, ten bai, ca si; phai: loi chu to, dong dang hat sang len.
 // Thanh phat duoi cung van la thanh cua MusicPlayer (nam tren lop nay).
-const LyricsView = ({ song, coverSrc, currentTime, onSeek, onClose, actions }) => {
-    const file = song.file_path;
-    const [loaded, setLoaded] = useState({ file: null, lyrics: null });
+// Karaoke (H15): MusicPlayer bo giong ca si; o day dong dang hat to hon, chu to mau dan theo nhac (KaraokeLine).
+// Loi bai do MusicPlayer tai (useLyrics) -> truyen vao `lyrics` / `loading`.
+const LyricsView = (props) => {
+    const { song, coverSrc, lyrics, loading, currentTime, getTime, onSeek, onClose, actions, karaoke, onKaraoke } = props;
     const listRef = useRef(null);
     const userScrollAt = useRef(0);
     const closeRef = useRef(onClose);
     useEffect(() => { closeRef.current = onClose; });
 
-    // tai file loi: /lyrics/<ten file mp3>.lrc; 404 = bai chua co loi
-    useEffect(() => {
-        let alive = true;
-        fetch(`${API_URL}/lyrics/${encodeURIComponent(lyricsFileName(song))}`)
-            .then((res) => (res.ok ? res.text() : null))
-            .then((text) => { if (alive) setLoaded({ file, lyrics: text ? parseLrc(text) : null }); })
-            .catch(() => { if (alive) setLoaded({ file, lyrics: null }); });
-        return () => { alive = false; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- chi tai lai khi doi bai (file), khong theo object song
-    }, [file]);
-
-    const loading = loaded.file !== file;
-    const lyrics = loading ? null : loaded.lyrics;
     const active = lyrics?.synced ? activeLineIndex(lyrics.lines, currentTime) : -1;
 
     // mau nen: anh bia co mau -> mau do; chua tai xong / anh den trang / khong co anh -> mau theo ten bai
@@ -45,11 +34,18 @@ const LyricsView = ({ song, coverSrc, currentTime, onSeek, onClose, actions }) =
     useEffect(() => {
         const list = listRef.current;
         if (!list || !lyrics?.synced) return;
-        if (Date.now() - userScrollAt.current < USER_SCROLL_PAUSE_MS) return;
-        const el = active >= 0 ? list.children[active] : null;
-        const top = el ? el.offsetTop + el.offsetHeight / 2 - list.clientHeight * 0.35 : 0;
-        list.scrollTo({ top, behavior: reduceMotion() ? "auto" : "smooth" });
-    }, [active, lyrics]);
+        const scrollToActive = (smooth) => {
+            if (Date.now() - userScrollAt.current < USER_SCROLL_PAUSE_MS) return;
+            const el = active >= 0 ? list.children[active] : null;
+            const top = el ? el.offsetTop + el.offsetHeight / 2 - list.clientHeight * 0.35 : 0;
+            list.scrollTo({ top, behavior: smooth && !reduceMotion() ? "smooth" : "auto" });
+        };
+        scrollToActive(true);
+        // doi kich co cua so / xoay dien thoai -> dong xuong hang khac -> canh lai ngay
+        const onResize = () => scrollToActive(false);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, [active, lyrics, karaoke]);
 
     // Esc -> dong (tru khi menu ☰ cua thanh phat dang mo: Esc do de dong menu)
     useEffect(() => {
@@ -62,9 +58,11 @@ const LyricsView = ({ song, coverSrc, currentTime, onSeek, onClose, actions }) =
 
     const markUserScroll = () => { userScrollAt.current = Date.now(); };
     const artist = song.artist || "Unknown artist";
+    // karaoke chi co y nghia khi loi co moc thoi gian
+    const canKaraoke = !!lyrics?.synced;
 
     return (
-        <div className="lyrics-view" style={palette} role="dialog" aria-label={`Lyrics: ${song.title}`}>
+        <div className={`lyrics-view ${karaoke && canKaraoke ? "is-karaoke" : ""}`} style={palette} role="dialog" aria-label={`Lyrics: ${song.title}`}>
             {coverSrc && <div className="lyrics-backdrop" style={{ backgroundImage: `url("${coverSrc}")` }} aria-hidden="true" />}
 
             <button className="lyrics-close" onClick={onClose} aria-label="Close lyrics" title="Close lyrics (Esc)">
@@ -82,7 +80,25 @@ const LyricsView = ({ song, coverSrc, currentTime, onSeek, onClose, actions }) =
                             ? <Link className="lyrics-artist" to={`/artist/${song.artist_id}`}>{artist}</Link>
                             : <p className="lyrics-artist">{artist}</p>}
                     </div>
-                    {actions && <div className="lyrics-actions">{actions}</div>}
+                    <div className="lyrics-actions">
+                        {canKaraoke && (
+                            <button
+                                className={`pill-toggle karaoke-toggle ${karaoke ? "on" : ""}`}
+                                onClick={() => onKaraoke(!karaoke)}
+                                aria-pressed={!!karaoke}
+                                title={karaoke ? "Turn karaoke off (vocals back)" : "Karaoke: remove the singer's voice, sing along"}
+                            >
+                                <MicIcon />
+                                <span>{karaoke ? "Karaoke on" : "Karaoke"}</span>
+                            </button>
+                        )}
+                        {actions}
+                    </div>
+                    {karaoke && canKaraoke && (
+                        <p className="karaoke-note">
+                            Singer's voice reduced in the browser (left − right channel). Some echo of the voice may remain.
+                        </p>
+                    )}
                 </aside>
 
                 <section className="lyrics-text" aria-live="off">
@@ -100,11 +116,15 @@ const LyricsView = ({ song, coverSrc, currentTime, onSeek, onClose, actions }) =
                             {lyrics.lines.map((line, i) => {
                                 const state = i === active ? "is-active" : i < active ? "is-past" : "";
                                 if (!line.text) return <li key={i} className={`gap ${state}`} aria-hidden="true">♪</li>;
+                                // karaoke: dong dang hat to mau dan tung chu
+                                const text = karaoke && i === active
+                                    ? <KaraokeLine text={line.text} start={line.time} span={lineSpan(lyrics.lines, i)} getTime={getTime} />
+                                    : line.text;
                                 return (
                                     <li key={i} className={state}>
                                         {/* loi co moc thoi gian: bam 1 dong -> tua toi dong do */}
                                         {lyrics.synced
-                                            ? <button type="button" onClick={() => onSeek(line.time)}>{line.text}</button>
+                                            ? <button type="button" onClick={() => onSeek(line.time)}>{text}</button>
                                             : line.text}
                                     </li>
                                 );

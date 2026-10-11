@@ -3,7 +3,7 @@
 // thu tu co dinh (mau theo cam xuc, khong theo thu hang) — mau da kiem tra mu mau tren nen toi
 export const EMOTIONS = [
     { key: 'happy', label: 'Happy' },
-    { key: 'surprise', label: 'Surprised' },
+    { key: 'surprise', label: 'Explore' },   // mã 'surprise' (nhãn AI) giữ nguyên, hiển thị là tâm trạng muốn khám phá
     { key: 'neutral', label: 'Neutral' },
     { key: 'sad', label: 'Sad' },
     { key: 'angry', label: 'Angry' },

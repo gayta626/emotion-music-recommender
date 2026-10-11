@@ -12,6 +12,8 @@
     "fetch-images": "node scripts/fetch-images.js",
     "fetch-lyrics": "node scripts/fetch-lyrics.js",
     "fetch-song-info": "node scripts/fetch-song-info.js",
+    "fetch-mv": "node scripts/fetch-mv.js",
+    "import-music": "node scripts/import-music.js",
     "seed-demo": "node scripts/seed-demo.js",
     "test": "node --test \"test/**/*.test.js\""
   },
@@ -22,7 +24,7 @@
   "author": "Nguyen Duc Vinh",
   "license": "ISC",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.132.1",
+    "@google/genai": "^2.28.0",
     "axios": "1.7.9",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

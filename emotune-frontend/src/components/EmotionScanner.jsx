@@ -8,7 +8,7 @@ const MOODS = [
     { emotion: "happy", label: "Happy" },
     { emotion: "sad", label: "Sad" },
     { emotion: "angry", label: "Angry" },
-    { emotion: "surprise", label: "Surprised" },
+    { emotion: "surprise", label: "Explore" },
     { emotion: "neutral", label: "Neutral" },
 ]
 

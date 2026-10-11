@@ -5,7 +5,7 @@
 
 -- user_profile: bang cu (truoc khi co tai khoan), van xoa de DB cu khong con sot lai
 DROP TABLE IF EXISTS
-    playlist_songs, playlists,
+    liked_songs, playlist_songs, playlists,
     devices, survey_genres, survey_artists, user_profile,
     recently_played, mood_history, preferences,
     songs, genres, artists, users
@@ -61,7 +61,8 @@ CREATE TABLE songs (
     cover       TEXT,   -- anh bia (covers/), do `npm run fetch-images` dien; NULL -> web tu ve bia
     album       TEXT,   -- ten album (iTunes), do `npm run fetch-song-info` dien; NULL -> web hien "—"
     duration    INTEGER, -- thoi luong (giay) doc tu file mp3, do `npm run fetch-song-info` dien
-    added_at    TIMESTAMP NOT NULL DEFAULT NOW()   -- luc them vao kho nhac (cot "Date added")
+    added_at    TIMESTAMP NOT NULL DEFAULT NOW(),  -- luc them vao kho nhac (cot "Date added")
+    youtube_id  TEXT    -- id MV tren YouTube, do `npm run fetch-mv` dien; NULL = chua tim, '' = khong co MV
 );
 
 -- ===== Du lieu ca nhan: 5 bang duoi deu co user_id -> moi cau SQL dung toi phai loc / ghi user_id =====
@@ -127,6 +128,14 @@ CREATE TABLE playlist_songs (
     position    INTEGER NOT NULL,
     added_at    TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (playlist_id, song_id)
+);
+
+-- Bai nguoi dung bam ♥ (giong db/migrate_likes.sql): danh sach "Liked Songs" + diem thuong khi AI chon bai (LIKE_BONUS)
+CREATE TABLE liked_songs (
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    song_id     INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+    liked_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, song_id)
 );
 
 CREATE INDEX idx_playlist_songs_order ON playlist_songs (playlist_id, position);

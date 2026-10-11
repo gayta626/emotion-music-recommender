@@ -1,0 +1,121 @@
+// Menu tài khoản (Figma 329:300). Nút .user-info dùng lại style trong Header.scss.
+.account-menu {
+  position: relative;
+
+  .user-info[aria-expanded='true'] {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 50;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: #1d1a22;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  animation: account-in 0.14s ease-out;
+
+  hr {
+    margin: 4px 8px;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .account-who {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+
+    div {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    b {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  button {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 10px;
+    background: none;
+    color: var(--search-text);
+    font-family: 'DM Sans', sans-serif;
+    text-align: left;
+    cursor: pointer;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    svg:last-child:not(:first-child) {
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    b {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    &:hover,
+    &:focus-visible {
+      outline: none;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--accent);
+    }
+
+    &.danger,
+    &.danger b {
+      color: #ff8fa8;
+    }
+  }
+}
+
+@keyframes account-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-dropdown { animation: none; }
+}

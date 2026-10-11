@@ -1,0 +1,144 @@
+// Nền "bầu trời đêm" sau mọi trang trong MainLayout.
+// 3 quầng sáng: --amb-a (trên phải, đậm nhất), --amb-b (dưới trái), --amb-c (vầng mờ giữa) + lớp sao li ti.
+// Màu theo trang đang mở bằng body:has(...) — đăng ký @property kiểu <color> để đổi trang thì màu chuyển dần 1s.
+@property --amb-a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #6a3fd6;
+}
+
+@property --amb-b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2b4fd0;
+}
+
+@property --amb-c {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #c9a9f5;
+}
+
+.page-ambient {
+  // mặc định: đêm tím – xanh
+  --amb-a: #6a3fd6;
+  --amb-b: #2b4fd0;
+  --amb-c: #c9a9f5;
+
+  position: fixed;
+  inset: 0;
+  z-index: 0;                 // dưới .app-shell (z-index 1)
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+  transition: --amb-a 1s ease, --amb-b 1s ease, --amb-c 1s ease;
+
+  // cực quang: quầng sáng rộng hơn màn hình một chút để trôi qua lại không lộ mép
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    background:
+      radial-gradient(52% 50% at 78% 22%, color-mix(in srgb, var(--amb-a) 68%, transparent), transparent 72%),
+      radial-gradient(50% 50% at 16% 88%, color-mix(in srgb, var(--amb-b) 55%, transparent), transparent 72%),
+      radial-gradient(45% 40% at 50% 52%, color-mix(in srgb, var(--amb-c) 20%, transparent), transparent 72%);
+    animation: amb-drift 40s ease-in-out infinite alternate;
+  }
+
+  // sao: 2 lớp chấm nhỏ lặp lại với kích thước ô khác nhau (397 / 541px) -> không thấy lặp đều
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1.2px 1.2px at 40px 60px, rgba(255, 255, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 190px 140px, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1.4px 1.4px at 320px 40px, rgba(230, 215, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 90px 300px, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1.2px 1.2px at 260px 350px, rgba(255, 255, 255, 0.7), transparent),
+      radial-gradient(1px 1px at 120px 470px, rgba(220, 230, 255, 0.6), transparent),
+      radial-gradient(1.3px 1.3px at 430px 250px, rgba(255, 255, 255, 0.7), transparent),
+      radial-gradient(1px 1px at 500px 420px, rgba(255, 255, 255, 0.5), transparent);
+    background-size: 397px 397px, 397px 397px, 397px 397px, 397px 397px,
+      541px 541px, 541px 541px, 541px 541px, 541px 541px;
+    opacity: 0.45;
+    animation: amb-twinkle 7s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before,
+    &::after {
+      animation: none;
+    }
+  }
+}
+
+@keyframes amb-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-4%, 3%, 0) scale(1.08); }
+}
+
+@keyframes amb-twinkle {
+  from { opacity: 0.3; }
+  to { opacity: 0.6; }
+}
+
+// ---------------- màu theo trang ----------------
+// (cùng độ ưu tiên thì quy tắc viết sau thắng -> trang Mix / ca sĩ (cũng là .browse-page) đặt sau quy tắc cảm xúc)
+
+// màn chào + quét: tím – hồng, như phòng thu ánh đèn
+body:has(.home-page:not(.now-playing)) .page-ambient {
+  --amb-a: #7a3fd6;
+  --amb-b: #c2408f;
+  --amb-c: #d9a9f5;
+}
+
+// trang chủ duyệt nhạc: theo cảm xúc quét gần nhất (data-mood), cùng màu cảm xúc của trang chủ
+body:has(.browse-page[data-mood='happy']) .page-ambient { --amb-a: #c9842a; --amb-b: #c2486a; --amb-c: #f0b45a; }
+body:has(.browse-page[data-mood='surprise']) .page-ambient { --amb-a: #9b6fd0; --amb-b: #d05fa8; --amb-c: #c9a9f5; }
+body:has(.browse-page[data-mood='neutral']) .page-ambient { --amb-a: #2f9c8a; --amb-b: #3f5fb0; --amb-c: #7fd8c8; }
+body:has(.browse-page[data-mood='sad']) .page-ambient { --amb-a: #4c7bd0; --amb-b: #2d5f9e; --amb-c: #7fa6e0; }
+body:has(.browse-page[data-mood='angry']) .page-ambient { --amb-a: #d14b4b; --amb-b: #8f2f7a; --amb-c: #f07a62; }
+
+// trang Mix: theo vibe của mix (class hero-*), radio ca sĩ = tím
+body:has(.mix-page.hero-neutral) .page-ambient { --amb-a: #2f9c8a; --amb-b: #3f5fb0; --amb-c: #7fd8c8; }
+body:has(.mix-page.hero-happy) .page-ambient { --amb-a: #c9842a; --amb-b: #c2486a; --amb-c: #f0b45a; }
+body:has(.mix-page.hero-surprise) .page-ambient { --amb-a: #9b6fd0; --amb-b: #d05fa8; --amb-c: #c9a9f5; }
+body:has(.mix-page.hero-sad) .page-ambient { --amb-a: #4c7bd0; --amb-b: #2d5f9e; --amb-c: #7fa6e0; }
+body:has(.mix-page.hero-angry) .page-ambient { --amb-a: #d14b4b; --amb-b: #8f2f7a; --amb-c: #f07a62; }
+body:has(.mix-page.hero-radio) .page-ambient { --amb-a: #7a49d6; --amb-b: #2b4fd0; --amb-c: #c9a9f5; }
+
+// trang ca sĩ: sắc độ ảnh ca sĩ (--artist-h do ArtistPage đặt lên <html>), như Spotify
+body:has(.browse-page.artist-page) .page-ambient {
+  --amb-a: hsl(var(--artist-h, 270) 58% 46%);
+  --amb-b: hsl(calc(var(--artist-h, 270) + 40) 50% 34%);
+  --amb-c: hsl(var(--artist-h, 270) 65% 70%);
+}
+
+// thống kê: xanh tím than như các thẻ neon
+body:has(.stats-page) .page-ambient {
+  --amb-a: #4d5cf0;
+  --amb-b: #7b3fd6;
+  --amb-c: #4d74f0;
+}
+
+// playlist: tím – hồng
+body:has(.playlist-page) .page-ambient {
+  --amb-a: #a04fc8;
+  --amb-b: #4a3d9c;
+  --amb-c: #e070c8;
+}
+
+// cài đặt: dịu, xám lam + xanh ngọc tối
+body:has(.settings-page) .page-ambient {
+  --amb-a: #5a5f9a;
+  --amb-b: #2f7f78;
+  --amb-c: #a79fc9;
+}
+
+// đang phát (/now-playing): theo vibe bài, cùng tông khung phát
+body:has(.now-playing:not(.is-hidden) .player[data-vibe='happy']) .page-ambient { --amb-a: #d9712c; --amb-b: #c2486a; --amb-c: #f2b84b; }
+body:has(.now-playing:not(.is-hidden) .player[data-vibe='surprise']) .page-ambient { --amb-a: #7b4bc9; --amb-b: #d05fa8; --amb-c: #c08bf0; }
+body:has(.now-playing:not(.is-hidden) .player[data-vibe='neutral']) .page-ambient { --amb-a: #9a5468; --amb-b: #5a3070; --amb-c: #d48ca0; }
+body:has(.now-playing:not(.is-hidden) .player[data-vibe='sad']) .page-ambient { --amb-a: #3f64b0; --amb-b: #2d4f8e; --amb-c: #7fa6e0; }
+body:has(.now-playing:not(.is-hidden) .player[data-vibe='angry']) .page-ambient { --amb-a: #c0392f; --amb-b: #8f2f7a; --amb-c: #f07a62; }

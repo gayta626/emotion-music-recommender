@@ -1,0 +1,370 @@
+// 2 biểu đồ của 2 thẻ cuối trang chủ (theo ảnh mẫu "Infographic Chart").
+// Màu lấy từ biến của khối cha (.browse-page .features -> @include neon-mood): --mood-*, --c, --grid, --tip-bg.
+$badge: 30px;      // vòng số lần quét ở hàng trên
+$track-top: 42px;  // vùng vẽ cột bắt đầu dưới hàng vòng số
+$days-h: 20px;     // hàng tên ngày dưới cùng
+$axis-w: 24px;     // cột số trục y bên trái
+
+.hm-swatch {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--c);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent);
+}
+
+.hm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.72);
+
+    b { color: #fff; }
+  }
+}
+
+// ---------- thẻ "Mostly … this week": cột + donut ----------
+.hm-week {
+  container: hmweek / inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+}
+
+.hm-chart-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hm-plot {
+  position: relative;
+  height: 220px;
+}
+
+// lưới chấm ngang (đỉnh, giữa, 0) — trùng đúng vùng vẽ cột
+.hm-grid {
+  position: absolute;
+  top: $track-top;
+  bottom: $days-h;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.hm-gridline {
+  position: relative;
+  height: 0;
+  margin-left: $axis-w;
+  border-top: 1px dotted rgba(255, 255, 255, 0.16);
+
+  span {
+    position: absolute;
+    left: -$axis-w;
+    top: 0;
+    width: $axis-w - 6px;
+    transform: translateY(-50%);
+    font-size: 10px;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.hm-cols {
+  position: absolute;
+  top: 0;
+  bottom: $days-h;
+  left: $axis-w;
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.hm-col {
+  position: relative;
+  border-radius: 10px;
+  outline: none;
+
+  &:focus-visible { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45); }
+
+  &:hover .hm-bar,
+  &:focus-visible .hm-bar { filter: brightness(1.18); }
+
+  &:hover .hm-tip,
+  &:focus-visible .hm-tip { display: flex; }
+}
+
+// vòng số: viền trắng, số ở giữa (như vòng "46%" trong ảnh mẫu)
+.hm-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  width: $badge;
+  height: $badge;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  background: rgba(31, 32, 54, 0.75);
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hm-track {
+  position: absolute;
+  top: $track-top;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+// vạch trắng mảnh từ vòng số xuống gần đầu cột, chấm tròn ở cuối
+.hm-stem {
+  position: absolute;
+  top: $badge - $track-top;
+  left: 50%;
+  z-index: 1;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.7);
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+  }
+}
+
+// quầng sáng sau cột của ngày quét nhiều nhất (màu cảm xúc nhiều nhất ngày đó)
+.hm-halo {
+  position: absolute;
+  left: 50%;
+  width: 110px;
+  height: 110px;
+  transform: translate(-50%, 50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 45%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+// cột mảnh: các đoạn cảm xúc chồng nhau, khe 2px, mỗi đoạn gradient tối -> sáng của chính màu đó
+.hm-bar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  z-index: 1;
+  width: 12px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  transform: translateX(-50%);
+  transition: filter 0.15s;
+
+  .is-empty & {
+    height: 3px !important;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.hm-seg {
+  flex-basis: 0;
+  min-height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(to top,
+      color-mix(in srgb, var(--c) 55%, #1f2036) 0%,
+      var(--c) 55%,
+      color-mix(in srgb, var(--c) 70%, #fff) 100%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c) 50%, transparent);
+
+  &:last-child { border-radius: 6px 6px 3px 3px; }
+}
+
+.hm-days {
+  position: absolute;
+  left: $axis-w;
+  right: 0;
+  bottom: 0;
+  height: $days-h - 4px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  font-size: 11px;
+  line-height: $days-h - 4px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+// bảng số khi rê chuột / focus 1 cột
+.hm-tip {
+  position: absolute;
+  top: $badge + 6px;
+  left: 50%;
+  z-index: 5;
+  min-width: 140px;
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: var(--tip-bg);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+  pointer-events: none;
+
+  b { color: #fff; }
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  em {
+    margin-left: auto;
+    padding-left: 12px;
+    font-style: normal;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  // 2 cột ngoài cùng: bảng căn theo mép thẻ, không tràn ra ngoài
+  .hm-col:first-child & { left: 0; transform: none; }
+  .hm-col:last-child & { left: auto; right: 0; transform: none; }
+}
+
+// donut ca tuần, giữa là tổng số lần quét
+.hm-donut {
+  position: relative;
+  flex-shrink: 0;
+
+  > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .donut-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+  }
+
+  .donut-arc {
+    fill: none;
+    stroke: var(--c);
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c) 70%, transparent));
+  }
+
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+}
+
+.hm-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+
+  b {
+    font-family: 'Inter', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  small {
+    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+// thẻ hẹp: donut xuống dưới biểu đồ
+@container hmweek (max-width: 520px) {
+  .hm-chart-wrap { grid-column: 1 / -1; }
+
+  .hm-donut { grid-column: 1 / -1; justify-self: center; }
+}
+
+@supports not (container-type: inline-size) {
+  .hm-week { grid-template-columns: minmax(0, 1fr); }
+  .hm-donut { justify-self: center; }
+}
+
+// ---------- thẻ "How do you feel right now?": lưới chấm ----------
+.hm-dots-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hm-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px;
+}
+
+.hm-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c) 60%, transparent);
+  transition: transform 0.12s;
+
+  &:hover { transform: scale(1.4); }
+}
+
+.hm-dots-caption {
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hm-empty {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-dot,
+  .hm-bar { transition: none; }
+}

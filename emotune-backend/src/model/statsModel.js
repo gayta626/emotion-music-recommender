@@ -14,13 +14,12 @@ let getScanDays = async (userId, days) => (await db.query(
      GROUP BY 1, 2`,
     [userId, days])).rows;
 
-// lan quet theo thu (1 = Thu Hai) x gio x cam xuc -> chia buoi o service
+// lan quet theo gio trong ngay (0..23) x cam xuc, cong don moi ngay trong cua so
 let getScanHours = async (userId, days) => (await db.query(
-    `SELECT EXTRACT(ISODOW FROM created_at)::int AS weekday, EXTRACT(HOUR FROM created_at)::int AS hour,
-            emotion, COUNT(*)::int AS count
+    `SELECT EXTRACT(HOUR FROM created_at)::int AS hour, emotion, COUNT(*)::int AS count
      FROM mood_history
      WHERE user_id = $1 AND action = 'suggested' AND created_at >= CURRENT_DATE - ($2::int - 1)
-     GROUP BY 1, 2, 3`,
+     GROUP BY 1, 2`,
     [userId, days])).rows;
 
 // so bai da nghe + tong thoi luong (bai chua co duration thi khong cong)
@@ -80,13 +79,13 @@ let getPreferences = async (userId) => (await db.query(
      WHERE p.user_id = $1`,
     [userId])).rows;
 
-// do tu tin cua model khi quet camera (dong co confidence)
+// do tu tin cua model tung lan quet camera (dong co confidence), cu truoc moi sau -> service tinh trung binh
 let getConfidence = async (userId, days) => (await db.query(
-    `SELECT emotion, AVG(confidence)::float AS avg, COUNT(*)::int AS count
+    `SELECT emotion, confidence::float AS confidence
      FROM mood_history
      WHERE user_id = $1 AND action = 'suggested' AND confidence IS NOT NULL
        AND created_at >= CURRENT_DATE - ($2::int - 1)
-     GROUP BY emotion`,
+     ORDER BY created_at, id`,
     [userId, days])).rows;
 
 module.exports = {

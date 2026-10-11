@@ -19,15 +19,43 @@ body:has(.player-bar) {
 }
 
 .player {
-  // 3 điểm màu của gradient; mặc định = màu Figma (hồng mận)
+  // --g1..3: gradient cho ảnh bìa dự phòng; mặc định = màu Figma (hồng mận)
+  // --bg-a/b/c: 3 quầng màu ĐẬM của nền khung lớn (nền tối -> sóng âm sáng nổi lên)
+  // --viz-1 (sáng, giữa cột) / --viz-2 (đậm, đầu cột) / --viz-glow ("r g b", quầng sáng): màu sóng âm (AudioVisualizer đọc)
   --g1: #b17886;
   --g2: #b84d67;
   --g3: #73424e;
+  --bg-a: #8a3a5c;
+  --bg-b: #2e2a6a;
+  --bg-c: #c0507a;
+  --viz-1: #ffe3ec;
+  --viz-2: #ff5c8d;
+  --viz-glow: 255 110 160;
 
-  &[data-vibe="happy"] { --g1: #e9c17a; --g2: #db8a4f; --g3: #7a4a33; }
-  &[data-vibe="sad"] { --g1: #8aa1c4; --g2: #4f6d9e; --g3: #2c3a58; }
-  &[data-vibe="angry"] { --g1: #c9796b; --g2: #b2403a; --g3: #5a2424; }
-  &[data-vibe="surprise"] { --g1: #c79ae0; --g2: #9a5ec8; --g3: #4b3270; }
+  // vui: hổ phách + mâm xôi, sóng vàng → cam
+  &[data-vibe="happy"] {
+    --g1: #e9c17a; --g2: #db8a4f; --g3: #7a4a33;
+    --bg-a: #c2641c; --bg-b: #8f2a4f; --bg-c: #e09a3a;
+    --viz-1: #fff3c8; --viz-2: #ffad42; --viz-glow: 255 175 70;
+  }
+  // buồn: xanh đêm, sóng xanh băng
+  &[data-vibe="sad"] {
+    --g1: #8aa1c4; --g2: #4f6d9e; --g3: #2c3a58;
+    --bg-a: #2b55a8; --bg-b: #1a2a66; --bg-c: #4a7fd0;
+    --viz-1: #e2f1ff; --viz-2: #4f8dff; --viz-glow: 110 170 255;
+  }
+  // giận: đỏ thẫm + tím mận, sóng đỏ hồng gắt
+  &[data-vibe="angry"] {
+    --g1: #c9796b; --g2: #b2403a; --g3: #5a2424;
+    --bg-a: #a8202e; --bg-b: #4f1035; --bg-c: #e0482a;
+    --viz-1: #ffe0d6; --viz-2: #ff2d55; --viz-glow: 255 80 90;
+  }
+  // khám phá (surprise): tím + xanh ngọc lạ mắt, sóng xanh lơ → tím
+  &[data-vibe="surprise"] {
+    --g1: #c79ae0; --g2: #9a5ec8; --g3: #4b3270;
+    --bg-a: #6a2fc2; --bg-b: #127a8a; --bg-c: #a04fe0;
+    --viz-1: #d4fcff; --viz-2: #b06bff; --viz-glow: 150 130 255;
+  }
 
   width: 100%;
 }
@@ -45,12 +73,75 @@ body:has(.player-bar) {
   gap: 20px;
   padding: 26px 28px 32px;
   border-radius: 10px;
-  background: linear-gradient(180deg, var(--g1) 13%, var(--g2) 48.5%, var(--g3) 94%);
+  // nền nhiều lớp (từ dưới lên): đen tím -> ảnh bìa nhoè -> 3 quầng màu vibe trôi chậm -> hạt nhiễu + viền tối 4 góc.
+  // Các lớp nằm z-index -1 trong "isolation" của khung -> luôn dưới tên bài / sóng âm.
+  isolation: isolate;
+  background: #0b0912;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   overflow: hidden;
   text-align: left;
 
+  // tham số theo thể loại (data-genre trên .player): độ hạt, tốc độ trôi
+  --grain: 0.08;
+  --drift: 26s;
+
+  .stage-cover,
+  .stage-aurora,
+  &::before,
+  &::after {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  // ảnh bìa phóng to + nhoè mạnh: mỗi bài một chút màu riêng dưới quầng vibe
+  .stage-cover {
+    inset: -12%;
+    background: center / cover no-repeat;
+    filter: blur(70px) saturate(1.5);
+    opacity: 0.22;
+  }
+
+  // 3 quầng màu vibe, trôi qua lại chậm (kiểu "mesh gradient")
+  .stage-aurora {
+    inset: -25%;
+    background:
+      radial-gradient(34% 38% at 22% 24%, color-mix(in srgb, var(--bg-a) 70%, transparent), transparent 70%),
+      radial-gradient(38% 42% at 80% 78%, color-mix(in srgb, var(--bg-b) 75%, transparent), transparent 72%),
+      radial-gradient(26% 28% at 70% 22%, color-mix(in srgb, var(--bg-c) 40%, transparent), transparent 70%),
+      radial-gradient(30% 30% at 26% 82%, color-mix(in srgb, var(--bg-c) 25%, transparent), transparent 70%);
+    animation: stage-drift var(--drift) ease-in-out infinite alternate;
+  }
+
+  // hạt nhiễu mịn (SVG feTurbulence) -> nền có "chất liệu", không phẳng
+  &::before {
+    content: "";
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: var(--grain);
+    mix-blend-mode: overlay;
+  }
+
+  // viền tối 4 góc + dải tối mờ ngang giữa khung (chỗ sóng âm): vệt sáng mảnh nổi trên nền tối như ảnh mẫu
+  &::after {
+    content: "";
+    inset: 0;
+    background:
+      radial-gradient(70% 34% at 50% 58%, rgba(6, 4, 12, 0.45), transparent 75%),
+      radial-gradient(120% 95% at 50% 55%, transparent 40%, rgba(6, 4, 12, 0.7) 100%);
+  }
+
+  // trái: tên bài + lời gợi ý; phải: nút Karaoke
   .stage-head {
     align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .stage-info {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -91,12 +182,208 @@ body:has(.player-bar) {
     flex: 1;
     min-height: 0;
     width: 100%;
+    // MV đo theo kích thước khung (cqw / cqh) -> video 16:9 vừa khít, không méo, không tràn
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // MV thay cả khung sóng âm: phủ hết vùng (YouTube tự giữ tỉ lệ video, viền đen hoà vào nền đen của khung)
+  .stage-mv {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000 center / contain no-repeat;   // ảnh thumbnail MV (hiện khi video dừng)
+    animation: stage-mv-in 0.3s ease-out;
+
+  }
+
+  // nút MV + Karaoke ở góc phải trên
+  .stage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  // báo lỗi ngắn khi MV không phát được
+  .stage-note {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.35);
+    font-size: 13px;
+    color: #fff;
   }
 
   .visualizer {
     display: block;
     width: 100%;
     height: 100%;
+  }
+}
+
+// ---------- nút viên thuốc: MV, Karaoke (khung lớn + màn lời bài) ----------
+.pill-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.2s;
+
+  &:hover { background: rgba(255, 255, 255, 0.2); }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  // MV đang mở: nền trắng
+  &.mv-toggle.on {
+    border-color: transparent;
+    background: #fff;
+    color: #141019;
+  }
+
+  // karaoke đang bật: nền vàng (cùng màu chữ đã hát), micro "thở" nhẹ
+  &.karaoke-toggle.on {
+    border-color: transparent;
+    background: var(--karaoke-fill);
+    color: #1b1426;
+    box-shadow: 0 0 22px rgb(255 214 102 / 0.45);
+
+    svg { animation: karaoke-mic 1.6s ease-in-out infinite; }
+  }
+}
+
+// lớp nổi chứa trình phát MV duy nhất: MusicPlayer đặt vị trí / cỡ theo ô video đang hiện mỗi khung hình
+// (khung lớn hoặc cột phải). Không nhận chuột: điều khiển bằng thanh phát
+.mv-float {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 270px;
+  z-index: 14;
+  overflow: hidden;
+  pointer-events: none;
+  background: #000;
+
+  &[data-place="panel"] { border-radius: 10px; }
+
+  // cột phải thu gọn: vẫn chạy (để mở lại khớp nhạc) nhưng ẩn; video dừng / chưa chạy: ẩn để không thấy icon YouTube
+  &[data-place="off"],
+  &.is-paused { visibility: hidden; }
+
+  .mv-host,
+  iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+@keyframes stage-mv-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes karaoke-mic {
+  50% { transform: scale(1.15); }
+}
+
+// ---------- đang xem MV ở /now-playing: khung lớn phủ hết vùng giữa (chỉ chừa header, thư viện, thanh phát) ----------
+.player.mv-on .player-stage {
+  width: calc(100% + 2 * var(--main-pad));
+  height: calc(100vh - var(--header-h) - var(--player-bar-h));
+  margin: calc(-1 * var(--main-pad));
+  padding: 10px 0 0;
+  gap: 10px;
+  border-radius: 0;
+  background: #000;
+  box-shadow: none;
+
+  // bỏ các lớp nền màu (MV là nền)
+  .stage-cover,
+  .stage-aurora,
+  &::before,
+  &::after { display: none; }
+
+  // hàng tên bài + nút gọn lại cho video được to nhất
+  .stage-head { padding: 0 20px; }
+  .stage-title { font-size: 22px; }
+  .stage-message { display: none; }
+}
+
+// ---------- nền khung lớn theo thể loại ----------
+// rap: hạt gắt + vạch quét ngang mảnh, quầng trôi nhanh (năng lượng)
+.player[data-genre="rap"] .player-stage {
+  --grain: 0.16;
+  --drift: 12s;
+
+  .stage-aurora::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 4px);
+  }
+}
+
+// ballad: đốm sáng bokeh mờ bay chậm (như đèn sân khấu xa)
+.player[data-genre="ballad"] .player-stage {
+  --grain: 0.06;
+  --drift: 32s;
+
+  .stage-aurora::after {
+    content: "";
+    position: absolute;
+    inset: 22%;
+    background:
+      radial-gradient(circle at 18% 30%, rgb(var(--viz-glow) / 0.22) 0 16px, transparent 22px),
+      radial-gradient(circle at 72% 22%, rgb(var(--viz-glow) / 0.16) 0 24px, transparent 32px),
+      radial-gradient(circle at 84% 68%, rgb(var(--viz-glow) / 0.2) 0 12px, transparent 18px),
+      radial-gradient(circle at 30% 76%, rgb(var(--viz-glow) / 0.14) 0 28px, transparent 36px),
+      radial-gradient(circle at 52% 48%, rgb(var(--viz-glow) / 0.1) 0 40px, transparent 52px);
+    filter: blur(3px);
+    animation: stage-bokeh 20s ease-in-out infinite alternate;
+  }
+}
+
+// thư giãn: mịn, trôi rất chậm
+.player[data-genre="chill"] .player-stage {
+  --grain: 0.04;
+  --drift: 44s;
+}
+
+@keyframes stage-drift {
+  from { transform: translate3d(-3%, -2%, 0) rotate(0deg) scale(1); }
+  to { transform: translate3d(3%, 3%, 0) rotate(8deg) scale(1.08); }
+}
+
+@keyframes stage-bokeh {
+  from { transform: translate3d(0, 4%, 0); opacity: 0.7; }
+  to { transform: translate3d(2%, -4%, 0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-stage .stage-aurora,
+  .player-stage .stage-aurora::after,
+  .player-stage .stage-mv,
+  .pill-toggle.on svg {
+    animation: none;
   }
 }
 
@@ -138,6 +425,12 @@ body:has(.player-bar) {
 
   .dislike {
     flex-shrink: 0;
+  }
+
+  // ♥ chưa thích: viền tím như tim gạch chéo; đã thích: tô hồng + nảy nhẹ
+  .like-btn {
+    color: var(--accent);
+    &.liked { color: var(--liked); animation: like-pop 0.3s ease-out; }
   }
 
   // nút trong suốt bọc ảnh + tên bài (bấm -> /now-playing)
@@ -248,7 +541,7 @@ body:has(.player-bar) {
     color: #f2a7a7;
   }
 
-  // cột phải: lời bài hát, hàng đợi, thiết bị, loa + thanh âm lượng 80px
+  // cột phải: lời bài hát, hàng đợi, loa + thanh âm lượng 80px
   .bar-extra {
     display: flex;
     align-items: center;
@@ -272,7 +565,7 @@ body:has(.player-bar) {
   }
 }
 
-// nút icon trong suốt (shuffle, prev, next, repeat, lời bài hát, hàng đợi, thiết bị, loa)
+// nút icon trong suốt (shuffle, prev, next, repeat, lời bài hát, hàng đợi, loa)
 // Figma vẽ icon 16–20px -> nhìn nhỏ so với chữ / ảnh bìa; phóng to ~1.3 lần, icon co giãn theo cỡ nút
 .icon-btn {
   display: flex;
@@ -294,7 +587,8 @@ body:has(.player-bar) {
 
   // icon bên phải + tim (Figma 18px)
   .bar-extra &,
-  &.dislike {
+  &.dislike,
+  &.like-btn {
     width: 24px;
     height: 24px;
   }
@@ -313,6 +607,44 @@ body:has(.player-bar) {
   // menu/hàng đợi đang mở
   &.active {
     filter: brightness(1.8);
+  }
+
+  // Shuffle / Repeat đang bật (I1): icon tím + chấm nhỏ bên dưới như Spotify (icon Figma vẽ sẵn nét xám -> đổi nét bằng CSS)
+  &.toggle {
+    position: relative;
+
+    &.on {
+      svg path { stroke: var(--accent); }
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -7px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--accent);
+        transform: translateX(-50%);
+      }
+    }
+  }
+
+  // Repeat one: số "1" nhỏ ở góc
+  .repeat-one {
+    position: absolute;
+    top: -4px;
+    right: -5px;
+    min-width: 13px;
+    height: 13px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #131218;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
   }
 }
 
@@ -425,7 +757,7 @@ body:has(.player-bar) {
     .bar-extra { grid-area: extra; gap: 14px; }
     .bar-center { grid-area: center; }
 
-    // hàng trên chỉ giữ hàng đợi (lời bài hát, thiết bị, loa/âm lượng chưa dùng được ở màn hẹp)
+    // hàng trên chỉ giữ hàng đợi (lời bài hát, loa/âm lượng chưa dùng được ở màn hẹp)
     // điện thoại: giữ nút lời bài hát, ẩn các nút phụ còn lại
     .bar-extra > .icon-btn:not(.lyrics-btn),
     .bar-volume { display: none; }
@@ -437,6 +769,15 @@ body:has(.player-bar) {
 
     .bar-controls { gap: 20px; }
   }
+
+  // điện thoại: khung MV cao vừa tỉ lệ 16:9 (không lấn xuống dưới thanh phát)
+  .player.mv-on .player-stage { height: auto; padding-bottom: 0; }
+  .player.mv-on .stage-visual { flex: none; aspect-ratio: 16 / 9; }
+
+  // điện thoại: nút MV / Karaoke xuống hàng dưới tên bài, nhỏ hơn
+  .player-stage .stage-head { flex-wrap: wrap; }
+  .player-stage .stage-actions { justify-content: flex-start; }
+  .pill-toggle { height: 36px; font-size: 13px; }
 }
 
 // ---------- thẻ "Up next" (giống YouTube: mờ dần hiện khi sắp hết bài) ----------
@@ -815,4 +1156,10 @@ body:has(.player-bar) {
   .queue-panel {
     animation: none;
   }
+}
+
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.3); }
+  100% { transform: scale(1); }
 }

@@ -28,3 +28,15 @@ test("khong lo cot tinh diem noi bo ra ngoai", () => {
     assert.strictEqual(s.listen_score, undefined);
     assert.strictEqual(s.taste_bonus, undefined);
 });
+
+test("bai da ♥ duoc cong like_bonus (+1), cot noi bo khong lo ra", () => {
+    const liked = { ...row(1, 0, 0), like_bonus: "1" };
+    const out = rankForYou([liked, row(2, 0.5, 0)], 10);
+    assert.deepStrictEqual(out.map((s) => s.id), [1, 2]);
+    assert.strictEqual(out[0].score, 1);
+    assert.strictEqual(out[0].like_bonus, undefined);
+});
+
+test("dong khong co like_bonus (du lieu cu) van tinh duoc", () => {
+    assert.strictEqual(rankForYou([row(1, 1, 0.5)], 10)[0].score, 1.5);
+});

@@ -1,0 +1,162 @@
+// Chuông "What NYX noticed" (I1): cùng kiểu menu xổ xuống với AccountMenu
+.notification-menu {
+  position: relative;
+
+  .notification-btn {
+    position: relative;
+    display: flex;
+    padding: 4px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+
+    &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.08); }
+  }
+
+  // số nhận xét chưa xem
+  .notif-badge {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    min-width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    padding: 0 4px;
+    border: 2px solid var(--bg);
+    border-radius: 9px;
+    background: var(--liked);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 50;
+  width: 340px;
+  max-height: min(520px, calc(100svh - 140px));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: #1d1a22;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  font-family: 'DM Sans', sans-serif;
+  animation: notif-in 0.14s ease-out;
+
+  hr {
+    margin: 4px 8px;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .notif-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px 8px;
+
+    b { font-size: 15px; color: #fff; }
+    small { font-size: 12px; color: var(--muted); }
+  }
+
+  .notif-empty {
+    padding: 8px 12px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  button {
+    border: none;
+    border-radius: 10px;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      outline: none;
+      background: rgba(255, 255, 255, 0.07);
+    }
+  }
+
+  .notif-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 8px;
+    align-items: start;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  // ô icon tròn, màu theo loại nhận xét
+  .notif-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(201, 169, 245, 0.14);
+    color: var(--accent);
+
+    svg { width: 18px; height: 18px; }
+  }
+
+  .kind-cheer-up .notif-icon { background: rgba(255, 214, 102, 0.14); color: var(--karaoke-fill); }
+  .kind-no-scan .notif-icon { background: rgba(255, 92, 154, 0.14); color: var(--liked); }
+
+  .notif-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    b { font-size: 14px; font-weight: 600; color: #fff; }
+    small { font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+  }
+
+  // chấm "mới": nhận xét chưa xem lúc mở menu
+  .notif-new {
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--liked);
+  }
+
+  .notif-all {
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+}
+
+@keyframes notif-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-dropdown { animation: none; }
+}
+
+// điện thoại: chuông không nằm sát mép phải -> menu bám 2 mép màn hình
+@media (max-width: 640px) {
+  .notif-dropdown {
+    position: fixed;
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}

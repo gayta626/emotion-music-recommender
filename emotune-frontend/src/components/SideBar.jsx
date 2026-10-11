@@ -9,16 +9,17 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { usePlayback } from '../contexts/playbackContext'
 import ArtistAvatar from './ArtistAvatar'
+import HeartIcon from './HeartIcon'
 
 const SideBar = () => {
     const [collapsed, setCollapsed] = useState(false)
     const { pathname } = useLocation()
     const navigate = useNavigate()
     // dang mo trang playlist thi tab Playlists duoc chon san
-    const [tab, setTab] = useState(pathname.startsWith('/playlist/') ? 'playlists' : 'artists')
+    const [tab, setTab] = useState(pathname.startsWith('/playlist/') || pathname === '/liked' ? 'playlists' : 'artists')
     const [artists, setArtists] = useState([])
     const [playlists, setPlaylists] = useState([])
-    const { playlistsVersion, refreshPlaylists } = usePlayback()
+    const { playlistsVersion, refreshPlaylists, likedSongs } = usePlayback()
 
     useEffect(() => {
         api.get('/artists')
@@ -91,6 +92,20 @@ const SideBar = () => {
                     </button>
                 ))}
 
+                {/* "Liked Songs" (bai da ♥) luon ghim dau tab Playlists, mo trang /liked giong cac playlist khac */}
+                {tab === 'playlists' && (
+                    <button
+                        className={`playlist-item ${pathname === '/liked' ? 'active' : ''}`}
+                        onClick={() => navigate('/liked')}
+                        title="Liked Songs"
+                    >
+                        <span className="cover playlist-cover liked-cover" aria-hidden="true"><HeartIcon filled /></span>
+                        {!collapsed && <div className="info">
+                            <span className="name">Liked Songs</span>
+                            <span className="subtitle">Playlist · {likedSongs.length} {likedSongs.length === 1 ? 'song' : 'songs'}</span>
+                        </div>}
+                    </button>
+                )}
                 {/* bam vao playlist -> mo trang playlist (nut Play o do moi phat) */}
                 {tab === 'playlists' && playlists.map((item) => (
                     <button

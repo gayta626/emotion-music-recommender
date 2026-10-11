@@ -1,6 +1,6 @@
 const db = require("../config/db")
 
-// Khảo sát gu của MỘT người: ca sĩ + thể loại đã chọn, và đã làm / bỏ qua khảo sát chưa
+// Khảo sát gu của MỘT người: ca sĩ + thể loại đã chọn, đã làm / bỏ qua khảo sát chưa và lưu lúc nào
 const getProfile = async (userId) => {
     const [user, artists, genres] = await Promise.all([
         db.query(`SELECT survey_done_at FROM users WHERE id = $1`, [userId]),
@@ -9,6 +9,7 @@ const getProfile = async (userId) => {
     ]);
     return {
         done: Boolean(user.rows[0]?.survey_done_at),
+        updatedAt: user.rows[0]?.survey_done_at || null,   // lần lưu gu gần nhất (trang Settings hiện ngày này)
         artistIds: artists.rows.map((r) => r.artist_id),
         genreIds: genres.rows.map((r) => r.genre_id),
     };

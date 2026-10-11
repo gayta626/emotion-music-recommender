@@ -2,8 +2,9 @@ import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { AIAssistantProvider } from './contexts/AIAssistantContext'
 import MainLayout from './layouts/MainLayout'
 import RequireAuth from './components/RequireAuth'
-import Setting from './pages/Setting'
+import SettingsPage from './pages/SettingsPage'
 import PlaylistPage from './pages/PlaylistPage'
+import LikedPage from './pages/LikedPage'
 import MoodPage from './pages/MoodPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -33,11 +34,13 @@ const App = () => {
                 <Route path='/lyrics' element={null} />
                 <Route path='/artist/:id' element={<ArtistPage />} />
                 <Route path='/playlist/:id' element={<PlaylistPage />} />
+                {/* bai da bam ♥ (I1) */}
+                <Route path='/liked' element={<LikedPage />} />
                 {/* mix theo vibe / radio ca si (/mix/happy?genre=2, /mix/radio?artist=4) */}
                 <Route path='/mix/:key' element={<MixPage />} />
                 <Route path='/stats' element={<MoodPage />} />
                 <Route path='/mood' element={<Navigate to='/stats' replace />} />
-                <Route path='/settings' element={<Setting />} />
+                <Route path='/settings' element={<SettingsPage />} />
               </Route>
             </Route>
             <Route path='/login' element={<LoginPage />} />

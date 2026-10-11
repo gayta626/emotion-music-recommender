@@ -1,0 +1,218 @@
+// Cột phải xem tiếp MV khi lướt trang khác (kiểu Spotify): kính mờ tối như thư viện bên trái, cuộn riêng.
+// Cao vừa khoảng giữa header và thanh phát (thanh phát cố định ở dưới, không che nội dung cột).
+.np-panel {
+  width: 340px;
+  max-height: calc(100vh - var(--header-h) - var(--player-bar-h) - 8px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 14px 18px;
+  background-color: rgb(20 18 28 / 0.62);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  color: #fff;
+  text-align: left;
+  animation: np-in 0.25s ease-out;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.np-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+// đang phát từ đâu (playlist / gợi ý theo cảm xúc)
+.np-context {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.np-icon-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+
+  &:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+}
+
+// icon thu gọn / mở rộng dùng chung với thư viện bên trái -> lật ngang cho đúng chiều cột bên phải
+.np-head .np-icon-btn:first-child svg { transform: scaleX(-1); }
+
+// ---------- video + tên bài ----------
+.np-media {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// khung vuông (video 16:9 nằm giữa, viền đen trên dưới): luôn >= 200x200px như YouTube yêu cầu
+.np-video {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000 center / cover no-repeat;   // ảnh thumbnail MV (lộ ra khi video dừng / chưa chạy)
+
+}
+
+.np-titles { min-width: 0; }
+
+.np-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.np-artist {
+  padding-top: 2px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+// ---------- thẻ ----------
+.np-card {
+  flex-shrink: 0;
+  border-radius: 10px;
+  padding: 14px 16px 16px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.np-card-title,
+.np-card-head {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.np-card-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+// thẻ lời: nền theo màu chủ đạo ảnh bìa (như màn lời bài)
+.np-lyrics {
+  background: hsl(var(--ly-h), var(--ly-s), 30%);
+}
+
+.np-card-head {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 0 10px;
+  border: none;
+  background: none;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover .np-card-link { color: #fff; text-decoration: underline; }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+}
+
+.np-lyrics-lines {
+  height: 190px;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: none;
+  // mờ dần ở mép dưới
+  mask-image: linear-gradient(#000 70%, transparent);
+
+  &::-webkit-scrollbar { display: none; }
+
+  li {
+    padding-bottom: 8px;
+    font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.92);
+  }
+}
+
+// thẻ ca sĩ: ảnh rộng + tên
+.np-about-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  color: #fff;
+  text-decoration: none;
+
+  &:hover .np-about-name { text-decoration: underline; }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 6px; }
+}
+
+.np-about-photo {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 8px;
+  object-fit: cover;
+
+  &.cover-fallback {
+    display: grid;
+    place-items: center;
+    font-size: 40px;
+    background: linear-gradient(160deg, #4b2f7a, #1b1430);
+  }
+}
+
+.np-about-name {
+  padding-top: 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+// cột đã thu gọn (kiểu Spotify): dải mỏng ở mép phải, nút ‹ ở giữa để mở lại
+.np-strip {
+  width: 36px;
+  height: calc(100vh - var(--header-h) - var(--player-bar-h) - 8px);
+  display: grid;
+  place-items: center;
+  background-color: rgb(20 18 28 / 0.62);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+}
+
+@keyframes np-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+// ngăn kéo trên màn vừa / nhỏ: nền đặc hơn (nằm đè lên nội dung)
+@media (max-width: 1100px) {
+  .np-panel {
+    width: min(340px, calc(100vw - 16px));
+    background-color: rgb(20 18 28 / 0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-panel { animation: none; }
+}

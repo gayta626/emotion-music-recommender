@@ -3,13 +3,6 @@ import { EMOTIONS } from '../../utils/moodStats';
 
 export { EMOTIONS };   // thứ tự màu cố định: happy, surprise, neutral, sad, angry
 
-export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];   // weekday 1..7 của API
-export const PARTS = [
-    { key: 'morning', label: 'Morning', hours: '5–11' },
-    { key: 'afternoon', label: 'Afternoon', hours: '11–17' },
-    { key: 'evening', label: 'Evening', hours: '17–22' },
-    { key: 'night', label: 'Night', hours: '22–5' },
-];
 // kết quả 1 lượt nghe, từ tốt tới xấu (màu trong Stats.scss: .out-good …)
 export const OUTCOMES = [
     { key: 'good', label: 'Played to the end' },

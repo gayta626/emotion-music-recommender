@@ -46,7 +46,7 @@ const OverviewTiles = ({ overview, days, daily, cheer }) => {
                 <span className="tile-label">Most common mood</span>
                 {overview.topEmotion ? (
                     <Donut parts={mix} size={72} thickness={8} label={`Mood mix: ${mixLabel}`}>
-                        <MoodIcon emotion={overview.topEmotion} size={30} />
+                        <MoodIcon emotion={overview.topEmotion} size={38} />
                     </Donut>
                 ) : <span className="tile-value">—</span>}
             </div>

@@ -5,7 +5,7 @@ import { STALE_MS, timeAgo as ago } from '../utils/moodSession'
 import RecordIcon from '../assets/icons/record_circle_icon.svg?react'
 import './MoodButton.scss'
 
-const LABELS = { happy: 'Happy', sad: 'Sad', angry: 'Angry', surprise: 'Surprised', neutral: 'Neutral' }
+const LABELS = { happy: 'Happy', sad: 'Sad', angry: 'Angry', surprise: 'Explore', neutral: 'Neutral' }
 
 // Icon quet cam xuc tren header (man quet "thu gon" lai sau lan quet dau cua phien):
 // vien mau theo cam xuc gan nhat; cam xuc cu > 30 phut -> nhap nhay nhac quet lai; bam -> /scan

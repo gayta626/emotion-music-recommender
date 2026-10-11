@@ -3,14 +3,12 @@ import HomeIcon from '../assets/icons/home_icon.svg?react'
 import HeaderSearch from './HeaderSearch'
 import MoodButton from './MoodButton'
 import AIIcon from '../assets/icons/ai_icon.svg?react'
-import NotificationIcon from '../assets/icons/notification_icon.svg?react'
-import UserIcon from '../assets/icons/user_icon.svg?react'
-import { useAuth } from '../contexts/authContext'
+import NotificationMenu from './NotificationMenu'
+import AccountMenu from './AccountMenu'
 import { useNavigate } from 'react-router-dom'
 import { useAIAssistant } from '../contexts/aiAssistantStore'
 
 const Header = () => {
-    const { user, logout } = useAuth()
     const navigate = useNavigate()
     const { openAssistant } = useAIAssistant()
     return (
@@ -43,21 +41,15 @@ const Header = () => {
                 <div className="action-container">
                     {/* man quet thu gon thanh icon: bam -> /scan */}
                     <MoodButton />
-                    <button className="explore-premium-btn">
-                        Explore Premium
+                    {/* cho cua nut "Explore Premium" (Spotify) cu: app khong co goi Premium -> tom tat tuan nay o /stats */}
+                    <button className="your-week-btn" onClick={() => navigate('/stats')} title="Your moods and music this week">
+                        Your week
                     </button>
                     <div className="setting-and-notification-container">
-                        <button className="notification-btn" aria-label="Notifications">
-                            <NotificationIcon />
-                        </button>
-                        {/* bam ten tai khoan -> trang thong ke cam xuc */}
-                        <button className="user-info" onClick={() => navigate('/stats')} title="Your stats">
-                            <UserIcon />
-                            <span className="username">{user?.username}</span>
-                        </button>
-                        <button className="logout-btn" onClick={logout}>
-                            Log out
-                        </button>
+                        {/* chuong = nhan xet cua NYX (GET /insights) */}
+                        <NotificationMenu />
+                        {/* bam ten tai khoan -> menu: Your stats / Settings / Log out */}
+                        <AccountMenu />
                     </div>
 
                 </div>

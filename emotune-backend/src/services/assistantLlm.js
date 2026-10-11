@@ -1,73 +1,135 @@
 // LLM du phong cho tro ly giong noi: chi goi khi bo luat (assistantRules) khong hieu cau noi.
-// Claude Haiku 5.5 (re + nhanh), tra JSON theo schema co dinh. KHONG tin thang ket qua:
+// Google Gemini Flash (goi MIEN PHI, key tao o aistudio.google.com), tra JSON theo schema co dinh. KHONG tin thang ket qua:
 // assistantRules.validateLlmAction kiem lai voi danh muc truoc khi dung.
-// Khong co ANTHROPIC_API_KEY / loi mang / qua 6s -> tra null (tro ly noi "chua hieu", khong sap)
-const { Anthropic } = require("@anthropic-ai/sdk");
+// Ngoai cac lenh co san, Gemini con: goi y theo mo ta (queue), hoi dap / tro chuyen (answer), nhieu lenh 1 cau (sequence).
+// Khong co GEMINI_API_KEY / het luot mien phi (429) / loi mang / qua 8s -> tra null (tro ly noi "chua hieu", khong sap)
+const { GoogleGenAI } = require("@google/genai");
 
-const MODEL = "claude-haiku-5-5";
+// Flash-Lite: do 10/10 voi dung cau lenh that cua tro ly (kho ~70 bai + khuon JSON): 3.5-flash-lite ~1.8s, 3.6-flash ~3.3s,
+// 3.8-flash qua 20s khong tra loi (goi free) -> tro ly giong noi can nhanh nen dung Flash-Lite.
+// Google doi ten model kha thuong xuyen -> doi bang GEMINI_MODEL trong .env, khong can sua code
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const TIMEOUT_MS = 8000;
+const COMMANDS = ["pause", "resume", "next", "prev", "volume_up", "volume_down", "mute", "not_for_me", "like", "mv_on", "mv_off"];
 
-// moi truong deu bat buoc (structured outputs) -> truong khong dung thi LLM dien "", "none", 0
+// moi truong deu bat buoc (structured outputs) -> truong khong dung thi LLM dien "", "none", 0, []
+const STEP_FIELDS = {
+    path: { type: "string" },
+    kind: { type: "string", enum: ["song", "artist", "playlist", "none"] },
+    id: { type: "integer" },
+    command: { type: "string", enum: [...COMMANDS, "none"] },
+    ids: { type: "array", items: { type: "integer" } },
+    title: { type: "string" },
+};
+const STEP_SCHEMA = {
+    type: "object",
+    properties: { type: { type: "string", enum: ["navigate", "play", "control", "queue"] }, ...STEP_FIELDS },
+    required: ["type", ...Object.keys(STEP_FIELDS)],
+    additionalProperties: false,
+};
 const ACTION_SCHEMA = {
     type: "object",
     properties: {
-        type: { type: "string", enum: ["navigate", "play", "mood", "control", "unknown"] },
-        path: { type: "string" },
-        kind: { type: "string", enum: ["song", "artist", "playlist", "none"] },
-        id: { type: "integer" },
+        type: { type: "string", enum: ["navigate", "play", "mood", "control", "queue", "answer", "sequence", "unknown"] },
+        ...STEP_FIELDS,
         emotion: { type: "string", enum: ["happy", "sad", "angry", "surprise", "neutral", "none"] },
-        command: { type: "string", enum: ["pause", "resume", "next", "volume_up", "volume_down", "mute", "not_for_me", "none"] },
+        steps: { type: "array", items: STEP_SCHEMA },
         reply: { type: "string" },
     },
-    required: ["type", "path", "kind", "id", "emotion", "command", "reply"],
+    required: ["type", ...Object.keys(STEP_FIELDS), "emotion", "steps", "reply"],
     additionalProperties: false,
 };
 
-const SYSTEM_PROMPT = `Bạn là bộ hiểu lệnh của trợ lý giọng nói trong web nghe nhạc EmoTune.
+const RULES = `Bạn là trợ lý giọng nói NYX trong web nghe nhạc EmoTune (web chọn nhạc theo cảm xúc khuôn mặt).
 Người dùng nói tiếng Việt; câu đã được chuyển thành chữ nên có thể sai chính tả hoặc thiếu dấu.
 Chọn ĐÚNG MỘT hành động:
-- navigate: mở một trang. path là một trong: "/" (trang chủ), "/scan" (quét cảm xúc bằng camera), "/now-playing" (màn đang phát), "/lyrics" (lời bài hát), "/stats" (thống kê cảm xúc), "/settings" (cài đặt), "/survey" (khảo sát gu nhạc), "/artist/<id>" (trang ca sĩ), "/playlist/<id>" (trang playlist).
+- navigate: mở một trang. path là một trong: "/" (trang chủ), "/scan" (quét cảm xúc bằng camera), "/now-playing" (màn đang phát), "/lyrics" (lời bài hát), "/stats" (thống kê cảm xúc), "/settings" (cài đặt), "/survey" (khảo sát gu nhạc), "/liked" (bài đã thích), "/artist/<id>" (trang ca sĩ), "/playlist/<id>" (trang playlist).
 - play: phát nhạc; kind là song, artist hoặc playlist; id lấy từ danh mục.
-- mood: người dùng đang kể về cảm xúc, tâm trạng, một ngày của họ; emotion là happy, sad, angry, surprise hoặc neutral.
-- control: điều khiển bài đang phát; command là pause, resume, next, volume_up, volume_down, mute hoặc not_for_me.
-- unknown: không thuộc các loại trên.
-Chỉ dùng id có trong danh mục. Trường không dùng: path "", kind "none", id 0, emotion "none", command "none".
-reply: một câu tiếng Việt ngắn (dưới 20 từ), thân thiện, nói điều bạn sẽ làm.`;
+- mood: người dùng kể về cảm xúc, tâm trạng, một ngày của họ; emotion là happy, sad, angry, surprise (ngạc nhiên hoặc muốn khám phá điều mới) hoặc neutral.
+- control: điều khiển bài đang phát; command là pause, resume, next, prev (bài trước), volume_up, volume_down, mute, not_for_me (không thích, bỏ qua), like (thích / lưu bài), mv_on (mở / xem MV), mv_off (tắt MV).
+- queue: người dùng tả kiểu nhạc muốn nghe (hoàn cảnh, hoạt động, thời tiết, "giống bài X"...). Chọn 3–8 bài hợp nhất TRONG danh mục, dựa vào vibe, thể loại, ca sĩ; ids là danh sách id; title là tên ngắn cho danh sách (≤ 5 từ, ví dụ "Tối mưa").
+- sequence: người dùng nói NHIỀU lệnh trong một câu ("nhỏ tiếng rồi mở MV rồi bài kế"). steps là các bước theo đúng thứ tự (tối đa 5), mỗi bước là navigate, play, control hoặc queue.
+- answer: câu hỏi hoặc trò chuyện không cần đổi nhạc: hỏi về bài đang phát, ca sĩ, nhạc nói chung; chào hỏi; an ủi; kể chuyện vui ngắn. reply là câu trả lời.
+- unknown: không hiểu được.
+Quy tắc:
+- Chỉ dùng id có trong danh mục. Trường không dùng: path "", kind "none", id 0, command "none", ids [], title "", emotion "none", steps [].
+- reply luôn bằng tiếng Việt, thân thiện, xưng "mình". Với lệnh: một câu ngắn (dưới 20 từ) bắt đầu bằng "Mình sẽ ..." (lệnh chạy SAU khi bạn nói xong, đừng nói "đã"). Với answer: tối đa 3 câu (dưới 60 từ) vì sẽ được đọc to; không dùng markdown, emoji hay danh sách; answer KHÔNG đổi nhạc nên đừng nói "mình bật nhạc", có thể gợi ý người dùng nói ví dụ "mở nhạc vui".
+- Không chắc thông tin (năm phát hành, đời tư ca sĩ...) thì nói là không chắc, đừng bịa. Bạn không tra được Internet.
+- Yêu cầu ngoài âm nhạc và trò chuyện nhẹ (làm bài tập, viết code, tin tức...): dùng answer, từ chối khéo một câu và gợi ý nghe nhạc.
+- "bài này" = bài đang phát trong phần Ngữ cảnh. Dùng Hội thoại trước để hiểu câu hỏi nối tiếp.`;
 
-const buildUserMessage = (text, catalog) => {
-    const songs = catalog.songs.map((s) => `[${s.id}] ${s.title}${s.artist ? ` — ${s.artist}` : ""}`).join("\n");
+const songLine = (s) => `[${s.id}] ${s.title}${s.artist ? ` — ${s.artist}` : ""} · ${s.emotion || "?"} · ${s.genre || "?"}${s.youtube_id ? " · có MV" : ""}`;
+
+// HAM THUAN (unit test duoc): danh muc + ngu canh + lich su -> { system, input } gui cho Gemini.
+// Phan co dinh (luat + kho nhac + playlist) nam trong system instruction (giong nhau giua cac cau -> Gemini tu cache);
+// phan thay doi moi cau (bai dang phat, cam xuc, lich su, cau noi) nam trong input.
+// context: { nowPlaying: song | null, mood: "sad" | null }; history: [{ role: "user" | "assistant", text }]
+const buildRequest = (text, catalog, context = {}, history = []) => {
+    const songs = catalog.songs.map(songLine).join("\n");
     const artists = catalog.artists.map((a) => `[${a.id}] ${a.name}`).join("\n");
     const playlists = catalog.playlists.map((p) => `[${p.id}] ${p.name}`).join("\n");
-    return `Danh mục\nBài hát:\n${songs}\nCa sĩ:\n${artists}\nPlaylist:\n${playlists || "(chưa có)"}\n\nCâu nói: "${text}"`;
+    const system = `${RULES}\n\nDanh mục (mỗi bài: [id] tên — ca sĩ · vibe · thể loại)\nBài hát:\n${songs}\nCa sĩ:\n${artists}\nPlaylist:\n${playlists || "(chưa có)"}`;
+
+    const now = context.nowPlaying;
+    const lines = [
+        "Ngữ cảnh:",
+        `- Đang phát: ${now ? songLine(now) : "không có bài nào"}`,
+        `- Cảm xúc quét gần nhất: ${context.mood || "chưa quét"}`,
+    ];
+    if (history.length) {
+        lines.push("", "Hội thoại trước:");
+        history.forEach((h) => lines.push(`${h.role === "user" ? "Người dùng" : "Trợ lý"}: ${h.text}`));
+    }
+    lines.push("", `Câu nói: "${text}"`);
+    return { system, input: lines.join("\n") };
+};
+
+// ly do loi Google tra ve trong body (vd "API key not valid", schema khong hop le) -> log de biet sua gi
+const googleMessage = (err) => {
+    try {
+        const body = typeof err.body === "string" ? JSON.parse(err.body) : err.body;
+        return (Array.isArray(body) ? body[0] : body)?.error?.message || null;
+    } catch {
+        return null;
+    }
 };
 
 let client = null;
 const getClient = () => {
-    if (!process.env.ANTHROPIC_API_KEY) return null;
-    if (!client) client = new Anthropic({ timeout: 6000, maxRetries: 1 });
+    if (!process.env.GEMINI_API_KEY) return null;
+    if (!client) client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     return client;
 };
 
-const classifyWithLlm = async (text, catalog) => {
-    const anthropic = getClient();
-    if (!anthropic) return null;
+const classifyWithLlm = async (text, catalog, context, history) => {
+    const gemini = getClient();
+    if (!gemini) return null;
     try {
-        const response = await anthropic.messages.create({
+        const { system, input } = buildRequest(text, catalog, context, history);
+        const interaction = await gemini.interactions.create({
             model: MODEL,
-            max_tokens: 2048,
-            system: SYSTEM_PROMPT,
-            messages: [{ role: "user", content: buildUserMessage(text, catalog) }],
-            output_config: { effort: "low", format: { type: "json_schema", schema: ACTION_SCHEMA } },
-        });
-        if (response.stop_reason !== "end_turn") return null;
-        const block = response.content.find((b) => b.type === "text");
-        return block ? JSON.parse(block.text) : null;
+            system_instruction: system,
+            input,
+            // JSON dung khuon ACTION_SCHEMA; suy nghi it ("low") cho tro ly giong noi tra loi nhanh
+            response_format: { type: "text", mime_type: "application/json", schema: ACTION_SCHEMA },
+            generation_config: { thinking_level: "low", max_output_tokens: 2048 },
+            // khong de Google luu lai cau hoi / cau tra loi
+            store: false,
+        // KHONG tu thu lai: mac dinh SDK thu lai voi moi lan qua gio -> treo rat lau, timeout 8s mat tac dung
+        }, { timeout_ms: TIMEOUT_MS, retries: { strategy: "none" } });
+        const u = interaction.usage || {};
+        console.log(`Gemini: ${u.total_input_tokens ?? "?"} in (${u.total_cached_tokens ?? 0} cache) / ${u.total_output_tokens ?? "?"} out, status=${interaction.status}`);
+        if (interaction.status !== "completed" || !interaction.output_text) return null;
+        return JSON.parse(interaction.output_text);
     } catch (err) {
-        if (err instanceof Anthropic.APIError) console.log(`Loi goi Claude (${err.status}):`, err.message);
-        else console.log("Loi goi Claude:", err.message);
+        const status = err.statusCode ?? err.status;
+        if (status === 429) console.log("Gemini: het luot mien phi (429), thu lai sau / ngay mai");
+        else console.log(`Loi goi Gemini${status ? ` (${status})` : ""}:`, googleMessage(err) || err.message);
         return null;
     }
 };
 
 module.exports = {
+    buildRequest: buildRequest,
     classifyWithLlm: classifyWithLlm,
 };

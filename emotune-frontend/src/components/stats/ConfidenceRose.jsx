@@ -2,30 +2,53 @@ import { useId, useState } from 'react';
 import MoodIcon from '../MoodIcon';
 import StatsCard from './StatsCard';
 import { EMOTIONS } from './statsMeta';
+import { polar } from './chartMath';
 
-// Biểu đồ hoa hồng (polar area) kiểu ảnh mẫu: mỗi cảm xúc 1 cánh cố định (72°), cánh càng dài = AI càng tự tin.
-// Độ dài tính từ mép lỗ giữa (RI) tới vòng 100% (RO). Giữa vòng: độ tự tin trung bình của mọi lần quét camera.
-const RI = 44;
-const RO = 118;
-const SPAN = 360 / EMOTIONS.length;
-const PAD = 2.5;   // khe giữa 2 cánh (độ)
+// Hoa hồng nhiều cánh (kiểu ảnh mẫu "2438"): MỖI LẦN QUÉT CAMERA = 1 cánh, cánh càng dài = AI càng chắc lần đó.
+// Mỗi cảm xúc 1 múi, độ rộng múi theo số lần quét cảm xúc đó. Vòng cung ngoài + số % = độ chắc trung bình của múi.
+// Giữa: độ chắc trung bình mọi lần quét.
+const RI = 50;      // mép lỗ giữa (= 0%)
+const RO = 124;     // 100%
+const R_ARC = 136;  // vòng cung ngoài
+const R_LABEL = 154;
+const GAP = 4;      // khe giữa 2 múi (độ)
+const PAD = 0.7;    // khe giữa 2 cánh trong 1 múi (độ)
 
-const pt = (r, deg) => {
-    const a = (deg * Math.PI) / 180;
-    return `${(r * Math.sin(a)).toFixed(2)} ${(-r * Math.cos(a)).toFixed(2)}`;
-};
-// hình quạt khuyết từ bán kính ri tới ro, góc a0 -> a1 (0° = hướng 12 giờ, theo chiều kim đồng hồ)
-const sector = (ri, ro, a0, a1) =>
-    `M${pt(ri, a0)} L${pt(ro, a0)} A${ro} ${ro} 0 0 1 ${pt(ro, a1)} L${pt(ri, a1)} A${ri} ${ri} 0 0 0 ${pt(ri, a0)} Z`;
 const pct = (x) => `${Math.round(x * 100)}%`;
+const p = (r, a) => polar(r, a).map((n) => n.toFixed(2)).join(' ');
+// hình quạt khuyết từ bán kính ri tới ro, góc a0 -> a1
+const sector = (ri, ro, a0, a1) => {
+    const big = a1 - a0 > 180 ? 1 : 0;
+    return `M${p(ri, a0)} L${p(ro, a0)} A${ro} ${ro} 0 ${big} 1 ${p(ro, a1)} L${p(ri, a1)} A${ri} ${ri} 0 ${big} 0 ${p(ri, a0)} Z`;
+};
+const arc = (r, a0, a1) => `M${p(r, a0)} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${p(r, a1)}`;
+
+// chia vòng: múi rộng theo số cánh (tối thiểu 4% vòng để múi 1 lần quét vẫn thấy rõ), khe GAP giữa các múi
+const layoutGroups = (have) => {
+    const petals = have.reduce((s, r) => s + r.item.values.length, 0);
+    const weights = have.map((r) => Math.max(r.item.values.length, petals * 0.04));
+    const wSum = weights.reduce((s, w) => s + w, 0);
+    const many = have.length > 1;
+    const free = many ? 360 - GAP * have.length : 359.9;
+    const out = [];
+    let at = many ? GAP / 2 : 0;
+    have.forEach((r, i) => {
+        const span = (weights[i] / wSum) * free;
+        out.push({ ...r, a0: at, a1: at + span });
+        at += span + (many ? GAP : 0);
+    });
+    return out;
+};
 
 const ConfidenceRose = ({ confidence }) => {
     const id = useId();
     const [active, setActive] = useState(null);
-    const rows = EMOTIONS.map((e, i) => ({ ...e, i, item: confidence.find((c) => c.emotion === e.key) }));
+    const rows = EMOTIONS.map((e) => ({ ...e, item: confidence.find((c) => c.emotion === e.key) }));
     const have = rows.filter((r) => r.item);
     const scans = have.reduce((s, r) => s + r.item.count, 0);
     const avg = scans ? have.reduce((s, r) => s + r.item.avg * r.item.count, 0) / scans : 0;
+
+    const groups = layoutGroups(have);
 
     const table = (
         <table className="mood-table">
@@ -35,7 +58,7 @@ const ConfidenceRose = ({ confidence }) => {
             </tbody>
         </table>
     );
-    const summary = have.map((r) => `${r.label} ${pct(r.item.avg)}`).join(', ');
+    const summary = have.map((r) => `${r.label} ${pct(r.item.avg)} over ${r.item.count} scans`).join(', ');
     const hoverProps = (key) => ({
         onMouseEnter: () => setActive(key),
         onMouseLeave: () => setActive(null),
@@ -44,43 +67,51 @@ const ConfidenceRose = ({ confidence }) => {
     });
 
     return (
-        <StatsCard title="How sure the face AI was" note="Average confidence when the camera picked each mood · longer petal = more sure" table={have.length ? table : null}>
+        <StatsCard title="How sure the face AI was" note="Each petal is one camera scan · longer petal = the AI was more sure" table={have.length ? table : null}>
             {have.length ? (
                 <div className={`rose-wrap ${active ? 'has-active' : ''}`}>
                     <div className="rose">
-                        <svg viewBox="-150 -150 300 300" role="img" aria-label={`Rose chart of average confidence: ${summary}`}>
+                        <svg viewBox="-172 -172 344 344" role="img" aria-label={`Rose chart of how sure the face AI was: ${summary}`}>
                             <defs>
                                 {have.map((r) => (
                                     <radialGradient key={r.key} id={`${id}-${r.key}`} gradientUnits="userSpaceOnUse" cx="0" cy="0" r={RO}>
-                                        <stop offset={RI / RO} style={{ stopColor: `var(--mood-${r.key})`, stopOpacity: 0.35 }} />
-                                        <stop offset="1" style={{ stopColor: `var(--mood-${r.key})` }} />
+                                        <stop offset={RI / RO} className={`rose-stop-in ${r.key}`} />
+                                        <stop offset="0.75" className={`rose-stop-mid ${r.key}`} />
+                                        <stop offset="1" className={`rose-stop-out ${r.key}`} />
                                     </radialGradient>
                                 ))}
                             </defs>
-                            {/* vòng tham chiếu 50% và 100% */}
-                            <circle className="rose-ring" r={RI + (RO - RI) * 0.5} />
+                            {/* nền: tia mờ + vòng 50% / 100% */}
+                            {Array.from({ length: 72 }, (_, i) => {
+                                const [x1, y1] = polar(RI, i * 5);
+                                const [x2, y2] = polar(R_ARC + 6, i * 5);
+                                return <line key={i} className="rose-ray" x1={x1} y1={y1} x2={x2} y2={y2} />;
+                            })}
+                            <circle className="rose-ring" r={(RI + RO) / 2} />
                             <circle className="rose-ring" r={RO} />
-                            {rows.map((r) => {
-                                const a0 = r.i * SPAN - SPAN / 2 + PAD;
-                                const a1 = r.i * SPAN + SPAN / 2 - PAD;
-                                const ro = r.item ? RI + (RO - RI) * Math.min(1, r.item.avg) : RI;
-                                const mid = r.i * SPAN;
+                            {groups.map((g) => {
+                                const vals = g.item.values;
+                                const w = (g.a1 - g.a0) / vals.length;
+                                const mid = (g.a0 + g.a1) / 2;
+                                const [lx, ly] = polar(R_LABEL, mid);
                                 return (
-                                    <g key={r.key} className={`rose-petal ${r.key} ${active === r.key ? 'active' : ''}`} {...(r.item ? hoverProps(r.key) : {})}>
-                                        <path className="rose-track" d={sector(RI, RO, a0, a1)} />
-                                        {r.item && <path className="rose-fill" d={sector(RI, ro, a0, a1)} fill={`url(#${id}-${r.key})`} />}
-                                        {r.item && (
-                                            <text className="rose-label" transform={`translate(${pt(Math.min(ro + 14, RO + 16), mid)})`}>
-                                                {pct(r.item.avg)}
-                                            </text>
-                                        )}
+                                    <g key={g.key} className={`rose-petal ${g.key} ${active === g.key ? 'active' : ''}`} {...hoverProps(g.key)}>
+                                        <path className="rose-track" d={sector(RI, RO, g.a0, g.a1)} />
+                                        {vals.map((v, i) => {
+                                            const a0 = g.a0 + i * w + (vals.length > 1 ? PAD / 2 : 0);
+                                            const a1 = g.a0 + (i + 1) * w - (vals.length > 1 ? PAD / 2 : 0);
+                                            return <path key={i} className="rose-fill" d={sector(RI, RI + (RO - RI) * Math.min(1, v), a0, a1)} fill={`url(#${id}-${g.key})`} />;
+                                        })}
+                                        <path className="rose-arc" d={arc(R_ARC, g.a0, g.a1)} />
+                                        <text className="rose-label" x={lx.toFixed(1)} y={ly.toFixed(1)}>{pct(g.item.avg)}</text>
                                     </g>
                                 );
                             })}
+                            <circle className="rose-hole" r={RI - 4} />
                         </svg>
                         <div className="rose-center">
                             <b>{pct(avg)}</b>
-                            <small>avg. sure</small>
+                            <small>{scans} {scans === 1 ? 'scan' : 'scans'}</small>
                         </div>
                     </div>
                     <ul className="rose-list">
@@ -91,11 +122,10 @@ const ConfidenceRose = ({ confidence }) => {
                                 tabIndex={r.item ? 0 : -1}
                                 {...(r.item ? hoverProps(r.key) : {})}
                             >
-                                <span className="rose-dot" aria-hidden="true" />
-                                <span className="rose-name"><MoodIcon emotion={r.key} size={20} /><span className="rose-text">{r.label}</span></span>
-                                {r.item ? (
-                                    <span className="rose-value">{pct(r.item.avg)}<small>{r.item.count} {r.item.count === 1 ? 'scan' : 'scans'}</small></span>
-                                ) : <span className="rose-value" title="No camera scans with this mood yet"><small>—</small></span>}
+                                <span className="rose-name"><MoodIcon emotion={r.key} size={18} /><span className="rose-text">{r.label}</span></span>
+                                <span className="rose-value" title={r.item ? undefined : 'No camera scans with this mood yet'}>{r.item ? pct(r.item.avg) : '—'}</span>
+                                <span className="rose-bar" aria-hidden="true"><i style={{ width: r.item ? pct(r.item.avg) : 0 }} /></span>
+                                <small className="rose-scans">{r.item ? `${r.item.count} ${r.item.count === 1 ? 'scan' : 'scans'}` : 'no scans'}</small>
                             </li>
                         ))}
                     </ul>

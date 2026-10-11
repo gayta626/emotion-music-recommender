@@ -1,24 +1,54 @@
 .app-shell {
+    position: relative;
+    z-index: 1;                 // trên lớp nền bầu trời đêm (PageAmbient, z-index 0)
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;     // thư viện | nội dung | cột phải "Now playing" (rỗng = 0px)
     grid-template-rows: auto 1fr;
     min-height: 100vh;
 
+    // cuộn trang: header + sidebar đứng yên (kiểu Spotify), chỉ nội dung giữa trôi.
+    // z-index 15: trên nội dung trang, dưới màn lời bài hát (19), thanh phát (20), trợ lý giọng nói (50)
     > .header-container {
         grid-column: 1 / -1;
+        position: sticky;
+        top: 0;
+        z-index: 15;
     }
 
     > .side-bar-container {
         position: sticky;
-        top: 0;
+        top: var(--header-h);   // dính ngay dưới header
         align-self: start;
         height: calc(100vh - var(--header-h));
         margin-left: 1px;
     }
 
     .app-main {
+        --main-pad: 24px;       // khung MV dùng để tràn ra sát mép vùng giữa
         min-width: 0;
-        padding: 24px;
+        padding: var(--main-pad);
+    }
+
+    // cột phải: dính dưới header như thư viện bên trái, chừa chỗ thanh phát ở dưới
+    > .right-panel-slot {
+        position: sticky;
+        top: var(--header-h);
+        align-self: start;
+        margin-right: 1px;
+
+        &:empty { display: none; }
+    }
+}
+
+// màn vừa / nhỏ: không đủ chỗ cho 3 cột -> cột phải thành ngăn kéo nổi bên phải (mở bằng nút trên thanh phát)
+@media (max-width: 1100px) {
+    .app-shell > .right-panel-slot {
+        position: fixed;
+        top: var(--header-h);
+        right: 8px;
+        z-index: 18;            // trên nội dung + header (15), dưới màn lời bài (19) / thanh phát (20)
+        box-shadow: -12px 0 40px rgba(0, 0, 0, 0.5);
+        border-radius: var(--radius);
     }
 }
 
@@ -35,7 +65,7 @@
         }
 
         .app-main {
-            padding: 12px;
+            --main-pad: 12px;
         }
     }
 }

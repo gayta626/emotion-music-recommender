@@ -66,7 +66,7 @@ SCREENS = {
     "happy": ("Cam xuc", "VUI"),
     "sad": ("Cam xuc", "BUON"),
     "angry": ("Cam xuc", "GIAN"),
-    "surprise": ("Cam xuc", "NGAC NHIEN"),
+    "surprise": ("Cam xuc", "KHAM PHA"),   # web hien "Explore" (muon kham pha)
     "neutral": ("Cam xuc", "BINH THUONG"),
 }
 GREETING = ("Xin chao!", "Cham de quet")   # đang chờ + có người lại gần

@@ -1,0 +1,24 @@
+// Bảng màu "neon" dùng chung cho trang thống kê /stats và 2 thẻ cuối trang chủ (theo ảnh mẫu "Infographic Chart").
+// 5 màu cảm xúc đã chạy validate_palette (dataviz) trên nền thẻ #24253e: qua kiểm tra độ sáng / độ đậm / mù màu / tương phản.
+// Dùng: @use '../styles/moodPalette' as mp;  rồi trong khối cần màu: @include mp.neon-mood;
+@mixin neon-mood {
+  // thứ tự cảm xúc cố định: happy, surprise, neutral, sad, angry (màu theo cảm xúc, không theo thứ hạng)
+  --mood-happy: #d4741f;
+  --mood-surprise: #a35cf0;
+  --mood-neutral: #1fa99c;
+  --mood-sad: #4d74f0;
+  --mood-angry: #e8456e;
+
+  --card: linear-gradient(160deg, #2a2b48 0%, #1f2036 100%);
+  --card-solid: #24253e;
+  --grid: rgba(255, 255, 255, 0.07);
+  --tip-bg: #30315a;
+  --neon: linear-gradient(90deg, #f08a3c 0%, #e8456e 55%, #a35cf0 100%);
+
+  // mỗi phần tử mang class cảm xúc có biến --c = màu của nó (gradient, viền sáng, donut, chấm)
+  .happy { --c: var(--mood-happy); }
+  .surprise { --c: var(--mood-surprise); }
+  .neutral { --c: var(--mood-neutral); }
+  .sad { --c: var(--mood-sad); }
+  .angry { --c: var(--mood-angry); }
+}

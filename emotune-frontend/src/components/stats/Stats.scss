@@ -1,37 +1,24 @@
 // Trang thống kê mới — nằm trong .mood-page (dùng lại style biểu đồ của MoodPage.scss)
 // Giao diện "neon" theo ảnh mẫu người dùng gửi: thẻ xanh tím than, màu sáng + phát sáng nhẹ.
 // Mọi bảng màu dưới đây đã chạy validate_palette (dataviz) trên nền thẻ #24253e.
+@use '../../styles/moodPalette' as mp;
+
 .mood-page.stats-page {
-  // 5 cảm xúc (thứ tự happy, surprise, neutral, sad, angry): qua đủ kiểm tra độ sáng / độ đậm / mù màu / tương phản
-  --mood-happy: #d4741f;
-  --mood-surprise: #a35cf0;
-  --mood-neutral: #1fa99c;
-  --mood-sad: #4d74f0;
-  --mood-angry: #e8456e;
+  // 5 màu cảm xúc + màu thẻ neon: dùng chung với 2 thẻ cuối trang chủ (styles/_moodPalette.scss)
+  @include mp.neon-mood;
   // kết quả nghe: xanh = nghe hết … hồng đỏ = Not for me; xám = mức giữa (cố ý ít màu, luôn có chữ chú thích)
   --out-good: #3f7ff5;
   --out-neutral: #73758f;
   --out-bad: #c4861a;
   --out-declined: #e0407a;
 
-  --card: linear-gradient(160deg, #2a2b48 0%, #1f2036 100%);
-  --card-solid: #24253e;
-  --grid: rgba(255, 255, 255, 0.07);
-  --tip-bg: #30315a;
-  --neon: linear-gradient(90deg, #f08a3c 0%, #e8456e 55%, #a35cf0 100%);
-
-  // mỗi phần tử mang class cảm xúc / kết quả có biến --c = màu của nó (dùng cho gradient, viền sáng, donut)
-  .happy { --c: var(--mood-happy); }
-  .surprise { --c: var(--mood-surprise); }
-  .neutral { --c: var(--mood-neutral); }
-  .sad { --c: var(--mood-sad); }
-  .angry { --c: var(--mood-angry); }
+  // phần tử mang class kết quả nghe có biến --c = màu của nó
   .out-good { --c: var(--out-good); }
   .out-neutral { --c: var(--out-neutral); }
   .out-bad { --c: var(--out-bad); }
   .out-declined { --c: var(--out-declined); }
 
-  max-width: 1200px;
+  max-width: none;                  // trải hết vùng nội dung (màn lớn không còn trống 2 bên)
   container: stats / inline-size;   // bố cục theo bề rộng vùng nội dung (đã trừ sidebar), không theo cửa sổ
 
   .stats-head {
@@ -116,26 +103,6 @@
     grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2fr);
   }
 
-  // 30 cột: khe hẹp, cột mảnh
-  .chart.dense {
-    .chart-cols,
-    .chart-x {
-      gap: 3px;
-    }
-
-    .stack {
-      width: 80%;
-    }
-
-    // nhãn thưa: không để chữ nới cột, căn giữa dưới cột của nó
-    .chart-x span {
-      min-width: 0;
-      justify-self: center;
-      white-space: nowrap;
-      overflow: visible;
-    }
-  }
-
   .stats-error {
     display: flex;
     align-items: center;
@@ -144,7 +111,7 @@
   }
 }
 
-// theo bề rộng vùng nội dung (container "stats"), không theo cửa sổ: bên trái còn sidebar 240px.
+// theo bề rộng vùng nội dung (container "stats"), không theo cửa sổ: bên trái còn sidebar 300px.
 // Selector viết đủ `.mood-page.stats-page ...` để không thua độ ưu tiên của luật gốc phía trên.
 @container stats (max-width: 1000px) {
   .mood-page.stats-page .stats-pair {
@@ -172,113 +139,12 @@
   .mood-page.stats-page .stats-card {
     padding: 16px 14px;
   }
-
-  .mood-page.stats-page .chart.dense .chart-x span {
-    font-size: 9px;
-  }
 }
 
 // ---- Task 6: theo buổi, top, nghe gì khi… ----
 .mood-page.stats-page {
   .stats-pair.even {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  // lưới thứ × buổi (cuộn ngang chỉ khi container hẹp, xem cuối file; không đặt overflow ở đây vì sẽ cắt tooltip)
-
-  .daypart-grid {
-    min-width: 320px;
-    display: grid;
-    grid-template-columns: 40px repeat(4, minmax(56px, 1fr));
-    gap: 4px;
-
-    .dp-row {
-      display: contents;
-    }
-
-    .dp-head {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 12px;
-      color: var(--search-text);
-
-      small {
-        font-size: 10px;
-        color: var(--muted);
-      }
-    }
-
-    .dp-day {
-      align-self: center;
-      font-size: 12px;
-      color: var(--muted);
-    }
-  }
-
-  // ô = vùng rê chuột; bên trong là 1 chấm tròn (to theo số lần quét, màu theo cảm xúc chính)
-  .dp-cell {
-    position: relative;
-    height: 40px;
-    display: grid;
-    place-items: center;
-    border-radius: 8px;
-    outline: none;
-
-    &:hover,
-    &:focus-visible {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .dp-dot {
-      width: var(--size, 5px);
-      height: var(--size, 5px);
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.12);   // ô trống: chấm nhỏ mờ, giữ nhịp lưới như ảnh mẫu
-      transition: transform 0.15s;
-    }
-
-    &:not(.empty) .dp-dot {
-      background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--c) 55%, white), var(--c) 70%);
-      box-shadow: 0 0 12px color-mix(in srgb, var(--c) 60%, transparent);
-    }
-
-    &:hover .dp-dot,
-    &:focus-visible .dp-dot {
-      transform: scale(1.12);
-    }
-
-    .dp-n {
-      font-size: 11px;
-      font-weight: 700;
-      color: #fff;
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    }
-
-    .chart-tip {
-      bottom: calc(100% + 6px);
-      transform: translateX(-50%);
-
-      // hàng đầu (Mon–Wed) hiện tooltip phía dưới; cột Morning/Night căn mép để không tràn thẻ
-      &.tip-below {
-        top: calc(100% + 6px);
-        bottom: auto;
-      }
-
-      &.tip-left {
-        left: 0;
-        transform: none;
-      }
-
-      &.tip-right {
-        left: auto;
-        right: 0;
-        transform: none;
-      }
-    }
   }
 
   // top bài / ca sĩ
@@ -437,10 +303,6 @@
 }
 
 @container stats (max-width: 640px) {
-  .mood-page.stats-page .daypart-wrap {
-    overflow-x: auto;
-  }
-
   .mood-page.stats-page .mood-songs {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -449,86 +311,6 @@
 // ---- Task 7: gợi ý trúng, độ tự tin, điểm sở thích ----
 .mood-page.stats-page {
   // màu .out-* lấy qua biến --c (đầu file), gradient + viền sáng ở khối "Giao diện neon"
-
-  .hit-hero {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-  }
-
-  .hit-value {
-    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
-    font-size: 44px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .hit-label {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 14px;
-    color: var(--search-text);
-
-    small {
-      font-size: 12px;
-      color: var(--muted);
-    }
-  }
-
-  .hit-cols {
-    height: 150px;
-    display: grid;
-    gap: 3px;
-  }
-
-  // không đặt overflow ở .hit-col / .hit-chart / .hit-cols: sẽ cắt tooltip (tooltip là anh em của .hit-stack, không nằm trong nó)
-  .hit-col {
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    border-radius: 4px;
-    outline: none;
-
-    &.hover,
-    &:focus-visible {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .chart-tip {
-      top: 0;
-      bottom: auto;
-      transform: translate(-50%, -100%);
-
-      // 3 cột đầu / cuối căn mép để không tràn khỏi thẻ (viết đủ 2 class để thắng luật trên)
-      &.tip-left {
-        left: 0;
-        transform: translate(0, -100%);
-      }
-
-      &.tip-right {
-        left: auto;
-        right: 0;
-        transform: translate(0, -100%);
-      }
-    }
-  }
-
-  .hit-stack {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .hit-none {
-    align-self: flex-end;
-    width: 100%;
-    height: 2px;
-    background: var(--grid);
-  }
 
   // bảng điểm sở thích: cuộn ngang trong thẻ khi hẹp
   .pref-wrap {
@@ -655,75 +437,13 @@
     box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent);
   }
 
-  // màu 1 đoạn: gradient tối -> sáng của chính màu đó + viền sáng (1 cảm xúc = 1 màu, không trộn màu khác)
-  .seg {
-    background: linear-gradient(to top, color-mix(in oklab, var(--c) 75%, black), var(--c) 55%, color-mix(in oklab, var(--c) 70%, white));
-    box-shadow: 0 0 10px color-mix(in srgb, var(--c) 55%, transparent);
-  }
-
-  // ---- Scans per day: cột mảnh bo tròn trên một "rãnh" mờ ----
-  .chart-col::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    width: 14px;
-    transform: translateX(-50%);
-    border-radius: 999px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-    pointer-events: none;
-  }
-
-  .chart-col.hover,
-  .chart-col:focus-visible {
-    background: none;
-
-    .stack {
-      filter: brightness(1.15);
-    }
-  }
-
-  // không cắt overflow (để giữ viền sáng): bo tròn đoạn trên cùng / dưới cùng thay vì bo cả cột
-  .stack {
-    position: relative;
-    width: 14px;
-    overflow: visible;
-    border-radius: 0;
-
-    .seg:first-child { border-radius: 0 0 4px 4px; }   // column-reverse: phần tử đầu nằm dưới cùng (chạm trục)
-    .seg:last-child { border-radius: 999px 999px 0 0; }
-    .seg:only-child { border-radius: 999px 999px 4px 4px; }
-  }
-
-  .chart.dense .stack {
-    width: min(8px, 80%);
-  }
-
-  .chart.dense .chart-col::before {
-    width: min(8px, 80%);
-  }
-
-  // 3 cột đầu / cuối: chú thích căn theo mép cột để không tràn khỏi thẻ
-  .chart-col .chart-tip {
-    &.tip-left {
-      left: 0;
-      transform: translate(0, -100%);
-    }
-
-    &.tip-right {
-      left: auto;
-      right: 0;
-      transform: translate(0, -100%);
-    }
-  }
-
   // ---- donut dùng chung ----
   .donut {
     position: relative;
     flex-shrink: 0;
 
-    svg {
+    // chỉ hình vòng (con trực tiếp), không đụng icon cảm xúc nằm giữa vòng (.donut-center)
+    > svg {
       display: block;
       width: 100%;
       height: 100%;
@@ -763,77 +483,365 @@
     filter: drop-shadow(0 0 4px rgba(232, 69, 110, 0.45));
   }
 
-  // ---- How often NYX got it right: donut lớn + cột mảnh ----
-  .hit-hero {
-    display: flex;
-    align-items: center;
-    gap: 22px;
+  // ---- điểm sở thích: viên bo tròn ----
+  .pref-cell {
+    border-radius: 999px;
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+// ---- Vẽ lại theo 4 ảnh mẫu "Infographic Chart" (10/10): thanh ngang, sóng theo giờ, vòng đường cong, hoa hồng nhiều cánh ----
+// Mọi gradient chỉ đi tối -> sáng của CHÍNH màu đó (biến --c), không trộn màu khác: 1 cảm xúc = 1 màu.
+.mood-page.stats-page {
+  // ===== Scans per day: thanh ngang chồng =====
+  .hbar {
+    --hbar-label: 86px;
+    position: relative;
   }
 
-  .hit-value {
-    font-size: 30px;
-    background: var(--neon);
-    background-clip: text;
-    color: transparent;
-  }
-
-  .hit-side {
-    min-width: 0;
+  .hbar-plot {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
-  .hit-legend {
+  .hbar.dense .hbar-plot {
+    gap: 4px;
+  }
+
+  // vạch dọc mảnh tại mỗi mốc trục ngang
+  .hbar-grid {
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+    left: var(--hbar-label);
+    right: 0;
+    pointer-events: none;
+
+    span {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.09);
+    }
+  }
+
+  .hbar-row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, max-content));
-    gap: 6px 18px;
+    grid-template-columns: var(--hbar-label) minmax(0, 1fr);
+    align-items: center;
+    outline: none;
+  }
+
+  .hbar-day {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 
     b {
-      margin-left: 6px;
+      font-weight: 600;
+      color: var(--search-text);
+    }
+  }
+
+  .hbar.dense .hbar-day {
+    font-size: 10px;
+  }
+
+  .hbar-track {
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+  }
+
+  .hbar.dense .hbar-track {
+    height: 9px;
+  }
+
+  .hbar-stack {
+    height: 100%;
+    display: flex;
+    gap: 2px;
+    transition: filter 0.15s;
+  }
+
+  .hbar-row.hover .hbar-stack,
+  .hbar-row:focus-visible .hbar-stack {
+    filter: brightness(1.2);
+  }
+
+  .hbar-seg {
+    min-width: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--c) 28%, #24253e) 0%, var(--c) 72%, color-mix(in oklab, var(--c) 62%, white) 100%);
+    box-shadow: 0 0 24px -4px color-mix(in srgb, var(--c) 75%, transparent);
+
+    &:last-child {
+      border-radius: 0 3px 3px 0;
+    }
+
+    span {
+      font: 500 15px 'DM Sans', sans-serif;
       color: #fff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
       font-variant-numeric: tabular-nums;
     }
   }
 
-  .hit-col {
-    justify-content: center;
+  .hbar.dense .hbar-seg {
+    padding: 0;
+  }
 
-    &.hover,
-    &:focus-visible {
-      background: rgba(255, 255, 255, 0.04);
+  .hbar-none {
+    width: 100%;
+    height: 1px;
+    background: var(--grid);
+  }
+
+  .hbar-x {
+    position: relative;
+    height: 16px;
+    margin: 12px 0 0 var(--hbar-label);
+
+    span {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
     }
   }
 
-  .hit-stack {
-    width: min(12px, 70%);
-    overflow: visible;
-    border-radius: 0;
+  // tooltip hiện dưới hàng, ngay sau đầu thanh (left đặt inline); 4 hàng cuối hiện phía trên
+  .hbar-row .chart-tip {
+    top: calc(100% + 6px);
+    bottom: auto;
+    transform: none;
 
-    .seg:first-child { border-radius: 999px 999px 0 0; }   // column: phần tử đầu nằm trên cùng
-    .seg:last-child { border-radius: 0 0 999px 999px; }
-    .seg:only-child { border-radius: 999px; }
+    &.tip-up {
+      top: auto;
+      bottom: calc(100% + 6px);
+    }
   }
 
-  .hit-none {
-    width: min(12px, 70%);
-    align-self: flex-end;
-    margin: 0 auto;
-    border-radius: 999px;
-  }
-
-  // ---- How sure the face AI was: hoa hồng + danh sách ----
-  .rose-wrap {
+  // chú giải dưới cùng: vạch màu + tên + % số lần quét cả khoảng (kiểu "25% 55% 20%" của ảnh mẫu)
+  .hbar-legend {
+    list-style: none;
     display: grid;
-    grid-template-columns: minmax(0, 230px) minmax(0, 1fr);
-    align-items: center;
-    gap: 18px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 10px;
+
+    li {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    i {
+      width: 56px;
+      max-width: 100%;
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, color-mix(in oklab, var(--c) 55%, #24253e), color-mix(in oklab, var(--c) 70%, white));
+    }
+
+    span {
+      font-size: 13px;
+      color: var(--search-text);
+    }
+
+    b {
+      font: 300 30px 'DM Sans', sans-serif;
+      letter-spacing: -0.5px;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(90deg, color-mix(in oklab, var(--c) 85%, white), color-mix(in oklab, var(--c) 50%, white));
+      background-clip: text;
+      color: transparent;
+    }
   }
 
-  .rose {
+  // ===== Mood by time of day: các lớp sóng chồng =====
+  .wave {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    grid-template-rows: 230px auto;
+    column-gap: 8px;
+  }
+
+  .wave-y {
+    position: relative;
+
+    span {
+      position: absolute;
+      right: 0;
+      transform: translateY(50%);
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .wave-plot {
+    position: relative;
+
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+  }
+
+  .wave-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    .h {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .v {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-left: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .wave-stop-top {
+    stop-color: color-mix(in oklab, var(--c) 72%, white);
+    stop-opacity: 0.95;
+  }
+
+  .wave-stop-bottom {
+    stop-color: var(--c);
+    stop-opacity: 0.16;
+  }
+
+  .wave-layer {
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--c) 50%, transparent));
+  }
+
+  .wave-edge {
+    fill: none;
+    stroke: color-mix(in oklab, var(--c) 50%, white);
+    stroke-width: 1.5;
+  }
+
+  // vòng sáng tại khung giờ quét nhiều nhất (kiểu "89%" của ảnh mẫu)
+  .wave-peak {
+    position: absolute;
+    width: 66px;
+    height: 66px;
+    transform: translate(-50%, -8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: radial-gradient(circle, #24253e 56%, transparent 58%);
+    border: 2px solid color-mix(in oklab, var(--c) 55%, white);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--c) 22%, transparent), 0 0 30px 6px color-mix(in srgb, var(--c) 55%, transparent);
+    pointer-events: none;
+
+    b {
+      font: 400 17px 'DM Sans', sans-serif;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    small {
+      font-size: 9px;
+      color: var(--search-text);
+      white-space: nowrap;
+    }
+  }
+
+  .wave-cross {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.55);
+    pointer-events: none;
+  }
+
+  .wave-hits {
+    position: absolute;
+    inset: 0;
+  }
+
+  .wave-hit {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    outline: none;
+
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .chart-tip {
+      top: 6px;
+      bottom: auto;
+      left: 50%;
+      transform: translateX(-50%);
+
+      &.tip-left {
+        left: 0;
+        transform: none;
+      }
+
+      &.tip-right {
+        left: auto;
+        right: 0;
+        transform: none;
+      }
+    }
+  }
+
+  .wave-x {
+    grid-column: 2;
+    position: relative;
+    height: 16px;
+    margin-top: 8px;
+
+    span {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+  }
+
+  // ===== How often NYX got it right: vòng đường cong + sparkline =====
+  .hit-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 270px) minmax(0, 1fr);
+    align-items: center;
+    gap: 24px;
+  }
+
+  .hit-ring {
     position: relative;
     width: 100%;
-    max-width: 230px;
+    max-width: 270px;
     aspect-ratio: 1;
 
     svg {
@@ -844,43 +852,244 @@
     }
   }
 
+  .hit-grid {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.07);
+  }
+
+  .hit-spoke {
+    stroke: rgba(255, 255, 255, 0.06);
+
+    &.on {
+      stroke: rgba(255, 255, 255, 0.45);
+    }
+  }
+
+  .hit-line {
+    fill: none;
+    stroke: color-mix(in oklab, var(--c) 78%, white);
+    stroke-width: 2;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 5px var(--c));
+  }
+
+  .hit-start {
+    fill: color-mix(in oklab, var(--c) 60%, white);
+  }
+
+  .hit-dot {
+    fill: #fff;
+    stroke: var(--c);
+    stroke-width: 2;
+  }
+
+  .hit-wedge {
+    fill: transparent;
+    outline: none;
+
+    &:focus-visible {
+      fill: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  .hit-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+
+    b {
+      font: 300 42px 'DM Sans', sans-serif;
+      letter-spacing: -1px;
+      color: #dcd8ea;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+
+      &.day {
+        font-size: 34px;
+      }
+    }
+
+    small {
+      font-size: 11px;
+      color: var(--muted);
+    }
+  }
+
+  .hit-side {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .hit-label {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+
+    small {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--search-text);
+    }
+  }
+
+  .hit-tiles {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 22px;
+
+    li {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    b {
+      font: 300 28px 'DM Sans', sans-serif;
+      line-height: 1.1;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  .hit-spark {
+    width: 100%;
+    max-width: 150px;
+    height: 34px;
+    overflow: visible;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--c) 60%, transparent));
+
+    path {
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+  }
+
+  .hit-stop-a {
+    stop-color: color-mix(in oklab, var(--c) 60%, #24253e);
+  }
+
+  .hit-stop-b {
+    stop-color: color-mix(in oklab, var(--c) 65%, white);
+  }
+
+  // ===== How sure the face AI was: hoa hồng nhiều cánh =====
+  .rose-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(130px, 1fr);
+    align-items: center;
+    gap: 16px;
+  }
+
+  .rose {
+    position: relative;
+    width: 100%;
+    max-width: 270px;
+    aspect-ratio: 1;
+
+    // quầng sáng tím sau hoa (làm cả khối sáng hơn)
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(163, 92, 240, 0.4), rgba(232, 69, 110, 0.14) 55%, transparent 72%);
+      filter: blur(18px);
+      pointer-events: none;
+    }
+
+    svg {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+  }
+
+  .rose-ray {
+    stroke: rgba(255, 255, 255, 0.05);
+  }
+
   .rose-ring {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.08);
+    stroke: rgba(255, 255, 255, 0.1);
     stroke-dasharray: 2 4;
   }
 
   .rose-track {
-    fill: rgba(255, 255, 255, 0.05);
+    fill: rgba(255, 255, 255, 0.045);
+  }
+
+  .rose-stop-in {
+    stop-color: color-mix(in oklab, var(--c) 80%, black);
+    stop-opacity: 0.8;
+  }
+
+  .rose-stop-mid {
+    stop-color: var(--c);
+  }
+
+  .rose-stop-out {
+    stop-color: color-mix(in oklab, var(--c) 55%, white);
   }
 
   .rose-petal {
     transition: opacity 0.15s;
 
     .rose-fill {
-      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 65%, transparent));
+      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 85%, transparent));
     }
 
     &.active .rose-fill {
-      filter: drop-shadow(0 0 10px var(--c)) brightness(1.15);
+      filter: drop-shadow(0 0 12px var(--c)) brightness(1.2);
     }
   }
 
-  // đang rê 1 cảm xúc: các cánh / dòng khác mờ đi
-  .rose-wrap.has-active {
-    .rose-petal:not(.active),
-    .rose-list li:not(.active) {
-      opacity: 0.35;
-    }
+  .rose-arc {
+    fill: none;
+    stroke: color-mix(in oklab, var(--c) 60%, white);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .rose-hole {
+    fill: #1f2036;
+    stroke: rgba(255, 255, 255, 0.08);
   }
 
   .rose-label {
-    fill: #fff;
-    font-size: 13px;
-    font-weight: 700;
+    fill: color-mix(in oklab, var(--c) 40%, white);
+    font: 300 17px 'DM Sans', sans-serif;
     text-anchor: middle;
     dominant-baseline: central;
     font-variant-numeric: tabular-nums;
+  }
+
+  // đang rê 1 cảm xúc: múi / dòng khác mờ đi
+  .rose-wrap.has-active {
+    .rose-petal:not(.active),
+    .rose-list li:not(.active) {
+      opacity: 0.3;
+    }
   }
 
   .rose-center {
@@ -893,9 +1102,8 @@
     pointer-events: none;
 
     b {
-      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
+      font: 300 28px 'DM Sans', sans-serif;
+      color: #e6e2f2;
       font-variant-numeric: tabular-nums;
     }
 
@@ -913,9 +1121,10 @@
 
     li {
       display: grid;
-      grid-template-columns: 9px minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'name value' 'bar scans';
       align-items: center;
-      gap: 10px;
+      gap: 6px 10px;
       padding: 6px 8px;
       border-radius: 8px;
       outline: none;
@@ -932,19 +1141,12 @@
     }
   }
 
-  .rose-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--c);
-    box-shadow: 0 0 6px var(--c);
-  }
-
   .rose-name {
+    grid-area: name;
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 13px;
   }
 
@@ -956,39 +1158,62 @@
   }
 
   .rose-value {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    grid-area: value;
     font-size: 14px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-
-    small {
-      font-size: 11px;
-      font-weight: 400;
-      color: var(--muted);
-    }
   }
 
-  // ---- điểm sở thích: viên bo tròn ----
-  .pref-cell {
-    border-radius: 999px;
-    border-color: rgba(255, 255, 255, 0.05);
+  .rose-scans {
+    grid-area: scans;
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rose-bar {
+    grid-area: bar;
+    align-self: center;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+
+    i {
+      display: block;
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, color-mix(in oklab, var(--c) 55%, #24253e), color-mix(in oklab, var(--c) 60%, white));
+      box-shadow: 0 0 6px var(--c);
+    }
   }
 }
 
 @container stats (max-width: 640px) {
-  .mood-page.stats-page .rose-wrap {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
+  .mood-page.stats-page .hbar {
+    --hbar-label: 66px;
+  }
 
-    .rose-list {
-      width: 100%;
+  .mood-page.stats-page .hbar-seg span {
+    font-size: 12px;
+  }
+
+  .mood-page.stats-page .hbar-legend {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    b {
+      font-size: 24px;
     }
   }
 
-  .mood-page.stats-page .hit-hero {
-    flex-direction: column;
-    align-items: flex-start;
+  .mood-page.stats-page .hit-wrap,
+  .mood-page.stats-page .rose-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .mood-page.stats-page .hit-side,
+  .mood-page.stats-page .rose-list {
+    width: 100%;
   }
 }

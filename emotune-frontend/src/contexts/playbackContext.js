@@ -7,7 +7,8 @@ import { createContext, useContext } from "react";
 // - lastMood { emotion, at }: cam xuc quet gan nhat (icon quet tren header, chon bai tiep khi dang luot)
 // - nowPlaying { songId, playlistId }: trang playlist to sang dong dang phat
 // - playlistsVersion / refreshPlaylists(): them/xoa bai, tao/xoa playlist xong -> noi khac tai lai
-// - control(command): tro ly giong noi dieu khien bai dang phat (pause/resume/next/volume_up/volume_down/mute/not_for_me/duck/unduck)
+// - control(command): tro ly giong noi dieu khien bai dang phat (pause/resume/next/prev/volume_up/volume_down/mute/not_for_me/like/mv_on/mv_off/duck/unduck)
+// - likedSongs / likedIds (Set id) / toggleLike(song): bai da bam ♥ (GET/POST/DELETE /likes), trang Liked Songs = /liked
 export const PlaybackContext = createContext({
     playScanResult: () => {},
     playPlaylist: () => {},
@@ -21,6 +22,9 @@ export const PlaybackContext = createContext({
     setNowPlaying: () => {},
     playlistsVersion: 0,
     refreshPlaylists: () => {},
+    likedSongs: [],
+    likedIds: new Set(),
+    toggleLike: () => false,
 });
 
 export const usePlayback = () => useContext(PlaybackContext);

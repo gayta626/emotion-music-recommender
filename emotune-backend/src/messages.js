@@ -19,9 +19,10 @@ const MESSAGES = {
         "Tâm trạng bình thường, nghe thử bài này cho có không khí nhé?",
         "Để mình gợi ý 1 bài nhẹ nhàng cho lúc này.",
     ],
+    // surprise hien thi la "Explore": mat ngac nhien = tam trang muon kham pha dieu moi
     surprise: [
-        "Ồ, có vẻ bất ngờ nhỉ! Thử nghe bài này xem sao.",
-        "Trông bạn khá ngạc nhiên, đây là gợi ý mới lạ cho bạn.",
+        "Có vẻ bạn đang muốn khám phá điều mới, thử bài này xem sao!",
+        "Tâm trạng khám phá đây rồi, mình gợi ý một bài mới lạ cho bạn nhé.",
     ],
     encouragement: [
         "Mấy hôm nay thấy bạn hơi trầm, đổi gió bằng bài vui này nhé!",

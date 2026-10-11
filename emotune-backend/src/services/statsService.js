@@ -3,8 +3,6 @@
 
 // thu tu "hoa" khi chon cam xuc nhieu nhat (spec)
 const EMOTIONS = ["happy", "sad", "angry", "surprise", "neutral"];
-// buoi trong ngay: sang 05-11h, chieu 11-17h, toi 17-22h, dem 22-05h
-const PARTS = ["morning", "afternoon", "evening", "night"];
 // ket qua 1 luot nghe (mood_history.action)
 const OUTCOMES = ["good", "neutral", "bad", "declined"];
 
@@ -27,10 +25,6 @@ const dayRange = (days, today) => {
     return out;
 };
 
-const daypartOf = (hour) => (hour >= 5 && hour < 11 ? "morning"
-    : hour >= 11 && hour < 17 ? "afternoon"
-        : hour >= 17 && hour < 22 ? "evening" : "night");
-
 // rows: [{ day: "YYYY-MM-DD", emotion, count }] -> moi ngay trong cua so 1 phan tu (ngay khong quet = 0)
 const buildDaily = (rows, days, today) => {
     const map = Object.fromEntries(dayRange(days, today).map((k) => [k, emptyCounts()]));
@@ -40,17 +34,14 @@ const buildDaily = (rows, days, today) => {
     return Object.entries(map).map(([date, counts]) => ({ date, counts }));
 };
 
-// rows: [{ weekday 1..7, hour 0..23, emotion, count }] -> 28 o (7 thu x 4 buoi)
-const buildDayparts = (rows) => {
-    const cells = [];
-    for (let weekday = 1; weekday <= 7; weekday++) {
-        PARTS.forEach((part) => cells.push({ weekday, part, counts: emptyCounts() }));
-    }
+// rows: [{ hour 0..23, emotion, count }] (cong don moi thu trong tuan) -> du 24 gio, gio khong quet = 0
+const buildHourly = (rows) => {
+    const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, counts: emptyCounts() }));
     rows.forEach((r) => {
-        const cell = cells.find((c) => c.weekday === Number(r.weekday) && c.part === daypartOf(Number(r.hour)));
-        if (cell && r.emotion in cell.counts) cell.counts[r.emotion] += Number(r.count);
+        const h = hours[Number(r.hour)];
+        if (h && r.emotion in h.counts) h.counts[r.emotion] += Number(r.count);
     });
-    return cells;
+    return hours;
 };
 
 const topEmotionOf = (daily) => {
@@ -112,11 +103,21 @@ const pickPreferences = (rows, limit = 10) => {
         .slice(0, limit);
 };
 
-// rows: [{ emotion, avg, count }] -> theo thu tu EMOTIONS, avg lam tron 2 so
+// so lan quet gan nhat moi cam xuc gui ve de ve "canh hoa" (moi lan quet 1 canh)
+const MAX_VALUES = 60;
+
+// rows: tung lan quet camera [{ emotion, confidence }], cu truoc moi sau
+// -> theo thu tu EMOTIONS: { emotion, avg (lam tron 2 so), count, values (toi da MAX_VALUES lan gan nhat) }
 const buildConfidence = (rows) => EMOTIONS
-    .map((e) => rows.find((r) => r.emotion === e))
-    .filter(Boolean)
-    .map((r) => ({ emotion: r.emotion, avg: Math.round(Number(r.avg) * 100) / 100, count: Number(r.count) }));
+    .map((e) => rows.filter((r) => r.emotion === e).map((r) => Number(r.confidence)))
+    .map((list, i) => ({ emotion: EMOTIONS[i], list }))
+    .filter(({ list }) => list.length)
+    .map(({ emotion, list }) => ({
+        emotion,
+        avg: Math.round((list.reduce((sum, x) => sum + x, 0) / list.length) * 100) / 100,
+        count: list.length,
+        values: list.slice(-MAX_VALUES).map((x) => Math.round(x * 100) / 100),
+    }));
 
 const statsModel = require("../model/statsModel");
 
@@ -147,7 +148,7 @@ const getStats = async (userId, rawDays) => {
             listenSeconds: Number(play.seconds),
         },
         daily,
-        dayparts: buildDayparts(scanHours),
+        hourly: buildHourly(scanHours),
         topSongs: topSongs.map(({ plays, ...song }) => ({ song, plays: Number(plays) })),
         topArtists: topArtists.map((a) => ({ ...a, plays: Number(a.plays) })),
         moodSongs: pickMoodSongs(moodRows),
@@ -158,8 +159,8 @@ const getStats = async (userId, rawDays) => {
 };
 
 module.exports = {
-    EMOTIONS, PARTS, OUTCOMES,
-    normalizeDays, dayKey, daypartOf,
-    buildDaily, buildDayparts, topEmotionOf, buildHitRate, pickMoodSongs, pickPreferences, buildConfidence,
+    EMOTIONS, OUTCOMES,
+    normalizeDays, dayKey,
+    buildDaily, buildHourly, topEmotionOf, buildHitRate, pickMoodSongs, pickPreferences, buildConfidence,
     getStats,
 };

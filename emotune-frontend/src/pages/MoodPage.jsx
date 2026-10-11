@@ -4,7 +4,7 @@ import { buildDays, cheerUpStatus } from '../utils/moodStats';
 import OverviewTiles from '../components/stats/OverviewTiles';
 import CheerTile from '../components/stats/CheerTile';
 import DailyChart from '../components/stats/DailyChart';
-import DaypartGrid from '../components/stats/DaypartGrid';
+import HourlyChart from '../components/stats/HourlyChart';
 import TopLists from '../components/stats/TopLists';
 import MoodSongs from '../components/stats/MoodSongs';
 import HitRateChart from '../components/stats/HitRateChart';
@@ -87,7 +87,7 @@ const MoodPage = () => {
             <OverviewTiles overview={stats.overview} days={stats.days} daily={stats.daily} cheer={cheer} />
             <div className="stats-pair">
                 <DailyChart daily={stats.daily} />
-                <DaypartGrid cells={stats.dayparts} />
+                <HourlyChart hours={stats.hourly} />
             </div>
             <TopLists songs={stats.topSongs} artists={stats.topArtists} />
             <MoodSongs data={stats.moodSongs} />

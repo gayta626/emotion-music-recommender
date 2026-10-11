@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     oled = Oled()
     for title, text in [("EmoTune", "XIN CHAO"), ("Camera", "Dang quet..."),
-                        ("Cam xuc", "VUI"), ("Cam xuc", "NGAC NHIEN")]:
+                        ("Cam xuc", "VUI"), ("Cam xuc", "KHAM PHA")]:
         print("Man hinh phai hien:", title, "/", text)
         oled.show(title, text)
         sleep(2)

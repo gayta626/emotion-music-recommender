@@ -10,6 +10,7 @@ import { buildMix, mixPath } from '../utils/mixes';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import { timeAgo } from '../utils/moodSession';
 import { coverUrl } from '../utils/images';
+import { useCoverColor } from '../hooks/useCoverColor';
 import { moodShares, pickForMood, rankByPlays } from '../utils/artistPage';
 import PlayIcon from '../assets/icons/player_play.svg?react';
 import './BrowsePage.scss';
@@ -95,6 +96,16 @@ const ArtistView = ({ artistId }) => {
         const vibes = EMOTIONS.filter((e) => mine.some((s) => s.emotion === e.key));
         return { artist, mine, ranked, pick, genres, others, mixes, vibes, shares: moodShares(stats.moods), stats };
     }, [data, lastMood]);
+
+    // nền trang (PageAmbient) theo màu ảnh ca sĩ: đặt sắc độ --artist-h lên <html>, rời trang thì gỡ
+    const avatar = data.status === 'ok' ? data.artist.avatar : null;
+    const photoColor = useCoverColor(avatar ? `${API_URL}/avatars/${avatar}` : null);
+    useEffect(() => {
+        if (!photoColor) return;
+        const root = document.documentElement;
+        root.style.setProperty('--artist-h', Math.round(photoColor.h));
+        return () => root.style.removeProperty('--artist-h');
+    }, [photoColor]);
 
     // Follow = thêm ca sĩ vào gu (khảo sát) → "Made for you" cộng điểm cho ca sĩ này
     const toggleFollow = () => {

@@ -4,7 +4,9 @@
     align-items: center;
     height: var(--header-h);
     padding: 0 32px;
-    background-color: var(--bg);
+    // kính mờ: thấy ánh màu nền trang phía sau, nội dung cuộn dưới header thì nhoè đi
+    background-color: rgb(8 7 12 / 0.38);
+    backdrop-filter: blur(20px) saturate(1.2);
     color: white;
 
     .app-name-container {
@@ -100,7 +102,7 @@
         align-items: center;
         gap: 20px;
 
-        .explore-premium-btn {
+        .your-week-btn {
             height: 35px;
             width: 180px;
             border: none;
@@ -119,14 +121,8 @@
             align-items: center;
             gap: 20px;
 
-            .notification-btn {
-                display: flex;
-                background: none;
-                border: none;
-                cursor: pointer;
-            }
 
-            // nút (bấm -> /stats): bỏ nền/viền mặc định của button
+            // nút tài khoản (bấm -> menu AccountMenu): bỏ nền/viền mặc định của button
             .user-info {
                 display: flex;
                 align-items: center;
@@ -153,24 +149,6 @@
                     color: var(--search-text);
                 }
             }
-
-            .logout-btn {
-                height: 32px;
-                padding: 0 16px;
-                border: 1px solid var(--accent);
-                border-radius: var(--radius);
-                background: none;
-                color: var(--accent);
-                font-family: 'Inter', sans-serif;
-                font-weight: 600;
-                font-size: 13px;
-                cursor: pointer;
-                transition: background-color 0.15s;
-
-                &:hover {
-                    background-color: var(--chip);
-                }
-            }
         }
     }
 }
@@ -182,7 +160,7 @@
             width: 240px;
         }
 
-        .action-container .explore-premium-btn {
+        .action-container .your-week-btn {
             display: none;
         }
     }
@@ -253,8 +231,7 @@
             .setting-and-notification-container {
                 gap: 10px;
 
-                // điện thoại: chỉ giữ icon tài khoản (bấm -> /stats), bỏ chuông + tên cho vừa 1 hàng
-                .notification-btn,
+                // điện thoại: bỏ tên tài khoản cho vừa 1 hàng (giữ chuông nhận xét + icon tài khoản)
                 .user-info .username {
                     display: none;
                 }
@@ -266,13 +243,6 @@
                         width: 26px;
                         height: 26px;
                     }
-                }
-
-                .logout-btn {
-                    height: 30px;
-                    padding: 0 10px;
-                    font-size: 12px;
-                    white-space: nowrap;
                 }
             }
         }

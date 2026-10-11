@@ -1,35 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import ArtistAvatar from '../components/ArtistAvatar';
-import { plain } from '../utils/text';
 import { useAuth } from '../contexts/authContext';
-import SearchIcon from '../assets/icons/search_icon.svg?react';
-import CheckIcon from '../assets/icons/check_icon.svg?react';
-import ChevronDownIcon from '../assets/icons/chevron_down_icon.svg?react';
+import { ArtistPicker, GenrePicker } from '../components/TastePicker';
+import { toggleId } from '../utils/sets';
 import './SurveyPage.scss';
 
 // Khao sat gu lan dau (Figma 255:5): chon the loai + ca si yeu thich.
 // Ket qua luu o survey_genres / survey_artists -> suggestService cong diem thuong (+0.5) cho bai hop gu
 // -> nguoi moi chua nghe bai nao van duoc goi y dung gu ("cold start").
-
-const ARTISTS_PER_PAGE = 12;
-
-
-const toggle = (set, id) => {
-    const next = new Set(set);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-}
+// Phan chon the loai / ca si dung chung voi trang Settings: components/TastePicker.
 
 const SurveyPage = () => {
     const [genres, setGenres] = useState([]);
     const [artists, setArtists] = useState([]);
     const [pickedGenres, setPickedGenres] = useState(new Set());
     const [pickedArtists, setPickedArtists] = useState(new Set());
-    const [genreQuery, setGenreQuery] = useState('');
-    const [artistQuery, setArtistQuery] = useState('');
-    const [showAll, setShowAll] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const { markSurveyDone } = useAuth();
@@ -44,17 +30,6 @@ const SurveyPage = () => {
             setPickedArtists(new Set(res.data.artistIds));
         }).catch(() => { });
     }, []);
-
-    const shownGenres = useMemo(
-        () => genres.filter((g) => plain(g.name).includes(plain(genreQuery.trim()))),
-        [genres, genreQuery]
-    );
-    const matchedArtists = useMemo(
-        () => artists.filter((a) => plain(a.name).includes(plain(artistQuery.trim()))),
-        [artists, artistQuery]
-    );
-    // dang tim thi hien het ket qua; khong tim thi chi hien 12 nguoi dau + nut "Show more"
-    const shownArtists = showAll || artistQuery ? matchedArtists : matchedArtists.slice(0, ARTISTS_PER_PAGE);
 
     // mang rong = bo qua (backend van danh dau da lam khao sat)
     const save = (genreIds, artistIds) => {
@@ -92,86 +67,23 @@ const SurveyPage = () => {
                 </section>
 
                 <section className="survey-section">
-                    <div className="section-top">
-                        <div className="section-heading">
-                            <h2>Favorite genres</h2>
-                            <span>Pick one or more</span>
-                        </div>
-                        <label className="survey-search">
-                            <SearchIcon aria-hidden="true" />
-                            <input
-                                id="genre-search"
-                                type="search"
-                                placeholder="Search genres..."
-                                value={genreQuery}
-                                onChange={(e) => setGenreQuery(e.target.value)}
-                            />
-                        </label>
-                    </div>
-                    <div className="genre-chips">
-                        {shownGenres.map((g) => {
-                            const on = pickedGenres.has(g.id);
-                            return (
-                                <button
-                                    key={g.id}
-                                    className={`genre-chip ${on ? 'selected' : ''}`}
-                                    aria-pressed={on}
-                                    onClick={() => setPickedGenres((s) => toggle(s, g.id))}
-                                >
-                                    {on && <CheckIcon aria-hidden="true" />}
-                                    {g.name}
-                                </button>
-                            )
-                        })}
-                        {shownGenres.length === 0 && <p className="empty">No genre matches "{genreQuery}".</p>}
-                    </div>
+                    <GenrePicker
+                        genres={genres}
+                        picked={pickedGenres}
+                        onToggle={(id) => setPickedGenres((s) => toggleId(s, id))}
+                        title="Favorite genres"
+                        note="Pick one or more"
+                    />
                 </section>
 
                 <section className="survey-section">
-                    <div className="section-top">
-                        <div className="section-heading">
-                            <h2>Favorite artists</h2>
-                            <span>Pick the ones you listen to</span>
-                        </div>
-                        <label className="survey-search">
-                            <SearchIcon aria-hidden="true" />
-                            <input
-                                id="artist-search"
-                                type="search"
-                                placeholder="Search artists..."
-                                value={artistQuery}
-                                onChange={(e) => setArtistQuery(e.target.value)}
-                            />
-                        </label>
-                    </div>
-                    <div className="artist-grid">
-                        {shownArtists.map((a) => {
-                            const on = pickedArtists.has(a.id);
-                            return (
-                                <button
-                                    key={a.id}
-                                    className={`artist-card ${on ? 'selected' : ''}`}
-                                    aria-pressed={on}
-                                    onClick={() => setPickedArtists((s) => toggle(s, a.id))}
-                                >
-                                    <span className="artist-photo">
-                                        <ArtistAvatar name={a.name} avatar={a.avatar} />
-                                        {on && <span className="artist-badge"><CheckIcon aria-hidden="true" /></span>}
-                                    </span>
-                                    <span className="artist-name">{a.name}</span>
-                                    <span className="artist-role">Artist</span>
-                                </button>
-                            )
-                        })}
-                        {matchedArtists.length === 0 && <p className="empty">No artist matches "{artistQuery}".</p>}
-                    </div>
-                    {!artistQuery && !showAll && matchedArtists.length > ARTISTS_PER_PAGE && (
-                        <div className="show-more">
-                            <button onClick={() => setShowAll(true)}>
-                                Show more artists <ChevronDownIcon aria-hidden="true" />
-                            </button>
-                        </div>
-                    )}
+                    <ArtistPicker
+                        artists={artists}
+                        picked={pickedArtists}
+                        onToggle={(id) => setPickedArtists((s) => toggleId(s, id))}
+                        title="Favorite artists"
+                        note="Pick the ones you listen to"
+                    />
                 </section>
 
                 <footer className="survey-actions">

@@ -19,6 +19,7 @@ const PHOTOS_DIR = path.join(__dirname, "..", "avatars", "photos");
 const EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 const { plain, baseTitle, ALT_VERSION, itunesSearch, findTrack } = require('./lib/itunes');
+const { countHashes, isPlaceholderCover } = require('./lib/coverCheck');
 const slug = (s) => plain(s).replace(/ /g, "-");
 
 // file anh da co san tren may (bat ky duoi nao trong EXTS) -> ten file, khong co -> null
@@ -107,6 +108,22 @@ const run = async () => {
     fs.mkdirSync(COVERS_DIR, { recursive: true });
     fs.mkdirSync(PHOTOS_DIR, { recursive: true });
     const missing = [];   // can ban tu bo anh vao
+
+    // bia "gia" da lo chep vao (logo NhacCuaTui nhung trong mp3, import-music ban cu) -> xoa file + coi nhu chua co bia
+    const withCover = (await db.query(`SELECT id, title, cover FROM songs WHERE cover IS NOT NULL`)).rows
+        .map((s) => ({ ...s, path: path.join(COVERS_DIR, s.cover) }))
+        .filter((s) => fs.existsSync(s.path))
+        .map((s) => ({ ...s, data: fs.readFileSync(s.path) }));
+    const coverCounts = countHashes(withCover.map((s) => s.data));
+    const fakes = withCover.filter((s) => isPlaceholderCover(s.data, coverCounts));
+    if (fakes.length) {
+        console.log(`
+== Bo ${fakes.length} anh bia gia (logo trang tai nhac) ==`);
+        for (const s of fakes) {
+            fs.unlinkSync(s.path);
+            await db.query(`UPDATE songs SET cover = NULL WHERE id = $1`, [s.id]);
+        }
+    }
 
     const songs = (await db.query(
         `SELECT s.id, s.title, s.file_path, a.name AS artist

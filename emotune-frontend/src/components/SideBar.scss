@@ -1,6 +1,9 @@
 .side-bar-container {
-    width: 240px;
-    background-color: var(--surface);
+    width: 300px;
+    // kính mờ tối: ánh màu nền trang xuyên qua nhẹ, chữ vẫn rõ
+    background-color: rgb(20 18 28 / 0.62);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius);
     transition: width 0.3s ease;
     overflow: hidden;
@@ -42,7 +45,7 @@
 
             .title {
                 color: white;
-                font-size: 12px;
+                font-size: 14px;
                 font-weight: 600;
                 letter-spacing: 0.02em;
                 white-space: nowrap;
@@ -64,14 +67,14 @@
         padding: 18px 20px 0;
 
         .tab {
-            height: 25px;
-            padding: 0 11px;
+            height: 30px;
+            padding: 0 14px;
             background-color: var(--chip);
             color: white;
             border: none;
             border-radius: var(--radius);
             font-family: inherit;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.02em;
             cursor: pointer;
@@ -101,7 +104,7 @@
             align-items: center;
             gap: 10px;
             color: white;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.02em;
             cursor: pointer;
@@ -111,13 +114,16 @@
     .playlist-list {
         overflow-y: auto;
         flex: 1;
+        // thanh cuộn mảnh, mờ (mặc định của trình duyệt là dải trắng to, lạc tông nền tối)
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
 
         .playlist-item {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 12px;
             width: 100%;
-            padding: 5px 19px;
+            padding: 7px 20px;
             border: none;
             background: none;
             color: inherit;
@@ -134,8 +140,8 @@
             }
 
             .cover {
-                width: 42px;
-                height: 42px;
+                width: 52px;
+                height: 52px;
                 flex-shrink: 0;
                 border-radius: 50%;
                 object-fit: cover;
@@ -143,7 +149,7 @@
 
             // chữ viết tắt khi ca sĩ chưa có ảnh (màu nền/chữ ở ArtistAvatar.scss)
             .initials {
-                font-size: 14px;
+                font-size: 16px;
             }
 
             // playlist chưa có ảnh bìa -> ô vuông gradient có nốt nhạc
@@ -154,6 +160,12 @@
                 background: linear-gradient(135deg, #8a74ad, #2f2640);
                 color: #fff;
                 font-size: 18px;
+
+                // Liked Songs: nền tím sáng + tim trắng (I1)
+                &.liked-cover {
+                    background: linear-gradient(135deg, #5b3fd6, #b07cf0 55%, #e9d5ff);
+                    svg { width: 46%; height: 46%; }
+                }
             }
 
             .info {
@@ -161,7 +173,7 @@
                 flex-direction: column;
                 gap: 5px;
                 overflow: hidden;
-                font-size: 11px;
+                font-size: 13px;
                 letter-spacing: 0.02em;
 
                 .name {

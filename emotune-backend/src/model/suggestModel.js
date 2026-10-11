@@ -22,14 +22,20 @@ let getMoodTrend = async (userId, days) => {
 const TASTE_BONUS = `(CASE WHEN EXISTS (SELECT 1 FROM survey_artists sa WHERE sa.user_id = $1 AND sa.artist_id = s.artist_id) THEN 0.5 ELSE 0 END
                     + CASE WHEN EXISTS (SELECT 1 FROM survey_genres sg WHERE sg.user_id = $1 AND sg.genre_id = s.genre_id) THEN 0.5 ELSE 0 END)`;
 
+// Diem thuong bai nguoi dung bam ♥: +1 = bang 1 lan nghe het bai. Phan hoi tich cuc ro rang nen manh hon khao sat (+0.5),
+// nhung van chi xet trong cac bai hop cam xuc dang quet (WHERE s.emotion = ...) -> khong phat bai vui khi dang buon chi vi da thich.
+const LIKE_BONUS = `(CASE WHEN EXISTS (SELECT 1 FROM liked_songs l WHERE l.user_id = $1 AND l.song_id = s.id) THEN 1 ELSE 0 END)`;
+
 let getSongsByEmotion = async (userId, emotion) => {
     try {
         const result = await db.query(
-            `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.emotion, s.energy,
+            `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id, s.emotion, s.energy, g.name AS genre,
                     COALESCE(p.score, 0) AS score,
-                    ${TASTE_BONUS} AS taste_bonus
+                    ${TASTE_BONUS} AS taste_bonus,
+                    ${LIKE_BONUS} AS like_bonus
              FROM songs s
              LEFT JOIN artists a ON a.id = s.artist_id
+             LEFT JOIN genres g ON g.id = s.genre_id
              -- diem cua CHINH nguoi nay; dat trong ON (khong dat o WHERE) de bai chua co diem van duoc chon
              LEFT JOIN preferences p
                     ON p.song_id = s.id AND p.emotion = $2 AND p.user_id = $1
@@ -41,7 +47,7 @@ let getSongsByEmotion = async (userId, emotion) => {
                    ORDER BY played_at DESC
                    LIMIT 3
                )
-             ORDER BY COALESCE(p.score, 0) + ${TASTE_BONUS} DESC`,
+             ORDER BY COALESCE(p.score, 0) + ${TASTE_BONUS} + ${LIKE_BONUS} DESC`,
             [userId, emotion]
         );
 
@@ -49,14 +55,16 @@ let getSongsByEmotion = async (userId, emotion) => {
 
         if (candidates.length === 0) {
             const fallback = await db.query(
-                `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.emotion, s.energy,
+                `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id, s.emotion, s.energy, g.name AS genre,
                         COALESCE(p.score, 0) AS score,
-                        ${TASTE_BONUS} AS taste_bonus
+                        ${TASTE_BONUS} AS taste_bonus,
+                    ${LIKE_BONUS} AS like_bonus
                  FROM songs s
                  LEFT JOIN artists a ON a.id = s.artist_id
+             LEFT JOIN genres g ON g.id = s.genre_id
                  LEFT JOIN preferences p ON p.song_id = s.id AND p.emotion = $2 AND p.user_id = $1
                  WHERE s.emotion = $2
-                 ORDER BY COALESCE(p.score, 0) + ${TASTE_BONUS} DESC`,
+                 ORDER BY COALESCE(p.score, 0) + ${TASTE_BONUS} + ${LIKE_BONUS} DESC`,
                 [userId, emotion]
             );
             candidates = fallback.rows;

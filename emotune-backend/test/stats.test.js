@@ -15,18 +15,6 @@ test("normalizeDays: chi nhan 7 hoac 30", () => {
     assert.strictEqual(s.normalizeDays(undefined), 7);
 });
 
-test("daypartOf: dung ranh gioi 5h, 11h, 17h, 22h", () => {
-    assert.strictEqual(s.daypartOf(4), "night");
-    assert.strictEqual(s.daypartOf(5), "morning");
-    assert.strictEqual(s.daypartOf(10), "morning");
-    assert.strictEqual(s.daypartOf(11), "afternoon");
-    assert.strictEqual(s.daypartOf(16), "afternoon");
-    assert.strictEqual(s.daypartOf(17), "evening");
-    assert.strictEqual(s.daypartOf(21), "evening");
-    assert.strictEqual(s.daypartOf(22), "night");
-    assert.strictEqual(s.daypartOf(0), "night");
-});
-
 test("buildDaily: lap ngay trong, hom nay o cuoi, khoa ngay theo gio dia phuong", () => {
     const rows = [
         { day: "2026-10-09", emotion: "sad", count: 2 },
@@ -43,18 +31,19 @@ test("buildDaily: lap ngay trong, hom nay o cuoi, khoa ngay theo gio dia phuong"
     assert.strictEqual(s.dayKey(new Date(2026, 0, 5, 23, 59)), "2026-01-05");
 });
 
-test("buildDayparts: luon du 28 o, cong dung o", () => {
-    const empty = s.buildDayparts([]);
-    assert.strictEqual(empty.length, 28);
-    const cells = s.buildDayparts([
-        { weekday: 1, hour: 20, emotion: "sad", count: 3 },
-        { weekday: "1", hour: "21", emotion: "sad", count: "1" },
-        { weekday: 7, hour: 23, emotion: "angry", count: 1 },
+test("buildHourly: luon du 24 gio, cong don moi thu trong tuan", () => {
+    const empty = s.buildHourly([]);
+    assert.strictEqual(empty.length, 24);
+    assert.deepStrictEqual(empty[0], { hour: 0, counts: { happy: 0, sad: 0, angry: 0, surprise: 0, neutral: 0 } });
+    const hours = s.buildHourly([
+        { hour: 20, emotion: "sad", count: 3 },
+        { hour: "20", emotion: "sad", count: "1" },
+        { hour: 23, emotion: "angry", count: 1 },
+        { hour: 25, emotion: "angry", count: 9 },
     ]);
-    const mondayEvening = cells.find((c) => c.weekday === 1 && c.part === "evening");
-    assert.strictEqual(mondayEvening.counts.sad, 4);
-    const sundayNight = cells.find((c) => c.weekday === 7 && c.part === "night");
-    assert.strictEqual(sundayNight.counts.angry, 1);
+    assert.strictEqual(hours[20].counts.sad, 4);
+    assert.strictEqual(hours[23].counts.angry, 1);
+    assert.strictEqual(hours.reduce((n, h) => n + h.counts.angry, 0), 1);
 });
 
 test("topEmotionOf: nhieu nhat, hoa theo thu tu happy, sad, angry, surprise, neutral; khong co -> null", () => {
@@ -116,13 +105,25 @@ test("pickPreferences: gom theo bai, xep theo tong |diem|, bo bai toan 0, toi da
     assert.strictEqual(s.pickPreferences(many)[0].song.id, 15);
 });
 
-test("buildConfidence: lam tron 2 so, theo thu tu cam xuc, bo cam xuc khong co", () => {
+test("buildConfidence: tung lan quet -> trung binh lam tron 2 so + danh sach gia tri, theo thu tu cam xuc", () => {
     const out = s.buildConfidence([
-        { emotion: "neutral", avg: 0.8234, count: 3 },
-        { emotion: "happy", avg: "0.9", count: "2" },
+        { emotion: "neutral", confidence: 0.8 },
+        { emotion: "happy", confidence: "0.9" },
+        { emotion: "neutral", confidence: 0.85 },
+        { emotion: "neutral", confidence: 0.8203 },
     ]);
     assert.deepStrictEqual(out, [
-        { emotion: "happy", avg: 0.9, count: 2 },
-        { emotion: "neutral", avg: 0.82, count: 3 },
+        { emotion: "happy", avg: 0.9, count: 1, values: [0.9] },
+        { emotion: "neutral", avg: 0.82, count: 3, values: [0.8, 0.85, 0.82] },
     ]);
+    assert.deepStrictEqual(s.buildConfidence([]), []);
+});
+
+test("buildConfidence: values chi giu 60 lan gan nhat, avg + count van tinh het", () => {
+    const rows = Array.from({ length: 70 }, (_, i) => ({ emotion: "sad", confidence: i < 10 ? 0 : 1 }));
+    const [sad] = s.buildConfidence(rows);
+    assert.strictEqual(sad.count, 70);
+    assert.strictEqual(sad.avg, 0.86);
+    assert.strictEqual(sad.values.length, 60);
+    assert.ok(sad.values.every((v) => v === 1));
 });

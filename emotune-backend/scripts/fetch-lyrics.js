@@ -15,49 +15,10 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../src/config/db');
 const { mp3Duration } = require('./lib/mp3Duration');
+const { findLyrics } = require('./lib/lrclib');
 
 const LYRICS_DIR = path.join(__dirname, "..", "lyrics");
 const MUSIC_DIR = path.join(__dirname, "..", "music");
-const MAX_DIFF_S = 3;
-
-// "Sơn Tùng M-TP" -> "son tung m tp" (so khop khong dau, khong phan biet hoa thuong)
-const plain = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d")
-    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-// bo phan trong ngoac: "Nếu Như Ta Chẳng Còn (feat. A$AP Ướt Mi)" -> "Nếu Như Ta Chẳng Còn"
-const baseTitle = (s) => s.replace(/[([].*?[)\]]/g, "").trim();
-// ban phu (remix, live, mashup...) -> khong lay loi cua ban do
-const ALT_VERSION = /remix|live|speed|slowed|lofi|lo-fi|acoustic|instrumental|karaoke|beat|mashup/i;
-
-// do dai file mp3 (giay): dung de chon ban loi co moc thoi gian khop nhac
-
-const lrclibSearch = async (params) => {
-    const res = await fetch("https://lrclib.net/api/search?" + new URLSearchParams(params), {
-        headers: { "User-Agent": "EmoTune student project (fetch-lyrics)" },
-    });
-    if (!res.ok) throw new Error(`LRCLIB tra loi ${res.status}`);
-    return res.json();
-};
-
-// Chon ket qua: ca si khop, ten bai khop (bo phan trong ngoac), khong phai ban phu, co loi.
-// Uu tien loi co moc thoi gian cua ban dai gan bang file mp3; khong co -> loi thuong cua ban gan nhat.
-const pickLyrics = (results, song, duration) => {
-    const artist = plain(song.artist);
-    const title = plain(baseTitle(song.title));
-    const ok = results.filter((r) =>
-        (plain(r.artistName).includes(artist) || artist.includes(plain(r.artistName)))
-        && plain(baseTitle(r.trackName)) === title
-        && !ALT_VERSION.test(r.trackName)
-        && !r.instrumental
-        && (r.syncedLyrics || r.plainLyrics));
-    const diff = (r) => (duration ? Math.abs(r.duration - duration) : Infinity);
-    ok.sort((a, b) => diff(a) - diff(b));
-
-    const synced = ok.find((r) => r.syncedLyrics && diff(r) <= MAX_DIFF_S);
-    if (synced) return { text: synced.syncedLyrics, kind: `co moc thoi gian, lech ${diff(synced).toFixed(1)}s` };
-    const plainHit = ok.find((r) => r.plainLyrics);
-    if (plainHit) return { text: plainHit.plainLyrics, kind: "loi thuong (khong co ban dai khop file mp3)" };
-    return null;
-};
 
 const run = async () => {
     fs.mkdirSync(LYRICS_DIR, { recursive: true });
@@ -82,9 +43,7 @@ const run = async () => {
         try {
             const mp3 = path.join(MUSIC_DIR, song.file_path);
             const duration = fs.existsSync(mp3) ? mp3Duration(mp3) : null;
-            let results = await lrclibSearch({ track_name: baseTitle(song.title), artist_name: song.artist });
-            if (!results.length) results = await lrclibSearch({ q: `${baseTitle(song.title)} ${song.artist}` });
-            const hit = pickLyrics(results, song, duration);
+            const hit = await findLyrics(song, duration);
             if (!hit) {
                 missing.push(`"${song.title}" -> lyrics/${name}`);
                 console.log(`  x ${song.title}: LRCLIB khong co loi phu hop`);

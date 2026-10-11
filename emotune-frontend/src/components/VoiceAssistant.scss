@@ -1,5 +1,5 @@
-// Tro ly giong noi - Figma 284:120 (1440 x 1024): nen #261925, logo AI 92px tren cung,
-// micro 111px giua man, song 43 vach #d9d9d9 rong 13px (cao nhat 420px) o nua duoi.
+// Tro ly giong noi - Figma 284:120 (1440 x 1024): logo AI 92px tren cung, micro giua man.
+// Tu 10/10: nen tim than + qua cau song (VoiceOrb) quanh micro theo anh mau "Infographic Chart" (thay song 43 vach).
 .voice-assistant {
     position: fixed;
     inset: 0;
@@ -8,13 +8,13 @@
     flex-direction: column;
     align-items: center;
     padding: 52px 16px 24px;
-    // tím #261925 đậm ở giữa, nhạt dần ra mép -> vẫn thấy trang đang xem phía sau
-    background: radial-gradient(ellipse 75% 70% at 50% 45%,
-            rgb(var(--assistant-bg-rgb) / 0.97) 0%,
-            rgb(var(--assistant-bg-rgb) / 0.9) 40%,
-            rgb(var(--assistant-bg-rgb) / 0.6) 75%,
-            rgb(var(--assistant-bg-rgb) / 0.35) 100%);
-    color: #f6ecf2;
+    // tím than như ảnh mẫu: sáng hơn ở giữa (sau quả cầu), hơi trong ở mép -> thấp thoáng trang phía sau
+    background: radial-gradient(ellipse 75% 70% at 50% 42%,
+            rgb(var(--assistant-glow-rgb) / 0.98) 0%,
+            rgb(var(--assistant-bg-rgb) / 0.97) 45%,
+            rgb(var(--assistant-bg-rgb) / 0.92) 78%,
+            rgb(var(--assistant-bg-rgb) / 0.85) 100%);
+    color: #f1ecff;
     overflow-y: auto;
     animation: va-in 0.25s ease-out;
 
@@ -32,7 +32,7 @@
         font-size: 18px;
         cursor: pointer;
 
-        &:hover { background: #3a2638; }
+        &:hover { background: #3d3278; }
     }
 
     .va-logo {
@@ -52,10 +52,29 @@
         min-height: 300px;
     }
 
-    .va-mic {
+    // khung vuông chứa quả cầu (canvas phủ kín) + nút micro ở lỗ tròn giữa
+    .va-orb {
+        position: relative;
+        flex: none;
         display: grid;
         place-items: center;
-        padding: 18px;
+        width: min(600px, 92vw, max(300px, 58vh));
+        aspect-ratio: 1;
+
+        .voice-orb {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 14px rgba(190, 110, 255, 0.35));
+        }
+    }
+
+    .va-mic {
+        position: relative;      // nằm trên canvas
+        display: grid;
+        place-items: center;
+        padding: 14px;
         border: none;
         border-radius: 50%;
         background: transparent;
@@ -64,15 +83,15 @@
         transition: background 0.2s;
 
         svg {
-            width: 111px;
-            height: 111px;
+            width: 72px;
+            height: 72px;
         }
 
         &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
         &:disabled { opacity: 0.4; cursor: default; }
 
         &.is-listening {
-            background: rgba(232, 197, 220, 0.08);
+            background: rgba(200, 180, 255, 0.1);
             animation: va-pulse 1.6s ease-out infinite;
         }
     }
@@ -98,9 +117,17 @@
     .va-reply {
         margin: 0;
         font-size: 18px;
-        color: #e3c9d9;
+        color: #d6cdf5;
 
         &.is-thinking { opacity: 0.7; }
+    }
+
+    // cau tra loi do Gemini dua ra (khong phai bo luat) -> ghi chu nho de biet phan nao la LLM
+    .va-source {
+        margin: -4px 0 0;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: rgba(214, 205, 245, 0.6);
     }
 
     .va-notice {
@@ -135,28 +162,6 @@
                 font-size: 13px;
                 opacity: 0.65;
             }
-        }
-    }
-
-    .voice-wave {
-        flex: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 17px;
-        width: min(1260px, 100%);
-        height: 260px;
-        margin: 8px 0 20px;
-
-        span {
-            flex: 0 1 13px;
-            min-width: 3px;
-            height: 100%;
-            border-radius: 2px;
-            background: #d9d9d9;
-            transform: scaleY(0.04);
-            transform-origin: center;
-            will-change: transform;
         }
     }
 
@@ -197,15 +202,8 @@
         padding-top: 32px;
 
         .va-logo { width: 64px; height: 64px; }
-        .va-mic svg { width: 80px; height: 80px; }
+        .va-mic svg { width: 56px; height: 56px; }
         .va-heard { font-size: 22px; }
-
-        .voice-wave {
-            gap: 3px;
-            height: 140px;
-
-            span { flex: 1 1 0; }
-        }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -221,6 +219,6 @@
 }
 
 @keyframes va-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(232, 197, 220, 0.35); }
-    100% { box-shadow: 0 0 0 28px rgba(232, 197, 220, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(200, 180, 255, 0.35); }
+    100% { box-shadow: 0 0 0 22px rgba(200, 180, 255, 0); }
 }

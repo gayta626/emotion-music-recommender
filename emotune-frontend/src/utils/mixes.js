@@ -1,7 +1,7 @@
 // Ten + mo ta cua cac "mix" theo vibe bai hat (trang chu va trang ca si)
 export const MIXES = {
     happy: { mood: 'Happy', title: 'Good Vibes', desc: 'Upbeat songs to keep the smile going' },
-    surprise: { mood: 'Surprised', title: 'Something New', desc: 'Songs with a twist you did not see coming' },
+    surprise: { mood: 'Explore', title: 'Explore Mode', desc: 'Fresh picks for when you feel like trying something new' },
     neutral: { mood: 'Neutral', title: 'Easy Listening', desc: 'Calm tracks for any time of day' },
     sad: { mood: 'Sad', title: 'Rainy Day', desc: 'Slow songs for quiet, heavy moments' },
     angry: { mood: 'Angry', title: 'Let It Out', desc: 'Loud enough to let the steam out' },

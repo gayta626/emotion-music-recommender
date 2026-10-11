@@ -6,8 +6,11 @@
   --muted: #a79fc9;
   --search-text: #dad1ff;
   --on-premium: #27003c;
-  --assistant-bg: #261925;
-  --assistant-bg-rgb: 38 25 37;   /* cùng màu #261925, dạng số để pha độ trong (nền trợ lý nhạt dần ra mép) */
+  --assistant-bg: #241d4f;
+  --assistant-bg-rgb: 36 29 79;   /* cùng màu #241d4f (tím than như ảnh mẫu), dạng số để pha độ trong (nền trợ lý nhạt dần ra mép) */
+  --karaoke-fill: #ffd666;        /* karaoke (H15): chữ đã hát + nút Karaoke đang bật */
+  --liked: #ff5c9a;               /* ♥ bài đã thích (I1) */
+  --assistant-glow-rgb: 58 45 120; /* #3a2d78: giữa nền trợ lý, sau quả cầu sóng */
   --radius: 20px;
   --header-h: 117px;
 }

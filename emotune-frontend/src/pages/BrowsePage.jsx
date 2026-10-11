@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import MoodIcon from '../components/MoodIcon';
+import { MoodWeekChart, ScanDots } from '../components/HomeMood';
 import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
 import { buildMix, mixPath } from '../utils/mixes';
 import Shelf from '../components/Shelf';
@@ -105,8 +106,7 @@ const BrowsePage = () => {
         const top = EMOTIONS
             .map((e) => ({ ...e, n: days.reduce((s, d) => s + (d.counts[e.key] || 0), 0) }))
             .sort((a, b) => b.n - a.n)[0];
-        const max = Math.max(1, ...days.map((d) => d.total));
-        return { days, total, top, max, status: cheerUpStatus(days) };
+        return { days, total, top, status: cheerUpStatus(days) };
     }, [mood.data]);
 
     // banner: tao playlist moi roi mo trang cua no
@@ -191,24 +191,13 @@ const BrowsePage = () => {
                     </div>
                     <div className="feature-panel">
                         {mood.error && <p className="feature-line">Couldn't load your mood history.</p>}
+                        {/* bieu do theo anh mau "Infographic Chart": 7 cot mong + vong so + donut ca tuan */}
                         {moodSummary && (
                             <>
-                                <div className="mini-chart" role="img" aria-label={`${moodSummary.total} scans in the last 7 days`}>
-                                    {moodSummary.days.map((d) => (
-                                        <div key={d.sub} className="mini-day">
-                                            <div className="mini-col">
-                                                <div className="mini-bar" style={{ height: `${(d.total / moodSummary.max) * 100}%` }}>
-                                                    {EMOTIONS.filter((e) => d.counts[e.key]).map((e) => (
-                                                        <span key={e.key} className={`seg ${e.key}`} style={{ flexGrow: d.counts[e.key] }} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <span className="mini-label">{d.label === 'Today' ? 'Today' : d.label.slice(0, 2)}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                <MoodWeekChart days={moodSummary.days} />
                                 <p className="feature-line">
-                                    {moodSummary.total} {moodSummary.total === 1 ? 'scan' : 'scans'} · Cheer-up mode <b>{moodSummary.status.on ? 'On' : 'Off'}</b>
+                                    <span className={`cheer-chip ${moodSummary.status.on ? 'on' : ''}`}>Cheer-up mode {moodSummary.status.on ? 'On' : 'Off'}</span>
+                                    {moodSummary.status.on ? ' NYX is mixing in happier songs for you.' : ' NYX picks songs that match how you feel.'}
                                 </p>
                             </>
                         )}
@@ -225,6 +214,8 @@ const BrowsePage = () => {
                         </div>
                     </div>
                     <div className="feature-panel">
+                        {/* luoi cham: moi cham = 1 lan quet trong tuan, mau theo cam xuc */}
+                        {moodSummary && <ScanDots days={moodSummary.days} />}
                         <p className="feature-line big">
                             {lastMoodInfo
                                 ? <>Last scan: <MoodIcon emotion={lastMoodInfo.key} size={28} /> · {timeAgo(now - lastMood.at)}</>
