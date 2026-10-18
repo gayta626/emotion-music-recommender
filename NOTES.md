@@ -9,6 +9,8 @@
 
 # 🧭 PHIÊN 18/10/2026 (sửa lỗi) — chọn bài khi đang quét + karaoke tự bật
 
+> **Cuối phiên: đã commit `bcf173e`** (gom toàn bộ việc 11–18/10, 217 file; chưa push). Không đưa `docs/EmoTune_bao_cao_cuoi_ki.pptx` (file của người dùng). Backend `npm test` 177/177 trước khi commit.
+
 ## 1. Lỗi người dùng báo
 (a) Nghe hết bài → dừng (rảnh ≥ 60s nên tự sang `/scan`) → người dùng tự bấm chọn 1 bài → màn quét mặt vẫn chạy và **đè lên bài người dùng chọn**. (b) Có bài vừa phát là **karaoke tự bật** → muốn chỉ bật khi người dùng chọn.
 
