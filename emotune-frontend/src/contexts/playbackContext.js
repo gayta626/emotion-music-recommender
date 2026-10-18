@@ -9,6 +9,7 @@ import { createContext, useContext } from "react";
 // - playlistsVersion / refreshPlaylists(): them/xoa bai, tao/xoa playlist xong -> noi khac tai lai
 // - control(command): tro ly giong noi dieu khien bai dang phat (pause/resume/next/prev/volume_up/volume_down/mute/not_for_me/like/mv_on/mv_off/duck/unduck)
 // - likedSongs / likedIds (Set id) / toggleLike(song): bai da bam ♥ (GET/POST/DELETE /likes), trang Liked Songs = /liked
+// - pickVersion: tang moi lan nguoi dung tu chon bai (playSong / playQueue / playlist) -> ScanPage thoi quet
 export const PlaybackContext = createContext({
     playScanResult: () => {},
     playPlaylist: () => {},
@@ -25,6 +26,7 @@ export const PlaybackContext = createContext({
     likedSongs: [],
     likedIds: new Set(),
     toggleLike: () => false,
+    pickVersion: 0,
 });
 
 export const usePlayback = () => useContext(PlaybackContext);

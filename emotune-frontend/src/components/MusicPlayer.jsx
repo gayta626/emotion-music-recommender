@@ -4,7 +4,6 @@ import { songImageUrl } from '../utils/images'
 import api from '../api'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useHardwareButtons } from '../hardware'
 import ShuffleIcon from '../assets/icons/bar_shuffle.svg?react'
 import PrevIcon from '../assets/icons/bar_prev.svg?react'
 import PlayIcon from '../assets/icons/bar_play.svg?react'
@@ -27,7 +26,12 @@ import { createPortal } from 'react-dom'
 import { YT_BUFFERING, YT_ENDED, YT_PLAYING } from '../utils/youtube'
 import { setVocalCut } from '../utils/audioGraph'
 import { useLyrics } from '../hooks/useLyrics'
+import { useKaraokeTrack } from '../hooks/useKaraokeTrack'
+import { useSingScore } from '../hooks/useSingScore'
+import KaraokeScoreCard from './KaraokeScoreCard'
 import { Cover, QueueMenu, QueuePanel, UpNextCard } from './PlayerOverlays'
+import { MoodFix } from './MoodCheck'
+import { moodLabel } from '../utils/moodFix'
 import './MusicPlayer.scss'
 
 // moi vibe co 1 bo mau nen rieng trong MusicPlayer.scss ([data-vibe])
@@ -50,19 +54,23 @@ const formatTime = (seconds) => {
 }
 
 const MusicPlayer = (props) => {
-    // playlist: { name, songs, index } khi dang phat playlist, null o che do cam xuc
+    // playlist: { name, songs, index, journey } khi dang phat playlist, null o che do cam xuc.
+    // journey = true: hanh trinh cam xuc I4 (hang doi do AI chon) -> VAN cham diem, co 👎, khong tron bai
     // showLyrics: dang o /lyrics -> phu man loi bai hat len tren (thanh phat van o duoi)
-    // karaoke: che do karaoke (PlayerHost giu -> doi bai van con), onKaraoke(bat/tat)
+    // karaoke: che do karaoke (PlayerHost giu, sang bai moi thi tat), onKaraoke(bat/tat); scoreOn / onScoreOn: cham diem hat (PlayerHost giu)
     // mvWanted / onMvWanted: che do xem MV (PlayerHost giu, doi bai van con); panelCollapsed / onPanelCollapse: cot phai MV thu gon
     // onPrev / canPrev: quay lai bai truoc; shuffle / onShuffle, repeat ("off" | "all" | "one") / onRepeat: PlayerHost giu
     // savedVolume / onVolumeChange: am luong + tat tieng PlayerHost giu qua cac bai
-    const { data, onFinish, playlist, onJump, onRequest, showLyrics, controlRef, duckRef, savedVolume, onVolumeChange, karaoke, onKaraoke,
+    // onPlayingChange(dang phat?): bao len PlayerHost (mp3 hoac MV) -> icon song nhay o cac trang dung yen khi tam dung
+    const { onPlayingChange, data, onFinish, playlist, onJump, onRequest, showLyrics, controlRef, duckRef, savedVolume, onVolumeChange, karaoke, onKaraoke, scoreOn, onScoreOn,
         mvWanted, onMvWanted, panelCollapsed, onPanelCollapse, onPrev, canPrev, shuffle, onShuffle, repeat, onRepeat } = props;
     const audioRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
     // het bai va bam Next co the xay ra cung luc -> chi gui report 1 lan
     const reportedRef = useRef(false);
+    // co cham diem nghe khong: che do cam xuc + hanh trinh cam xuc co; playlist / bai cua ca si thi khong
+    const scored = !playlist || playlist.journey;
     // Repeat one: da cham diem luot nghe dau roi -> cac vong lap sau + luc chuyen bai khong cham lai (khong cong diem ao)
     const scoredRef = useRef(false);
 
@@ -86,7 +94,7 @@ const MusicPlayer = (props) => {
     const artist = data.song.artist || "Unknown artist";
 
     // ♥ thich bai: luu vao Liked Songs + AI cong diem bai nay khi chon bai theo cam xuc (LIKE_BONUS o backend)
-    const { likedIds, toggleLike } = usePlayback();
+    const { likedIds, toggleLike, playScanResult, setLastMood } = usePlayback();
     const liked = likedIds.has(data.song.id);
     const likeButton = (className) => (
         <button
@@ -100,14 +108,57 @@ const MusicPlayer = (props) => {
         </button>
     );
 
+    // C15: nguoi dung sua cam xuc AI doc sai -> phat bai moi theo cam xuc ho chon (bai dang nghe duoc cham diem nhu khi bam Next)
+    const fixMood = (result) => {
+        setLastMood(result.detectedEmotion || result.emotion);
+        playScanResult(result);
+    };
+
     // loi bai: cho man /lyrics + biet bai co loi chay theo nhac khong (khong co -> an nut Karaoke, khong bo giong)
     const { loading: lyricsLoading, lyrics } = useLyrics(data.song);
     const canKaraoke = !!lyrics?.synced;
     const karaokeOn = !!karaoke && canKaraoke;
-    // bat karaoke -> bo giong ca si ngay tren do thi Web Audio cua the <audio> (utils/audioGraph)
+    // ban da tach giong bang AI (npm run make-karaoke): co -> karaoke phat nhac dem sach + cham diem duoc;
+    // chua co (bai moi them, file nhac dem loi) -> bo giong ngay tren do thi Web Audio cua the <audio> (L − R, utils/audioGraph)
+    const karaokeAi = useKaraokeTrack(data.song);
+    const [beatFailed, setBeatFailed] = useState(false);
+    const aiBeat = karaokeOn && !!karaokeAi && !beatFailed;
     useEffect(() => {
-        setVocalCut(audioRef.current, karaokeOn);
-    }, [karaokeOn]);
+        setVocalCut(audioRef.current, karaokeOn && !aiBeat);
+    }, [karaokeOn, aiBeat]);
+
+    // doi nguon cua CUNG the <audio> giua mp3 goc va nhac dem AI, nhac noi tiep dung giay dang toi
+    // (2 file dai bang nhau, Demucs giu nguyen do dai). Khong tao the <audio> moi: do thi Web Audio (song am) gan voi the nay.
+    const swappingRef = useRef(false);
+    // so giay da nghe o nguon truoc (doi nguon thi audio.played bi xoa) -> cham diem nghe van dung
+    const playedBeforeRef = useRef(0);
+    // nguoi dung muon dang phat: mp3 moi chua kip tu phat (autoPlay) thi audio.paused van la true.
+    // Bai mo dau o che do MV thi mp3 khong tu phat
+    const wantPlayRef = useRef(!(mvWanted && data.song.youtube_id && !showLyrics));
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        const url = aiBeat ? karaokeAi.beatUrl : `${API_URL}/music/${data.song.file_path}`;
+        if (audio.src === url) return;
+        const t = audio.currentTime;
+        const resume = wantPlayRef.current;
+        for (let i = 0; i < audio.played.length; i++) playedBeforeRef.current += audio.played.end(i) - audio.played.start(i);
+        swappingRef.current = true;
+        audio.autoplay = false;
+        audio.src = url;
+        audio.addEventListener("loadedmetadata", () => {
+            audio.currentTime = Math.min(t, Math.max(0, audio.duration - 0.5));
+            swappingRef.current = false;
+            if (resume) audio.play().catch(() => { });
+        }, { once: true });
+    }, [aiBeat, karaokeAi, data.song.file_path]);
+
+    // cham diem hat (chi khi dang o man loi + karaoke AI + bat "Score me")
+    const canScore = !!karaokeAi && !beatFailed;
+    const scoring = !!scoreOn && aiBeat && !!showLyrics;
+    const sing = useSingScore({ active: scoring, audioRef, track: karaokeAi?.track });
+    // hat xong bai -> the diem; bai ke cho toi khi bam nut tren the
+    const [scoreCard, setScoreCard] = useState(null);
     // KaraokeLine doc thoi gian bai 60 lan/giay qua ham nay (giu nguyen ham -> khong khoi dong lai vong ve)
     const getTime = useCallback(() => audioRef.current?.currentTime ?? 0, []);
 
@@ -295,6 +346,7 @@ const MusicPlayer = (props) => {
         for (let i = 0; i < audio.played.length; i++) {
             listened += audio.played.end(i) - audio.played.start(i);
         }
+        listened += playedBeforeRef.current;
         const fromMp3 = audio.duration ? listened / audio.duration : 0;
         const watch = mvWatchRef.current;
         const fromMv = watch.duration ? watch.seconds / watch.duration : 0;
@@ -313,7 +365,7 @@ const MusicPlayer = (props) => {
         }
 
         // che do playlist khong cham diem: diem so thich gan voi cam xuc, playlist khong co cam xuc
-        if (playlist || scoredRef.current) {
+        if (!scored || scoredRef.current) {
             onFinish();
             return;
         }
@@ -341,8 +393,10 @@ const MusicPlayer = (props) => {
 
     // het bai (mp3 / MV): Repeat one -> cham diem luot dau (1 lan) roi phat lai tu dau; nguoc lai sang bai
     const handleEnded = () => {
+        // dang cham diem karaoke -> hien diem, chua sang bai
+        if (scoring && !mv()) { setScoreCard(sing.getResult()); return; }
         if (repeat !== "one") { finishAndSend(); return; }
-        if (!playlist && !loadError && !scoredRef.current) sendListenReport();
+        if (scored && !loadError && !scoredRef.current) sendListenReport();
         const player = mv();
         if (player) { player.seekTo(0, true); player.playVideo(); }
         else { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => { }); }
@@ -382,6 +436,8 @@ const MusicPlayer = (props) => {
     // khong phat duoc file (sai ten / thieu mp3): truoc day tu nhay bai ngay -> thanh phat hien roi bien mat,
     // nguoi dung khong biet vi sao (va de lap lai lien tuc). Gio dung lai, bao loi; bam Next de sang bai khac.
     const handleError = () => {
+        // nhac dem AI loi (file hong / bi xoa) -> quay ve mp3 goc, karaoke dung cach L − R
+        if (audioRef.current?.src.includes("/karaoke/")) { swappingRef.current = false; setBeatFailed(true); return; }
         console.log("Khong phat duoc file:", data.song.file_path)
         setLoadError(true);
         setIsPlaying(false);
@@ -420,6 +476,23 @@ const MusicPlayer = (props) => {
         setMuted(value === 0);
         syncMvVolume(value, value === 0);
     }
+
+    // the diem karaoke: hat lai tu dau (cham lai tu 0) / sang bai ke
+    const singAgain = () => {
+        sing.reset();
+        setScoreCard(null);
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => { });
+    }
+    const nextAfterScore = () => {
+        setScoreCard(null);
+        finishAndSend();
+    }
+    // dang hien the diem ma roi man loi (Esc, nut Back...) -> khong ai bam nut tren the nua -> sang bai luon
+    // (bai moi = MusicPlayer moi -> the tu mat)
+    useEffect(() => {
+        if (scoreCard && !showLyrics) finishAndSend();
+    });
 
     // bam 1 dong loi -> tua toi dong do
     const seekTo = (seconds) => {
@@ -476,7 +549,7 @@ const MusicPlayer = (props) => {
         else if (command === "mv_on") { if (youtubeId && !mvOpen) openMv(); }
         else if (command === "mv_off") { if (mvOpen) closeMv(); }
         // playlist khong cham diem -> chi bo qua bai, khong gui feed-back
-        else if (command === "not_for_me") { if (playlist) finishAndSend(); else dislike(); }
+        else if (command === "not_for_me") { if (!scored) finishAndSend(); else dislike(); }
         else if (command === "volume_up") changeVolume(Math.min(1, volume + 0.2));
         else if (command === "volume_down") changeVolume(Math.max(0.1, volume - 0.2));
         else if (command === "mute") { audio.muted = true; setMuted(true); syncMvVolume(volume, true); }
@@ -499,30 +572,6 @@ const MusicPlayer = (props) => {
         onVolumeChange?.({ volume, muted });
     }, [volume, muted, duckRef, onVolumeChange]);
 
-    // true khi nhac dang dung vi nguoi dung di khoi -> quay lai moi tu phat tiep
-    // (tu bam dung thi khong tu phat lai)
-    const pausedByAwayRef = useRef(false);
-
-    // nut tren mach: nut 1 = bai tiep, nut 2 = tam dung / phat tiep
-    // cam bien PIR: vang nguoi 30s -> tam dung, quay lai -> phat tiep
-    useHardwareButtons({
-        onNext: finishAndSend,
-        onPause: () => {
-            pausedByAwayRef.current = false;
-            togglePlay();
-        },
-        onAway: () => {
-            if (isPaused()) return;
-            pausedByAwayRef.current = true;
-            pauseMedia();
-        },
-        onBack: () => {
-            if (!pausedByAwayRef.current) return;
-            pausedByAwayRef.current = false;
-            playMedia();
-        }
-    })
-
     // MV dung / chua chay -> AN trinh phat YouTube, hien anh thumbnail cua MV (YouTube cam ve de len trinh phat,
     // nen khong che icon cua ho ma an ca trinh phat khi khong phat)
     const mvHidden = mvState !== YT_PLAYING && mvState !== YT_BUFFERING;
@@ -540,9 +589,10 @@ const MusicPlayer = (props) => {
     const shownTime = mvOpen ? mvTime : currentTime;
     const shownDuration = mvOpen ? mvDuration : duration;
     const shownPlaying = mvOpen ? mvPlaying : isPlaying;
+    useEffect(() => { onPlayingChange?.(shownPlaying); }, [shownPlaying, onPlayingChange]);
     const progress = shownDuration ? (shownTime / shownDuration) * 100 : 0;
     // Repeat all: bai cuoi hang doi -> bai tiep la bai dau
-    const nextSong = playlist ? (playlist.songs[playlist.index + 1] ?? (repeat === "all" ? playlist.songs[0] : null)) : null;
+    const nextSong = playlist ? (playlist.songs[playlist.index + 1] ?? (repeat === "all" && !playlist.journey ? playlist.songs[0] : null)) : null;
     const repeatLabel = repeat === "one" ? "Repeat one (on)" : repeat === "all" ? "Repeat all (on)" : "Repeat (off)";
     const volumeLevel = muted ? 0 : volume * 100;
 
@@ -552,8 +602,9 @@ const MusicPlayer = (props) => {
             <audio ref={audioRef}
                 crossOrigin="anonymous"
                 src={`${API_URL}/music/${data.song.file_path}`}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
+                onPlay={() => { wantPlayRef.current = true; setIsPlaying(true); }}
+                // dang doi nguon mp3 <-> nhac dem: trinh duyet tu dung, khong phai nguoi dung bam dung
+                onPause={() => { if (swappingRef.current) return; wantPlayRef.current = false; setIsPlaying(false); }}
                 onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
                 onLoadedMetadata={(e) => setDuration(e.target.duration)}
                 onEnded={handleEnded}
@@ -569,9 +620,34 @@ const MusicPlayer = (props) => {
                 <div className="stage-head">
                     <div className="stage-info">
                         <h2 className="stage-title">{data.song.title}</h2>
-                        {playlist
-                            ? <span className="stage-source">♪ Playing from {playlist.name} · {playlist.index + 1}/{playlist.songs.length}</span>
-                            : data.message && <p className="stage-message">{data.message}</p>}
+                        {playlist && (
+                            <span className="stage-source">
+                                {playlist.journey ? `✦ ${playlist.name}` : `♪ Playing from ${playlist.name}`} · {playlist.index + 1}/{playlist.songs.length}
+                            </span>
+                        )}
+                        {(!playlist || playlist.journey) && data.message && <p className="stage-message">{data.message}</p>}
+                        {/* I2: vi sao NYX chon bai nay (backend lay tu dung cac diem da dung de xep hang) */}
+                        {scored && data.song.why?.length > 0 && (
+                            <p className="stage-why">
+                                <span className="why-label">Why this song</span>
+                                {data.song.why.map((w) => w.text).join(" · ")}
+                            </p>
+                        )}
+                        {/* C15: bai chon tu 1 lan quet camera -> nguoi dung sua duoc cam xuc AI doc sai */}
+                        {data.scanId && data.detectedEmotion && (
+                            <MoodFix scanId={data.scanId} detected={data.detectedEmotion} onResult={fixMood} />
+                        )}
+                        {/* vua sua / xac nhan cam xuc -> cam on + noi ro NYX dung cau tra loi do the nao */}
+                        {data.aiEmotion && (
+                            <p className="stage-note" role="status">
+                                {data.corrected && data.via === "voice"
+                                    ? `NYX read your face as ${moodLabel(data.aiEmotion)}, but went with what you said`
+                                    : data.corrected
+                                        ? `Thanks! NYX had read you as ${moodLabel(data.aiEmotion)}, it'll learn from this`
+                                        : "Thanks for confirming, NYX will learn from your answer"}
+                                {data.faceSaved ? " (photo kept for retraining)" : ""}
+                            </p>
+                        )}
                         {mvNote && <p className="stage-note" role="status">{mvNote}</p>}
                     </div>
                     <div className="stage-actions">
@@ -632,13 +708,20 @@ const MusicPlayer = (props) => {
                     loading={lyricsLoading}
                     karaoke={karaokeOn}
                     onKaraoke={onKaraoke}
+                    aiBeat={aiBeat}
+                    canScore={canScore}
+                    scoreOn={!!scoreOn}
+                    onScoreOn={onScoreOn}
+                    scoreStatus={sing.status}
+                    hearing={sing.hearing}
+                    scoreCard={scoreCard && <KaraokeScoreCard result={scoreCard} onAgain={singAgain} onNext={nextAfterScore} />}
                     getTime={getTime}
                     currentTime={currentTime}
                     onSeek={seekTo}
                     onClose={closeLyrics}
                     actions={<>
                         {likeButton("lyrics-action")}
-                        {!playlist && (
+                        {scored && (
                             <button className="lyrics-action" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
                                 <DislikeIcon />
                             </button>
@@ -687,7 +770,7 @@ const MusicPlayer = (props) => {
                     </button>
                     {likeButton("icon-btn")}
                     {/* che do playlist khong cham diem -> khong co nut nay */}
-                    {!playlist && (
+                    {scored && (
                         <button className="icon-btn dislike" onClick={dislike} title="Not for me (skip and remember)" aria-label="Not for me">
                             <DislikeIcon />
                         </button>
@@ -698,12 +781,13 @@ const MusicPlayer = (props) => {
                     <div className="bar-controls">
                         {/* che do cam xuc: NYX chon bai tiep theo cam xuc -> Shuffle chi dung cho playlist / hang doi */}
                         <button
-                            className={`icon-btn toggle ${shuffle && playlist ? "on" : ""}`}
+                            className={`icon-btn toggle ${shuffle && playlist && !playlist.journey ? "on" : ""}`}
                             onClick={onShuffle}
-                            disabled={!playlist}
+                            disabled={!playlist || playlist.journey}
                             aria-pressed={!!shuffle}
                             aria-label="Shuffle"
                             title={!playlist ? "Shuffle works on playlists. In mood mode NYX picks the next song for you"
+                                : playlist.journey ? "A mood journey keeps its order (sad songs first, then brighter ones)"
                                 : shuffle ? "Shuffle (on)" : "Shuffle (off)"}
                         ><ShuffleIcon /></button>
                         <button className="icon-btn" onClick={handlePrev} aria-label="Previous song" title="Previous (press again within 3s to go back a song)"><PrevIcon /></button>

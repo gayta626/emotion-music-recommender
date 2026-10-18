@@ -66,7 +66,7 @@
 ```sql
 -- Migration 002: goi y theo gu (dong nhac, dac trung am thanh)
 -- An toan khi chay nhieu lan, KHONG xoa du lieu cu.
--- Chay: psql -U postgres -d postgres -f db/migrate_002_taste.sql   (tren Pi: -d emotune)
+-- Chay: psql -U postgres -d postgres -f db/migrate_002_taste.sql
 
 ALTER TABLE songs ADD COLUMN IF NOT EXISTS genre TEXT;
 ALTER TABLE songs ADD COLUMN IF NOT EXISTS features REAL[];
@@ -747,7 +747,7 @@ git commit -m "feat(analyzer): audio feature extraction, ID3 merge, similarity"
 
 **Files:**
 - Create: `music-analyzer/analyze_music.py`
-- Modify: `NOTES.md` (mục "Chạy lại trên PC" và "Chạy lại trên Pi")
+- Modify: `NOTES.md` (mục "Chạy lại trên PC")
 
 **Interfaces:**
 - Consumes: `extract_features`, `merge_tags`, `similarity_matrix`, `FEATURE_DIM` (Task 6); cột `genre`, `features` (Task 1).
@@ -896,14 +896,14 @@ if __name__ == "__main__":
 
 - [ ] **Step 2: Chạy trên DB local**
 
-Chép 10 file mp3 vào `emotune-backend/music/` nếu máy chưa có (từ Pi: `scp "vinh@raspberrypi.local:~/emotion-music-recommender/emotune-backend/music/*.mp3" emotune-backend/music/`), rồi:
+Chép 10 file mp3 vào `emotune-backend/music/` nếu máy chưa có, rồi:
 
 ```powershell
 cd music-analyzer
 venv\Scripts\python analyze_music.py --similarity
 venv\Scripts\python analyze_music.py
 ```
-Nếu mọi bài đều báo `⚠ Bỏ qua ... NoBackendError` thì máy không giải mã được mp3: cài ffmpeg (`winget install Gyan.FFmpeg`, Pi: `sudo apt install -y ffmpeg`), mở terminal mới rồi chạy lại.
+Nếu mọi bài đều báo `⚠ Bỏ qua ... NoBackendError` thì máy không giải mã được mp3: cài ffmpeg (`winget install Gyan.FFmpeg`), mở terminal mới rồi chạy lại.
 
 Expected lần 1: 10 dòng `✓ #id 'Tên bài': tempo ... BPM · ...` (bài thiếu file in `⚠ Bỏ qua`), sau đó bảng độ giống 10×10, đường chéo = 1.00. Lần 2: `Không có bài nào cần phân tích`. Kiểm tra bằng mắt: 2 bài `angry` (Meditation, Reduce Stress — nhạc thư giãn) giống nhau hơn so với với `Blank Space`.
 
@@ -918,13 +918,13 @@ Sau đó bật backend, gửi `/listen-report` 1 lần với `finishPercent: 1` 
 
 - [ ] **Step 4: Cập nhật NOTES.md**
 
-Thêm vào mục "Chạy lại trên PC" và "Chạy lại trên Pi (demo)":
+Thêm vào mục "Chạy lại trên PC":
 
 ```markdown
 ### Gợi ý theo gu (sau khi thêm bài mới)
-1. DB đã có từ trước: chạy 1 lần `db/migrate_002_taste.sql` (DBeaver Alt+X, hoặc psql; Pi dùng `-d emotune`).
+1. DB đã có từ trước: chạy 1 lần `db/migrate_002_taste.sql` (DBeaver Alt+X, hoặc psql).
 2. Thêm bài: chép mp3 vào `emotune-backend/music/`, thêm dòng vào `songs` (có thể điền `artist`, `genre` — không bắt buộc).
-3. `cd music-analyzer && venv\Scripts\python analyze_music.py --similarity` (Pi: `venv/bin/python`). Lần đầu: `python -m venv venv` + `pip install -r requirements.txt`.
+3. `cd music-analyzer && venv\Scripts\python analyze_music.py --similarity`. Lần đầu: `python -m venv venv` + `pip install -r requirements.txt`.
 4. Test backend: `cd emotune-backend && npm test`.
 ```
 

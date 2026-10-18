@@ -1,0 +1,111 @@
+// I3 — dải lời chào cá nhân dưới hàng chip thể loại (mẫu "C · dải mỏng").
+// Nền kính mờ hơi trong (thấy bầu trời đêm phía sau), viền mảnh; màu chữ theo trang chủ.
+.home-greeting {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.07);
+  backdrop-filter: blur(6px);
+  // hiện ra nhẹ khi vào trang
+  animation: greet-in 0.45s ease-out both;
+
+  .greet-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+  }
+
+  .greet-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+
+    strong {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    span {
+      color: var(--muted);
+    }
+  }
+
+  .greet-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    padding: 0 0 0 2px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: scale 0.1s, filter 0.15s;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    &:hover:not(:disabled) {
+      scale: 1.06;
+    }
+
+    &:disabled {
+      filter: grayscale(0.6) brightness(0.8);
+      cursor: progress;
+    }
+
+    // "Scan again": nút chữ thay cho ▶
+    &.text {
+      width: auto;
+      padding: 0 16px;
+      border-radius: 999px;
+      color: #1b1638;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  }
+}
+
+@keyframes greet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-greeting {
+    animation: none;
+  }
+}
+
+// điện thoại: chữ nhỏ hơn, icon nhỏ hơn
+@media (max-width: 640px) {
+  .home-greeting {
+    gap: 10px;
+    padding: 8px 10px;
+
+    .greet-icon {
+      width: 34px;
+      height: 34px;
+    }
+
+    .greet-text {
+      font-size: 13px;
+    }
+  }
+}

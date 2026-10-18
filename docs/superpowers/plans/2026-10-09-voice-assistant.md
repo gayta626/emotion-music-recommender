@@ -992,7 +992,7 @@ Expected: hai file bắt đầu bằng `<svg` có `width`/`height`. Nếu URL đ
 ```js
 // Nhan giong noi + doc to cho tro ly (H6).
 // Nhan giong: Web Speech API cua Chrome/Edge (gui am thanh len may chu Google -> can Internet).
-// Tach rieng file nay: sau nay tren Pi (Chromium khong co Web Speech) chi can thay bang ban goi Whisper/PhoWhisper.
+// Tach rieng file nay: trinh duyet khong co Web Speech thi chi can thay bang ban goi Whisper/PhoWhisper.
 const Recognition = typeof window !== "undefined"
     ? (window.SpeechRecognition || window.webkitSpeechRecognition)
     : null;

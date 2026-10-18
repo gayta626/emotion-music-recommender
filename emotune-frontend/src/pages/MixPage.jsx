@@ -6,6 +6,8 @@ import MoodIcon from '../components/MoodIcon';
 import Shelf from '../components/Shelf';
 import SongThumb from '../components/SongThumb';
 import { usePlayback } from '../contexts/playbackContext';
+import PlayingBars from '../components/PlayingBars';
+import { SkeletonPage } from '../components/Skeleton';
 import { formatAdded, formatDuration } from '../utils/format';
 import { buildMix, mixPath, withArtists } from '../utils/mixes';
 import { EMOTIONS } from '../utils/moodStats';
@@ -56,7 +58,7 @@ const MixView = ({ mixKey, artistId, genreId }) => {
         return { mix, more, genre };
     }, [data, mixKey, artistId, genreId]);
 
-    if (data.status === 'loading') return <div className="browse-page mix-page"><p className="mix-note">Loading…</p></div>;
+    if (data.status === 'loading') return <div className="browse-page mix-page"><SkeletonPage /></div>;
     if (data.status === 'error' || !view.mix) {
         return (
             <div className="browse-page mix-page">
@@ -105,7 +107,7 @@ const MixView = ({ mixKey, artistId, genreId }) => {
                     const playing = nowPlaying?.songId === s.id;
                     return (
                         <button key={s.id} role="listitem" className={`mix-row ${playing ? 'playing' : ''}`} onClick={() => play(i)} title={`Play ${s.title}`}>
-                            <span className="col-num">{playing ? '♫' : i + 1}</span>
+                            <span className="col-num">{playing ? <PlayingBars /> : i + 1}</span>
                             <span className="mix-song">
                                 <SongThumb className="mix-thumb" song={s} />
                                 <span className="mix-song-text">

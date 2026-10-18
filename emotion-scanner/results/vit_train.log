@@ -1,0 +1,100 @@
+Thiết bị: cuda · 72535 ảnh
+
+=== vit fold 1: test ['mom', 'nhat'], val ducvinh ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  15%|█▌        | 30/200 [00:00<00:00, 286.72it/s]Loading weights:  36%|███▌      | 71/200 [00:00<00:00, 351.03it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 950.28it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+    val: công khai 0.698 · ducvinh 0.762
+{'epoch': 1, 'loss': 1.3284, 'sec': 162.3, 'val': 0.7299}
+    val: công khai 0.756 · ducvinh 0.720
+{'epoch': 2, 'loss': 0.9418, 'sec': 160.3, 'val': 0.7378}
+    val: công khai 0.758 · ducvinh 0.819
+{'epoch': 3, 'loss': 0.8557, 'sec': 160.5, 'val': 0.7885}
+    val: công khai 0.781 · ducvinh 0.809
+{'epoch': 4, 'loss': 0.813, 'sec': 160.4, 'val': 0.7951}
+    val: công khai 0.756 · ducvinh 0.821
+{'epoch': 5, 'loss': 0.7944, 'sec': 160.5, 'val': 0.7887}
+    val: công khai 0.785 · ducvinh 0.788
+{'epoch': 6, 'loss': 0.7762, 'sec': 160.4, 'val': 0.7862}
+  -> test acc 0.708, macro-F1 0.703
+
+=== vit fold 2: test ['phuc', 'trung'], val dung ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  40%|████      | 81/200 [00:00<00:00, 779.50it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 1214.65it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+    val: công khai 0.704 · dung 0.324
+{'epoch': 1, 'loss': 1.318, 'sec': 160.5, 'val': 0.5139}
+    val: công khai 0.775 · dung 0.437
+{'epoch': 2, 'loss': 0.9343, 'sec': 160.4, 'val': 0.6057}
+    val: công khai 0.791 · dung 0.426
+{'epoch': 3, 'loss': 0.8586, 'sec': 160.5, 'val': 0.6083}
+    val: công khai 0.750 · dung 0.601
+{'epoch': 4, 'loss': 0.8154, 'sec': 160.5, 'val': 0.6757}
+    val: công khai 0.787 · dung 0.448
+{'epoch': 5, 'loss': 0.7828, 'sec': 160.5, 'val': 0.6179}
+    val: công khai 0.789 · dung 0.490
+{'epoch': 6, 'loss': 0.773, 'sec': 160.5, 'val': 0.6397}
+  -> test acc 0.761, macro-F1 0.754
+
+=== vit fold 3: test ['ducvinh', 'vanquynh'], val nhat ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  55%|█████▍    | 109/200 [00:00<00:00, 1044.05it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 1221.94it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+    val: công khai 0.722 · nhat 0.707
+{'epoch': 1, 'loss': 1.3266, 'sec': 160.6, 'val': 0.7145}
+    val: công khai 0.756 · nhat 0.702
+{'epoch': 2, 'loss': 0.9364, 'sec': 160.6, 'val': 0.7287}
+    val: công khai 0.773 · nhat 0.666
+{'epoch': 3, 'loss': 0.8674, 'sec': 160.4, 'val': 0.7196}
+    val: công khai 0.780 · nhat 0.694
+{'epoch': 4, 'loss': 0.8163, 'sec': 160.6, 'val': 0.737}
+    val: công khai 0.786 · nhat 0.687
+{'epoch': 5, 'loss': 0.7949, 'sec': 160.4, 'val': 0.7364}
+    val: công khai 0.766 · nhat 0.644
+{'epoch': 6, 'loss': 0.7828, 'sec': 160.6, 'val': 0.7051}
+  -> test acc 0.827, macro-F1 0.827
+
+=== vit fold 4: test ['dung', 'vy'], val phuc ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  41%|████      | 82/200 [00:00<00:00, 787.14it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 1195.62it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+    val: công khai 0.680 · phuc 0.689
+{'epoch': 1, 'loss': 1.2954, 'sec': 160.5, 'val': 0.6845}
+    val: công khai 0.733 · phuc 0.745
+{'epoch': 2, 'loss': 0.9333, 'sec': 160.6, 'val': 0.739}
+    val: công khai 0.768 · phuc 0.841
+{'epoch': 3, 'loss': 0.8535, 'sec': 160.5, 'val': 0.8043}
+    val: công khai 0.793 · phuc 0.725
+{'epoch': 4, 'loss': 0.8127, 'sec': 160.6, 'val': 0.7587}
+    val: công khai 0.793 · phuc 0.779
+{'epoch': 5, 'loss': 0.7857, 'sec': 160.5, 'val': 0.7863}
+  -> test acc 0.553, macro-F1 0.524
+✓ Báo cáo: results/vit_cv.md

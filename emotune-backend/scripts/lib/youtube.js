@@ -29,7 +29,7 @@ const extraWords = (videoTitle, songTitle, singer) => {
     return rest.split(" ").filter((w) => w && !FILLER.has(w)).length;
 };
 
-// items: [{ id, title, channel }] (ket qua search) -> { id, score } hoac null
+// items: [{ id, title, channel, ageRestricted? }] (ket qua search) -> { id, score } hoac null
 const pickVideo = (items, title, artist) => {
     const songTitle = plain(baseTitle(title));
     const songPlain = plain(title);
@@ -38,6 +38,8 @@ const pickVideo = (items, title, artist) => {
 
     let best = null;
     for (const item of items) {
+        // video gioi han do tuoi: API van bao "embeddable" nhung trinh phat nhung tu choi (loi 150) -> bo
+        if (item.ageRestricted) continue;
         // chu Trung / Nhat / Han trong ten -> ban dang lai kem phu de nuoc ngoai, khong phai ban goc
         if (/[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(item.title)) continue;
         const videoTitle = plain(item.title);
@@ -85,7 +87,28 @@ const searchVideos = async (query, key) => {
         err.quotaExceeded = body.error.errors?.some((e) => e.reason === "quotaExceeded");
         throw err;
     }
-    return body.items.map((it) => ({ id: it.id.videoId, title: decodeEntities(it.snippet.title), channel: it.snippet.channelTitle }));
+    const items = body.items.map((it) => ({ id: it.id.videoId, title: decodeEntities(it.snippet.title), channel: it.snippet.channelTitle }));
+    const restricted = await ageRestrictedIds(items.map((it) => it.id), key);
+    return items.map((it) => ({ ...it, ageRestricted: restricted.has(it.id) }));
+};
+
+// search.list khong loc duoc video gioi han do tuoi -> hoi them videos.list (1 don vi / lan, toi da 50 id)
+const ageRestrictedIds = async (ids, key) => {
+    if (!ids.length) return new Set();
+    const url = "https://www.googleapis.com/youtube/v3/videos?" + new URLSearchParams({
+        part: "contentDetails",
+        id: ids.join(","),
+        key,
+    });
+    const body = await (await fetch(url)).json();
+    if (body.error) {
+        const err = new Error(body.error.message);
+        err.quotaExceeded = body.error.errors?.some((e) => e.reason === "quotaExceeded");
+        throw err;
+    }
+    return new Set(body.items
+        .filter((it) => it.contentDetails.contentRating?.ytRating === "ytAgeRestricted")
+        .map((it) => it.id));
 };
 
 // API tra ten video co "&amp;", "&#39;"...

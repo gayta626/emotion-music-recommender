@@ -160,7 +160,7 @@ const getStats = async (userId, rawDays) => {
 
 module.exports = {
     EMOTIONS, OUTCOMES,
-    normalizeDays, dayKey,
+    normalizeDays, dayKey, dayRange,
     buildDaily, buildHourly, topEmotionOf, buildHitRate, pickMoodSongs, pickPreferences, buildConfidence,
     getStats,
 };

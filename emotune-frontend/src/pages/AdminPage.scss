@@ -1,0 +1,652 @@
+// Trang admin theo dõi hệ thống (/admin) — nằm trong .mood-page.stats-page nên dùng lại thẻ neon, nút 7/30, bảng của /stats.
+// Màu MỨC (đạt / theo dõi / báo động / thiếu dữ liệu) tách riêng khỏi màu cảm xúc, đã kiểm tra tương phản ≥ 4.5:1
+// trên nền thẻ #24253e (dataviz contrast); luôn đi kèm icon + chữ, không chỉ dựa vào màu.
+.mood-page.stats-page.admin-page {
+  --s-ok: #3ccf8e;
+  --s-warn: #f5b031;
+  --s-alert: #ff5c7a;
+  --s-nodata: #8f91ad;
+
+  .s-ok { --s: var(--s-ok); }
+  .s-warn { --s: var(--s-warn); }
+  .s-alert { --s: var(--s-alert); }
+  .s-nodata { --s: var(--s-nodata); }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  code {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 13px;
+  }
+
+  // ---- đầu trang: công tắc tài khoản mẫu + 7/30 ngày ----
+  .admin-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    &[aria-busy='true'] {
+      cursor: progress;
+    }
+  }
+
+  .sample-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--search-text);
+    cursor: pointer;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .track {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--card-solid);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      transition: background 0.2s;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #c9cae0;
+        transition: transform 0.2s;
+      }
+    }
+
+    input:checked + .track {
+      background: var(--neon);
+      box-shadow: 0 0 12px rgba(232, 69, 110, 0.45);
+
+      &::after {
+        transform: translateX(16px);
+        background: #fff;
+      }
+    }
+
+    input:focus-visible + .track {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  // ---- dải trạng thái chung ----
+  .health-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--s) 16%, transparent) 0%, transparent 70%),
+      var(--card);
+    border: 1px solid color-mix(in srgb, var(--s) 45%, transparent);
+    box-shadow: 0 0 28px color-mix(in srgb, var(--s) 18%, transparent), 0 12px 32px rgba(0, 0, 0, 0.35);
+
+    > div {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    b {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 17px;
+    }
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    li button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 2px 0;
+      border: none;
+      background: none;
+      color: var(--search-text);
+      font: inherit;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+
+      &::before {
+        content: '';
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--s);
+        box-shadow: 0 0 8px var(--s);
+      }
+
+      &:hover {
+        color: #fff;
+        text-decoration: underline;
+      }
+    }
+
+    small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  .hb-icon {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--s) 22%, transparent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--s) 50%, transparent);
+
+    svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: var(--s);
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  }
+
+  &[data-health='alert'] .hb-icon {
+    animation: admin-pulse 2.4s ease-in-out infinite;
+  }
+
+  // ---- nhãn mức (icon + chữ) ----
+  .status-pill {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px 3px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--s) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--s) 40%, transparent);
+    color: var(--s);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  }
+
+  // ---- 5 ô chỉ số ----
+  .health-tiles {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .health-tile {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background:
+      radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, var(--s) 14%, transparent) 0%, transparent 60%),
+      var(--card);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+
+    // vạch sáng màu mức ở mép trên
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      background: var(--s);
+      box-shadow: 0 0 14px var(--s);
+      opacity: 0.85;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    // ô đang xem ở biểu đồ lớn: viền neon
+    &[aria-pressed='true'] {
+      border-color: transparent;
+      background:
+        radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, var(--s) 14%, transparent) 0%, transparent 60%) padding-box,
+        linear-gradient(var(--card-solid), var(--card-solid)) padding-box,
+        var(--neon) border-box;
+      box-shadow: 0 0 22px rgba(232, 69, 110, 0.28), 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    &.s-alert {
+      animation: admin-glow 2.4s ease-in-out infinite;
+    }
+  }
+
+  .ht-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ht-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--search-text);
+  }
+
+  .ht-value {
+    margin-top: 4px;
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+    font-size: clamp(34px, 3.4vw, 44px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .ht-short {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+
+  .ht-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    &.better { color: var(--s-ok); }
+    &.worse { color: var(--s-alert); }
+  }
+
+  .ht-spark {
+    width: 100%;
+    height: 40px;
+    margin-top: 4px;
+    overflow: visible;
+  }
+
+  .ht-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 0 4px rgba(232, 69, 110, 0.55));
+  }
+
+  .ht-dot {
+    stroke-width: 5;
+  }
+
+  .ht-target-line {
+    stroke: var(--s-ok);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0.6;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .ht-target {
+    padding-top: 8px;
+    border-top: 1px solid var(--grid);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  // ---- biểu đồ lớn theo ngày ----
+  .trend-wrap {
+    position: relative;
+    min-height: 240px;
+
+    svg {
+      display: block;
+    }
+  }
+
+  .trend-grid {
+    line {
+      stroke: var(--grid);
+    }
+
+    text {
+      fill: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .trend-x {
+    fill: var(--muted);
+    font-size: 11px;
+  }
+
+  .trend-alert-zone {
+    fill: var(--s-alert);
+    opacity: 0.07;
+  }
+
+  .trend-ref {
+    stroke-width: 1.2;
+    stroke-dasharray: 5 4;
+
+    &.ok { stroke: var(--s-ok); }
+    &.alert { stroke: var(--s-alert); }
+  }
+
+  .trend-ref-label {
+    font-size: 11px;
+    font-weight: 600;
+
+    &.ok { fill: var(--s-ok); }
+    &.alert { fill: var(--s-alert); }
+  }
+
+  .trend-line {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 6px rgba(232, 69, 110, 0.6));
+  }
+
+  .trend-dot {
+    fill: #fff;
+    stroke: var(--card-solid);
+    stroke-width: 2;
+    pointer-events: none;
+
+    &.on {
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+    }
+  }
+
+  .trend-dot.thin {
+    fill: var(--card-solid);
+    stroke: #fff;
+    stroke-width: 1.6;
+  }
+
+  .trend-legend {
+    margin-top: 6px;
+  }
+
+  .trend-key {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #fff;
+
+    &.thin {
+      background: none;
+      border: 1.6px solid #fff;
+    }
+
+    &.zone {
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--s-alert) 30%, transparent);
+      border: 1px dashed var(--s-alert);
+    }
+  }
+
+  .trend-cross {
+    stroke: rgba(255, 255, 255, 0.35);
+    stroke-width: 1;
+  }
+
+  .trend-hit {
+    fill: transparent;
+    outline: none;
+    cursor: crosshair;
+
+    &:focus-visible {
+      fill: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .trend-tip {
+    top: 0;
+    bottom: auto;
+    transform: translate(-50%, calc(-100% - 12px));
+    min-width: 170px;
+    background: var(--tip-bg);
+  }
+
+  // ---- bảng theo người dùng ----
+  .user-table {
+    td {
+      vertical-align: middle;
+    }
+  }
+
+  .user-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+  }
+
+  .sample-tag {
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .rate-cell {
+    position: relative;   // chữ .sr-only (absolute) nằm trong ô -> không thoát ra ngoài bảng cuộn ngang làm trang tràn
+    color: #fff;
+
+    .rate-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--s);
+      box-shadow: 0 0 6px var(--s);
+      vertical-align: 1px;
+    }
+
+    // chỉ ô có vấn đề mới tô nền -> mắt tìm ra ngay
+    &.s-warn,
+    &.s-alert {
+      background: color-mix(in srgb, var(--s) 10%, transparent);
+    }
+  }
+
+  // ---- vòng phản hồi: ảnh đã thu để train lại (C15) ----
+  .loop-card {
+    code {
+      font-size: 12px;
+    }
+  }
+
+  .loop-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .loop-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 92px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+
+    b {
+      font-size: 22px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    &.main {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  // ---- cách đo ----
+  .how-card {
+    dl {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 28px;
+    }
+
+    dt {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    dd {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--search-text);
+
+      small {
+        color: var(--muted);
+      }
+    }
+
+    > p {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+
+  .admin-locked {
+    max-width: 560px;
+
+    h1 {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 28px;
+    }
+  }
+}
+
+@keyframes admin-glow {
+  0%,
+  100% { box-shadow: 0 0 0 rgba(255, 92, 122, 0), 0 12px 32px rgba(0, 0, 0, 0.35); }
+  50% { box-shadow: 0 0 26px rgba(255, 92, 122, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35); }
+}
+
+@keyframes admin-pulse {
+  0%,
+  100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mood-page.stats-page.admin-page {
+    .health-tile.s-alert,
+    &[data-health='alert'] .hb-icon {
+      animation: none;
+    }
+  }
+}
+
+// theo bề rộng vùng nội dung (container "stats" của Stats.scss)
+@container stats (max-width: 1240px) {
+  .mood-page.stats-page.admin-page .health-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container stats (max-width: 1000px) {
+  .mood-page.stats-page.admin-page .health-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container stats (max-width: 640px) {
+  .mood-page.stats-page.admin-page {
+    .health-tiles {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .how-card dl {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .health-banner {
+      padding: 14px;
+    }
+  }
+}

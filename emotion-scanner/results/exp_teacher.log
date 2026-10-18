@@ -1,0 +1,72 @@
+Thiết bị: cuda · 72535 ảnh · đang nạp ảnh...
+
+=== thầy ViT fold 1: test ['mom', 'nhat'] ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  32%|███▎      | 65/200 [00:00<00:00, 626.98it/s]Loading weights:  64%|██████▍   | 128/200 [00:00<00:00, 534.94it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 841.95it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+{'epoch': 1, 'loss': 1.3283, 'sec': 163.5, 'val': 0.7373}
+{'epoch': 2, 'loss': 0.9421, 'sec': 162.5, 'val': 0.7371}
+{'epoch': 3, 'loss': 0.856, 'sec': 162.4, 'val': 0.7841}
+{'epoch': 4, 'loss': 0.8134, 'sec': 162.3, 'val': 0.7914}
+{'epoch': 5, 'loss': 0.7944, 'sec': 162.3, 'val': 0.7835}
+{'epoch': 6, 'loss': 0.7763, 'sec': 163.2, 'val': 0.7704}
+
+=== thầy ViT fold 2: test ['phuc', 'trung'] ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  43%|████▎     | 86/200 [00:00<00:00, 777.71it/s]Loading weights:  82%|████████▏ | 164/200 [00:00<00:00, 756.46it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 919.14it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+{'epoch': 1, 'loss': 1.3179, 'sec': 162.2, 'val': 0.5058}
+{'epoch': 2, 'loss': 0.9353, 'sec': 162.3, 'val': 0.6057}
+{'epoch': 3, 'loss': 0.859, 'sec': 161.7, 'val': 0.6265}
+{'epoch': 4, 'loss': 0.8159, 'sec': 161.7, 'val': 0.676}
+{'epoch': 5, 'loss': 0.7826, 'sec': 161.6, 'val': 0.6327}
+{'epoch': 6, 'loss': 0.7736, 'sec': 161.6, 'val': 0.6347}
+
+=== thầy ViT fold 3: test ['ducvinh', 'vanquynh'] ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  26%|██▌       | 52/200 [00:00<00:00, 503.18it/s]Loading weights:  57%|█████▊    | 115/200 [00:00<00:00, 560.77it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 785.11it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+{'epoch': 1, 'loss': 1.327, 'sec': 161.7, 'val': 0.7152}
+{'epoch': 2, 'loss': 0.9364, 'sec': 161.7, 'val': 0.734}
+{'epoch': 3, 'loss': 0.8674, 'sec': 161.6, 'val': 0.7304}
+{'epoch': 4, 'loss': 0.8162, 'sec': 161.6, 'val': 0.7396}
+{'epoch': 5, 'loss': 0.7937, 'sec': 161.7, 'val': 0.7367}
+{'epoch': 6, 'loss': 0.7813, 'sec': 161.7, 'val': 0.7078}
+
+=== thầy ViT fold 4: test ['dung', 'vy'] ===
+[transformers] You passed `num_labels=5` which is incompatible to the `id2label` map of length `7`.
+Loading weights:   0%|          | 0/200 [00:00<?, ?it/s]Loading weights:  40%|████      | 80/200 [00:00<00:00, 716.30it/s]Loading weights:  82%|████████▏ | 163/200 [00:00<00:00, 752.34it/s]Loading weights: 100%|██████████| 200/200 [00:00<00:00, 776.45it/s]
+[transformers] [1mViTForImageClassification LOAD REPORT[0m from: trpakov/vit-face-expression
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7, 768]) vs model:torch.Size([5, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([7]) vs model:torch.Size([5])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+{'epoch': 1, 'loss': 1.2956, 'sec': 161.7, 'val': 0.68}
+{'epoch': 2, 'loss': 0.9333, 'sec': 161.7, 'val': 0.751}
+{'epoch': 3, 'loss': 0.8538, 'sec': 161.7, 'val': 0.7998}
+{'epoch': 4, 'loss': 0.8125, 'sec': 161.8, 'val': 0.7683}
+{'epoch': 5, 'loss': 0.7856, 'sec': 161.7, 'val': 0.7777}

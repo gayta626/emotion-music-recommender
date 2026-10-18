@@ -1,6 +1,6 @@
 // Nap YouTube IFrame Player API (https://www.youtube.com/iframe_api) 1 lan cho ca trang -> Promise<YT>.
 // Dung trinh phat chinh thuc cua YouTube (dung dieu khoan: video luon hien tren man hinh, co nut cua YouTube).
-// Khong co mang (Pi mat hotspot...) -> reject sau toi da 10 giay, web bao loi va phat tiep mp3.
+// Khong co mang (mat Wi-Fi...) -> reject sau toi da 10 giay, web bao loi va phat tiep mp3.
 let apiPromise = null;
 
 export const loadYouTubeApi = () => {

@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import MoodIcon from '../components/MoodIcon';
 import { MoodWeekChart, ScanDots } from '../components/HomeMood';
+import HomeGreeting from '../components/HomeGreeting';
 import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
 import { buildMix, mixPath } from '../utils/mixes';
 import Shelf from '../components/Shelf';
+import { SkeletonCards } from '../components/Skeleton';
 import { usePlayback } from '../contexts/playbackContext';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import { timeAgo } from '../utils/moodSession';
@@ -30,6 +32,9 @@ const useLoad = (url, deps = []) => {
     }, deps);
     return state;
 }
+
+// hang chua tai xong (chua co du lieu, chua loi) -> ve the xam (I6)
+const loading = (state) => !state.data && !state.error;
 
 const LOAD_ERROR = "Couldn't load this section.";
 const EMPTY_GENRE = 'No song in this genre yet.';
@@ -134,6 +139,9 @@ const BrowsePage = () => {
                 ))}
             </div>
 
+            {/* I3: loi chao ca nhan (gio, cam xuc quet gan nhat, hanh trinh cam xuc dang chay) */}
+            <HomeGreeting cheerOn={!!moodSummary?.status.on} />
+
             <Shelf title="Getting started" className="getting-started">
                 <div className="banner" style={{ backgroundImage: `url(${bannerImg})` }}>
                     <p className="banner-title">CREATE YOUR <br />OWN PLAYLIST</p>
@@ -155,11 +163,11 @@ const BrowsePage = () => {
                 eyebrow="Picked from what you listen to and love"
                 note={forYou.error ? LOAD_ERROR : forYou.data && !madeForYou.length ? EMPTY_GENRE : null}
             >
-                {madeForYou.map((s) => <SongCard key={s.id} song={s} playing={isPlaying(s)} onPlay={playSong} />)}
+                {loading(forYou) ? <SkeletonCards /> : madeForYou.map((s) => <SongCard key={s.id} song={s} playing={isPlaying(s)} onPlay={playSong} />)}
             </Shelf>
 
             <Shelf title="Popular artists" note={artists.error ? LOAD_ERROR : null}>
-                {artistTiles.map((a) => <ArtistCard key={a.id} artist={a} onOpen={(artist) => navigate(`/artist/${artist.id}`)} />)}
+                {loading(artists) ? <SkeletonCards round /> : artistTiles.map((a) => <ArtistCard key={a.id} artist={a} onOpen={(artist) => navigate(`/artist/${artist.id}`)} />)}
             </Shelf>
 
             <Shelf
@@ -167,14 +175,14 @@ const BrowsePage = () => {
                 eyebrow="Brand new music in the NYX library"
                 note={songs.error ? LOAD_ERROR : songs.data && !recentShown.length ? EMPTY_GENRE : null}
             >
-                {recentShown.map((s) => <SongCard key={s.id} song={s} playing={isPlaying(s)} onPlay={playSong} />)}
+                {loading(songs) ? <SkeletonCards /> : recentShown.map((s) => <SongCard key={s.id} song={s} playing={isPlaying(s)} onPlay={playSong} />)}
             </Shelf>
 
             <Shelf
                 title="Mixes for every mood"
                 note={songs.error ? LOAD_ERROR : songs.data && !mixes.length ? EMPTY_GENRE : null}
             >
-                {mixes.map((m) => <MixCard key={m.key} mix={m} onOpen={(mix) => navigate(mixPath(mix))} />)}
+                {loading(songs) ? <SkeletonCards /> : mixes.map((m) => <MixCard key={m.key} mix={m} onOpen={(mix) => navigate(mixPath(mix))} />)}
             </Shelf>
 
             {/* 2 the lon cuoi trang (vi tri the podcast #471824 + khung xam trong Figma) */}

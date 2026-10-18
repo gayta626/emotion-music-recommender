@@ -1,0 +1,30 @@
+{
+  "layer": 4,
+  "picked": {
+    "neutral": {
+      "file": "data/neutral/ducvinh_neutral_1787032431130.jpg",
+      "pred": "neutral",
+      "confidence": 0.9658
+    },
+    "happy": {
+      "file": "data/happy/ducvinh_happy_1787032568195.jpg",
+      "pred": "happy",
+      "confidence": 0.9371
+    },
+    "sad": {
+      "file": "data/sad/ducvinh_sad_1787032601194.jpg",
+      "pred": "sad",
+      "confidence": 0.9547
+    },
+    "angry": {
+      "file": "data/angry/ducvinh_angry_1787032619908.jpg",
+      "pred": "angry",
+      "confidence": 0.9622
+    },
+    "surprise": {
+      "file": "data/surprise/ducvinh_surprise_1787032762504.jpg",
+      "pred": "surprise",
+      "confidence": 0.9251
+    }
+  }
+}

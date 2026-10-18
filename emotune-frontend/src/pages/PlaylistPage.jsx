@@ -4,6 +4,8 @@ import api from '../api';
 import SongThumb from '../components/SongThumb';
 import { useAuth } from '../contexts/authContext';
 import { usePlayback } from '../contexts/playbackContext';
+import PlayingBars from '../components/PlayingBars';
+import { SkeletonPage } from '../components/Skeleton';
 import { plain } from '../utils/text';
 import { formatAdded, formatDuration } from '../utils/format';
 import SearchIcon from '../assets/icons/search_icon.svg?react';
@@ -130,7 +132,7 @@ const PlaylistView = ({ id }) => {
     }
 
     if (error && !playlist) return <div className="playlist-page"><p className="pl-error">{error}</p></div>;
-    if (!playlist) return <div className="playlist-page"><p className="pl-loading">Loading…</p></div>;
+    if (!playlist) return <div className="playlist-page"><SkeletonPage /></div>;
 
     const playingHere = nowPlaying?.playlistId === playlist.id;
 
@@ -200,7 +202,7 @@ const PlaylistView = ({ id }) => {
                                 return (
                                     <tr key={s.id} className={isNow ? 'now' : ''} onDoubleClick={() => playPlaylist(playlist.id, i)}>
                                         <td className="col-num">
-                                            <span className="num">{isNow ? <span className="eq" aria-label="Now playing"><i /><i /><i /></span> : i + 1}</span>
+                                            <span className="num">{isNow ? <PlayingBars /> : i + 1}</span>
                                             <button className="row-play" onClick={() => playPlaylist(playlist.id, i)} aria-label={`Play ${s.title}`}>▶</button>
                                         </td>
                                         <td><SongCell song={s} /></td>

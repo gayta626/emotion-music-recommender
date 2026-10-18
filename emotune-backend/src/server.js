@@ -7,7 +7,8 @@ const cors = require("cors");
 
 let app = express()
 
-app.use(express.json());
+// 2mb: luot quet gui 5 tam anh base64 (~20KB/tam), mac dinh 100kb cua express khong du
+app.use(express.json({ limit: "2mb" }));
 app.use(cors());
 
 // phuc vu file nhac: GET /music/happy_01.mp3 -> emotune-backend/music/happy_01.mp3
@@ -21,6 +22,10 @@ app.use("/covers", express.static(path.join(__dirname, "..", "covers")));
 
 // loi bai hat: GET /lyrics/gia_nhu.lrc -> emotune-backend/lyrics/gia_nhu.lrc (do `npm run fetch-lyrics` tai ve)
 app.use("/lyrics", express.static(path.join(__dirname, "..", "lyrics")));
+
+// karaoke (AI tach giong): GET /karaoke/gia_nhu.beat.mp3 (nhac dem) + /karaoke/gia_nhu.json (cao do giong ca si)
+// -> emotune-backend/karaoke/ (do `npm run make-karaoke` tao ra)
+app.use("/karaoke", express.static(path.join(__dirname, "..", "karaoke")));
 
 initWebRoutes(app);
 

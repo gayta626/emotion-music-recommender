@@ -2,6 +2,7 @@ import SongThumb from '../components/SongThumb';
 import HeartIcon from '../components/HeartIcon';
 import { useAuth } from '../contexts/authContext';
 import { usePlayback } from '../contexts/playbackContext';
+import PlayingBars from '../components/PlayingBars';
 import { formatAdded, formatDuration } from '../utils/format';
 import ClockIcon from '../assets/icons/clock.svg?react';
 import './PlaylistPage.scss';
@@ -56,7 +57,7 @@ const LikedPage = () => {
                                 return (
                                     <tr key={s.id} className={isNow ? 'now' : ''} onDoubleClick={() => playFrom(i)}>
                                         <td className="col-num">
-                                            <span className="num">{isNow ? <span className="eq" aria-label="Now playing"><i /><i /><i /></span> : i + 1}</span>
+                                            <span className="num">{isNow ? <PlayingBars /> : i + 1}</span>
                                             <button className="row-play" onClick={() => playFrom(i)} aria-label={`Play ${s.title}`}>▶</button>
                                         </td>
                                         <td>

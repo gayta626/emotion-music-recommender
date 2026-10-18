@@ -1,0 +1,828 @@
+// Các trang admin quản lý (/admin/users, /admin/users/:id, /admin/library) + thanh tab chung của mọi trang admin.
+// Nằm trong .mood-page.stats-page.admin-page nên dùng lại thẻ neon, bảng, nút 7/30 của /stats và màu mức của AdminPage.scss.
+@use '../styles/moodPalette' as mp;
+
+.mood-page.stats-page.admin-page {
+  // ---- thanh tab Health / Users / Library ----
+  .admin-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: -8px;
+    border-bottom: 1px solid var(--grid);
+
+    a {
+      position: relative;
+      padding: 10px 16px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        color: #fff;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+        border-radius: 8px;
+      }
+
+      &.active {
+        color: #fff;
+
+        &::after {
+          content: '';
+          position: absolute;
+          inset: auto 10px -1px;
+          height: 3px;
+          border-radius: 3px 3px 0 0;
+          background: var(--neon);
+          box-shadow: 0 0 10px rgba(232, 69, 110, 0.6);
+        }
+      }
+    }
+  }
+
+  .user-name {
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.mood-page.stats-page.admin-page.admin-manage {
+  @include mp.neon-mood;
+
+  .admin-notice {
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--s-ok) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--s-ok) 40%, transparent);
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .admin-back {
+    align-self: flex-start;
+    margin-bottom: -10px;
+    color: var(--search-text);
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+  }
+
+  .admin-privacy {
+    margin-top: -12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .admin-primary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 999px;
+    background: var(--neon);
+    color: #fff;
+    font: 700 14px 'DM Sans', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 0 16px rgba(232, 69, 110, 0.45);
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+
+  // ---- thanh tìm kiếm + lọc ----
+  .manage-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .admin-search,
+  .admin-select,
+  .ad-field input:not([type='file']),
+  .ad-field select {
+    min-width: 0;
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--grid);
+    background: var(--card-solid);
+    color: #fff;
+    font: 14px 'DM Sans', sans-serif;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+  }
+
+  .admin-search {
+    flex: 1 1 220px;
+    max-width: 360px;
+  }
+
+  .stats-range .count {
+    margin-left: 4px;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ---- bảng ----
+  .manage-table {
+    th {
+      position: relative;   // chữ .sr-only (absolute) nằm trong ô -> không thoát khỏi bảng cuộn ngang làm trang tràn
+    }
+
+    td {
+      vertical-align: middle;
+    }
+
+    tr.is-locked td {
+      color: var(--muted);
+    }
+
+    td:last-child {
+      text-align: right;
+    }
+  }
+
+  .role-tag,
+  .state-tag,
+  .vibe-tag {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .role-tag {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--search-text);
+
+    &.admin {
+      border-color: transparent;
+      background: var(--neon);
+      color: #fff;
+    }
+  }
+
+  .state-tag {
+    color: var(--s);
+    background: color-mix(in srgb, var(--s) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--s) 40%, transparent);
+
+    &.active {
+      --s: var(--s-ok);
+    }
+
+    &.locked {
+      --s: var(--s-alert);
+    }
+  }
+
+  .vibe-tag {
+    color: #fff;
+    background: color-mix(in srgb, var(--c) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
+  }
+
+  .yes {
+    color: var(--s-ok);
+    font-weight: 600;
+  }
+
+  // ---- nút hành động ----
+  .user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+
+    &.compact {
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+    }
+  }
+
+  .ua-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--chip, rgba(255, 255, 255, 0.16));
+    border-radius: 999px;
+    background: none;
+    color: var(--search-text);
+    font: 600 12px 'DM Sans', sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &.danger {
+      color: var(--s-alert);
+      border-color: color-mix(in srgb, var(--s-alert) 45%, transparent);
+
+      &:hover:not(:disabled) {
+        border-color: var(--s-alert);
+        color: #fff;
+        background: color-mix(in srgb, var(--s-alert) 20%, transparent);
+      }
+    }
+
+    &.solid {
+      border-color: transparent;
+      background: var(--neon);
+      color: #fff;
+    }
+
+    &.danger.solid {
+      background: var(--s-alert);
+      color: #1c0b12;
+    }
+  }
+
+  .ua-error {
+    width: 100%;
+    color: var(--s-alert);
+    font-size: 13px;
+  }
+
+  // ---- trang chi tiết 1 người ----
+  .user-hero {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+
+    .uh-text {
+      flex: 1 1 260px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    h1 {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: clamp(24px, 3vw, 32px);
+      font-weight: 800;
+      word-break: break-word;
+    }
+  }
+
+  .user-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+
+    .stats-card {
+      gap: 4px;
+      padding: 16px 18px;
+    }
+
+    span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    b {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 28px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .mood-bars {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    li {
+      display: grid;
+      grid-template-columns: 70px 1fr 36px;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--search-text);
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--grid);
+      overflow: hidden;
+
+      i {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, #000), var(--c));
+        box-shadow: 0 0 8px var(--c);
+      }
+    }
+
+    b {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .outcome-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding-top: 10px;
+    border-top: 1px solid var(--grid);
+    font-size: 13px;
+    color: var(--search-text);
+
+    .swatch {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: var(--c);
+    }
+  }
+
+  .taste-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    > span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 13px;
+  }
+
+  .song-cell {
+    color: #fff;
+    white-space: normal;
+
+    small {
+      color: var(--muted);
+    }
+  }
+
+  .pl-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border: 1px solid var(--grid);
+      border-radius: 12px;
+      background: none;
+      color: #fff;
+      font: 14px 'DM Sans', sans-serif;
+      text-align: left;
+      cursor: pointer;
+
+      span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      &[aria-expanded='true'] {
+        border-color: var(--accent);
+      }
+    }
+
+    ol {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 6px 0 4px 34px;
+      font-size: 13px;
+    }
+  }
+
+  .liked-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 22px;
+    font-size: 13px;
+
+    li::marker {
+      color: var(--muted);
+    }
+
+    li small {
+      margin-left: 8px;
+      color: var(--muted);
+    }
+  }
+
+  .history-table td:last-child {
+    text-align: left;
+  }
+
+  // ---- kho nhạc ----
+  // dải trạng thái các script chạy nền sau khi thêm bài (fetch-images / fetch-song-info / fetch-mv)
+  .enrich-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+
+    > div {
+      flex: 1 1 260px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    b {
+      font-size: 14px;
+    }
+
+    small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    &.is-running b::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 8px;
+      border: 2px solid var(--accent);
+      border-right-color: transparent;
+      border-radius: 50%;
+      vertical-align: -1px;
+      animation: enrich-spin 0.9s linear infinite;
+    }
+  }
+
+  .enrich-log {
+    flex: 1 1 100%;
+    max-height: 220px;
+    overflow: auto;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--search-text);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .song-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 360px;
+    text-align: left;
+
+    > span {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    b {
+      color: #fff;
+      font-weight: 600;
+      white-space: normal;
+    }
+
+    small {
+      color: var(--muted);
+      white-space: normal;
+    }
+  }
+
+  .lib-thumb {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .artist-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+  }
+
+  .artist-item {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--grid);
+    background: rgba(255, 255, 255, 0.02);
+    text-align: center;
+
+    b {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .user-actions {
+      margin-top: 4px;
+      justify-content: center;
+    }
+  }
+
+  .lib-artist {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    font-size: 26px;
+  }
+}
+
+// ---- hộp thoại (<dialog> nằm ở lớp trên cùng nhưng vẫn thừa hưởng biến màu của trang) ----
+.mood-page.stats-page.admin-page .admin-dialog {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  margin: auto;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: var(--card-solid);
+  color: #fff;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  text-align: left;
+
+  &.wide {
+    width: min(720px, calc(100vw - 32px));
+  }
+
+  &::backdrop {
+    background: rgba(8, 6, 20, 0.7);
+    backdrop-filter: blur(3px);
+  }
+
+  .ad-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+
+    h2 {
+      font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .ad-close {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  .ad-text {
+    margin-bottom: 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--search-text);
+
+    a {
+      color: var(--accent);
+    }
+  }
+
+  .ad-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+
+    .full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &:not(.wide) .ad-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // nhóm ô của form bài hát: mờ đi khi chưa đọc xong file mp3
+  .ad-fields {
+    display: grid;
+    grid-template-columns: inherit;
+    gap: inherit;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+
+  .ad-warn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--s-warn) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--s-warn) 45%, transparent);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .ad-field small.warn {
+    color: var(--s-warn);
+  }
+
+  .ad-cover {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+
+    img {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+  }
+
+  .ad-field {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+
+    > span {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--search-text);
+    }
+
+    input:not([type='file']),
+    select {
+      border-radius: 10px;
+    }
+
+    input[type='file'] {
+      max-width: 100%;
+      color: var(--search-text);
+      font: 13px 'DM Sans', sans-serif;
+
+      &::file-selector-button {
+        margin-right: 10px;
+        padding: 6px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        background: none;
+        color: #fff;
+        font: inherit;
+        cursor: pointer;
+      }
+    }
+
+    small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  .ad-password {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    code {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 20px;
+      letter-spacing: 0.08em;
+      text-align: center;
+      user-select: all;
+    }
+  }
+
+  .ad-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+  }
+}
+
+@keyframes enrich-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mood-page.stats-page.admin-page.admin-manage .enrich-bar.is-running b::before {
+    animation: none;
+  }
+}
+
+@container stats (max-width: 1000px) {
+  .mood-page.stats-page.admin-page.admin-manage .user-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container stats (max-width: 640px) {
+  .mood-page.stats-page.admin-page.admin-manage {
+    .user-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-search {
+      max-width: none;
+    }
+  }
+
+  .mood-page.stats-page.admin-page .admin-dialog .ad-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

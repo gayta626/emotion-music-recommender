@@ -9,8 +9,9 @@ const BITRATES = {
 };
 const SAMPLE_RATES = { 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] };
 
+// file: duong dan, hoac Buffer (file vua upload tren trang admin, chua ghi ra dia)
 const mp3Duration = (file) => {
-    const buf = fs.readFileSync(file);
+    const buf = Buffer.isBuffer(file) ? file : fs.readFileSync(file);
     let off = 0;
     // bo qua the ID3v2 (ten bai, anh bia...) o dau file
     if (buf.toString("latin1", 0, 3) === "ID3") {

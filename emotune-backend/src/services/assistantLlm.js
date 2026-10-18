@@ -101,17 +101,32 @@ const getClient = () => {
     return client;
 };
 
-const classifyWithLlm = async (text, catalog, context, history) => {
+// C11: micro an luc quet mat -> chi hoi "cau nay la cam xuc gi" (khong gui kho nhac -> nhanh, it token)
+const MOOD_SCHEMA = {
+    type: "object",
+    properties: { emotion: { type: "string", enum: ["happy", "sad", "angry", "surprise", "neutral", "none"] } },
+    required: ["emotion"],
+    additionalProperties: false,
+};
+const MOOD_RULES = `Bạn đọc một câu người dùng vừa nói (tiếng Việt, đã chuyển thành chữ nên có thể sai chính tả hoặc thiếu dấu) trong lúc web nghe nhạc EmoTune quét khuôn mặt họ.
+Cho biết câu đó có kể cảm xúc, tâm trạng hay một ngày của CHÍNH người nói không:
+- happy: vui, hào hứng, có chuyện tốt; sad: buồn, mệt mỏi, chán nản, cô đơn, áp lực; angry: bực, tức, khó chịu; surprise: ngạc nhiên hoặc muốn khám phá điều mới; neutral: bình thường, bình yên, thư giãn.
+- none: câu không nói về cảm xúc của người nói (ra lệnh, hỏi đáp, nói chuyện với người khác, tên bài hát...).`;
+
+// HAM THUAN (unit test duoc)
+const buildMoodRequest = (text) => ({ system: MOOD_RULES, input: `Câu nói: "${text}"` });
+
+// gui 1 yeu cau JSON theo schema -> object, hoac null (khong co key / loi / het luot / qua gio)
+const askGemini = async ({ system, input }, schema) => {
     const gemini = getClient();
     if (!gemini) return null;
     try {
-        const { system, input } = buildRequest(text, catalog, context, history);
         const interaction = await gemini.interactions.create({
             model: MODEL,
             system_instruction: system,
             input,
-            // JSON dung khuon ACTION_SCHEMA; suy nghi it ("low") cho tro ly giong noi tra loi nhanh
-            response_format: { type: "text", mime_type: "application/json", schema: ACTION_SCHEMA },
+            // JSON dung khuon schema; suy nghi it ("low") cho tro ly giong noi tra loi nhanh
+            response_format: { type: "text", mime_type: "application/json", schema },
             generation_config: { thinking_level: "low", max_output_tokens: 2048 },
             // khong de Google luu lai cau hoi / cau tra loi
             store: false,
@@ -129,7 +144,17 @@ const classifyWithLlm = async (text, catalog, context, history) => {
     }
 };
 
+const classifyWithLlm = (text, catalog, context, history) => askGemini(buildRequest(text, catalog, context, history), ACTION_SCHEMA);
+
+// -> "sad" | ... | null (khong phai cau ke cam xuc / Gemini khong tra loi duoc)
+const moodWithLlm = async (text) => {
+    const raw = await askGemini(buildMoodRequest(text), MOOD_SCHEMA);
+    return raw && MOOD_SCHEMA.properties.emotion.enum.includes(raw.emotion) && raw.emotion !== "none" ? raw.emotion : null;
+};
+
 module.exports = {
     buildRequest: buildRequest,
+    buildMoodRequest: buildMoodRequest,
     classifyWithLlm: classifyWithLlm,
+    moodWithLlm: moodWithLlm,
 };

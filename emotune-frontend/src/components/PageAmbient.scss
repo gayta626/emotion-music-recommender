@@ -122,6 +122,19 @@ body:has(.stats-page) .page-ambient {
   --amb-c: #4d74f0;
 }
 
+// admin theo dõi hệ thống: "phòng điều khiển" xanh ngọc – chàm; có chỉ số báo động thì ngả hồng đỏ
+body:has(.admin-page) .page-ambient {
+  --amb-a: #1fa99c;
+  --amb-b: #3b3fb0;
+  --amb-c: #5fd6c4;
+}
+
+body:has(.admin-page[data-health='alert']) .page-ambient {
+  --amb-a: #c23a5e;
+  --amb-b: #3b3fb0;
+  --amb-c: #ff7a94;
+}
+
 // playlist: tím – hồng
 body:has(.playlist-page) .page-ambient {
   --amb-a: #a04fc8;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ArtistAvatar from './ArtistAvatar';
+import PlayingBars from './PlayingBars';
 import { coverUrl } from '../utils/images';
 import { withArtists } from '../utils/mixes';
 import PlayIcon from '../assets/icons/player_play.svg?react';
@@ -35,7 +36,7 @@ export const SongCover = ({ song }) => {
 // the bai hat: bam = phat ngay
 export const SongCard = ({ song, playing, onPlay }) => (
     <button className={`card ${playing ? 'playing' : ''}`} onClick={() => onPlay(song)} title={`Play ${song.title}`}>
-        <span className="card-art"><SongCover song={song} /><PlayBadge /></span>
+        <span className="card-art"><SongCover song={song} />{playing && <PlayingBars className="card-eq" />}<PlayBadge /></span>
         <span className="card-title">{song.title}</span>
         <span className="card-sub">{song.artist || 'Unknown artist'}</span>
     </button>

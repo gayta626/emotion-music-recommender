@@ -14,6 +14,7 @@ const write = (key, value) => {
     try { sessionStorage.setItem(key, value); } catch { /* bo qua */ }
 };
 
+// "da quet" = da bat dau phien: quet mat / noi cam xuc voi tro ly / TU CHON 1 bai (PlaybackProvider) -> "/" la trang chu
 export const hasScanned = () => read(SCANNED) === "1";
 export const markScanned = () => write(SCANNED, "1");
 

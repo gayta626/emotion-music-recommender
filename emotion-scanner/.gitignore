@@ -16,3 +16,9 @@ train_checkpoints/
 
 # VS Code
 .vscode/
+
+# Dữ liệu công khai đã tải + ảnh đã chuẩn hoá (nặng, giấy phép phi thương mại)
+data_public/
+
+# Checkpoint tạm khi train EmoNet
+emonet_checkpoints/

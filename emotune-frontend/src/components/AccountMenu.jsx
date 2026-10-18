@@ -17,6 +17,7 @@ const Icon = ({ d }) => (
 const ICONS = {
     stats: 'M4 20V11M10 20V5M16 20v-6M21 20H3',
     settings: 'M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4ZM12 2.5v2.6M12 18.9v2.6M4.6 4.6l1.9 1.9M17.5 17.5l1.9 1.9M2.5 12h2.6M18.9 12h2.6M4.6 19.4l1.9-1.9M17.5 6.5l1.9-1.9',
+    admin: 'M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6l-8-3ZM8.5 12.5l2.4 2.4 4.6-4.8',
     logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
     chevron: 'm9 6 6 6-6 6',
 };
@@ -85,6 +86,13 @@ const AccountMenu = () => {
                         <span><b>Settings</b><small>Account &amp; music taste</small></span>
                         <Icon d={ICONS.chevron} />
                     </button>
+                    {user?.isAdmin && (
+                        <button role="menuitem" onClick={() => go('/admin')}>
+                            <Icon d={ICONS.admin} />
+                            <span><b>Admin</b><small>Health · users · library</small></span>
+                            <Icon d={ICONS.chevron} />
+                        </button>
+                    )}
                     <hr />
                     <button role="menuitem" className="danger" onClick={() => { setOpen(false); logout(); }}>
                         <Icon d={ICONS.logout} />

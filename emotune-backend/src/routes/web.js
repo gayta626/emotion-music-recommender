@@ -15,7 +15,10 @@ const assistantController = require('../controllers/assistantController')
 const statsController = require('../controllers/statsController')
 const likeController = require('../controllers/likeController')
 const insightController = require('../controllers/insightController')
-const { requireAuth } = require('../middleware/auth')
+const adminController = require('../controllers/adminController')
+const adminUserController = require('../controllers/adminUserController')
+const adminLibraryController = require('../controllers/adminLibraryController')
+const { requireAuth, requireAdmin } = require('../middleware/auth')
 
 let router = express.Router()
 
@@ -29,6 +32,7 @@ let initWebRoutes = (app) => {
     router.get('/genres', genreController.getGenres);
     router.get('/profile', requireAuth, profileController.getProfile);
     router.post('/profile', requireAuth, profileController.saveProfile);
+    router.put('/profile/faces', requireAuth, profileController.setFaceConsent);
     router.get('/songs/for-you', requireAuth, songController.getForYou);
     router.get('/songs', songController.getSongs);
     router.get('/playlists', requireAuth, playlistController.getPlaylists);
@@ -44,13 +48,30 @@ let initWebRoutes = (app) => {
     router.get('/mood-history', requireAuth, moodHistoryController.getMoodHistory);
     router.get('/stats', requireAuth, statsController.getStats);
     router.get('/insights', requireAuth, insightController.getInsights);
+    router.get('/admin/health', requireAuth, requireAdmin, adminController.getHealth);
+    router.get('/admin/users', requireAuth, requireAdmin, adminUserController.listUsers);
+    router.get('/admin/users/:id', requireAuth, requireAdmin, adminUserController.getUser);
+    router.patch('/admin/users/:id', requireAuth, requireAdmin, adminUserController.updateUser);
+    router.post('/admin/users/:id/reset-password', requireAuth, requireAdmin, adminUserController.resetPassword);
+    router.delete('/admin/users/:id', requireAuth, requireAdmin, adminUserController.deleteUser);
+    router.get('/admin/library', requireAuth, requireAdmin, adminLibraryController.getLibrary);
+    router.get('/admin/library/enrich', requireAuth, requireAdmin, adminLibraryController.getEnrich);
+    router.post('/admin/songs/analyze', requireAuth, requireAdmin, adminLibraryController.songUpload, adminLibraryController.analyzeSong);
+    router.post('/admin/songs', requireAuth, requireAdmin, adminLibraryController.songUpload, adminLibraryController.createSong);
+    router.patch('/admin/songs/:id', requireAuth, requireAdmin, adminLibraryController.songUpload, adminLibraryController.updateSong);
+    router.delete('/admin/songs/:id', requireAuth, requireAdmin, adminLibraryController.deleteSong);
+    router.post('/admin/artists', requireAuth, requireAdmin, adminLibraryController.artistUpload, adminLibraryController.createArtist);
+    router.patch('/admin/artists/:id', requireAuth, requireAdmin, adminLibraryController.artistUpload, adminLibraryController.updateArtist);
+    router.delete('/admin/artists/:id', requireAuth, requireAdmin, adminLibraryController.deleteArtist);
 
     router.post('/feed-back', requireAuth, feedBackController.submitFeedBack);
     router.post('/suggest', requireAuth, suggestController.getSuggest)
     router.post('/listen-report', requireAuth, listenReportController.submitListenReport)
     router.post('/request-song', requireAuth, requestSongController.postRequestSong)
     router.post('/scan-and-suggest', requireAuth, scanController.scanAndSuggest)
+    router.post('/scan-feedback', requireAuth, scanController.fixMood)
     router.post('/assistant', requireAuth, assistantController.ask)
+    router.post('/voice-mood', requireAuth, assistantController.voiceMood)
     router.post('/auth/register', authController.register)
     router.post('/auth/login', authController.login)
     router.get('/auth/me', requireAuth, authController.getUserByJWT)

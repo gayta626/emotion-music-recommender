@@ -3,14 +3,17 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import api from '../api';
 import MusicPlayer from './MusicPlayer';
 import { usePlayback } from '../contexts/playbackContext';
-import { setLed } from '../hardware';
 import { useIdle } from '../hooks/useIdle';
+import { useAuth } from '../contexts/authContext';
+import { journeyName } from '../utils/journey';
+import { loadRescan } from '../utils/playPrefs';
 
 // Bo phat nhac luon song (MainLayout ve no o moi trang) -> doi trang nhac khong tat.
 // Thanh phat duoi luon hien khi co bai; khung phat lon chi hien o /now-playing.
 // 2 che do:
 // - "emotion": bai do AI chon theo cam xuc. Het bai: dang o /scan hoac nguoi dung RANH (>= 60s khong dung chuot)
 //   -> sang /scan quet lai; dang LUOT -> khong bat camera, chon bai theo cam xuc quet gan nhat.
+//   Tat "Scan again after a song" o Settings (utils/playPrefs) -> khong tu quet lai, luon tu chon bai ke.
 // - "playlist": phat lan luot 1 hang doi (playlist / bai cua 1 ca si), khong cham diem; het -> ve "emotion".
 // Prev / Shuffle / Repeat (I1): xem playPrev, toggleShuffle, cycleRepeat ben duoi.
 const IDLE_MS = 60000;
@@ -34,8 +37,10 @@ const PlayerHost = () => {
     const [index, setIndex] = useState(0);          // bai dang phat trong hang doi
     // tang moi lan doi bai -> MusicPlayer duoc tao moi (2 bai lien tiep khong dung chung trang thai)
     const [playKey, setPlayKey] = useState(0);
-    // che do karaoke (H15) giu o day -> sang bai moi van con bat (MusicPlayer duoc tao lai moi bai)
+    // che do karaoke (H15) + cham diem ("Score me"): MAC DINH TAT, chi bat khi nguoi dung bam;
+    // sang bai moi thi tat lai (play() ben duoi) -> bai sau khong tu bo giong ca si
     const [karaoke, setKaraoke] = useState(false);
+    const [scoreOn, setScoreOn] = useState(false);
     // che do xem MV (H16): bat roi thi bai sau co MV cung chieu MV, nhu Spotify
     const [mvWanted, setMvWanted] = useState(false);
     // cot phai xem MV khi luot trang khac: thu gon (chi con video) hay mo rong (them loi bai, ca si)
@@ -46,6 +51,7 @@ const PlayerHost = () => {
     // cac bai da phat truoc o che do cam xuc (moi nhat cuoi) -> nut Prev quay lai; playlist thi lui index
     const [history, setHistory] = useState([]);
     const { registerPlayer, setNowPlaying, lastMood } = usePlayback();
+    const { user } = useAuth();
     const { pathname } = useLocation();
     const navigate = useNavigate();
     const isIdle = useIdle(IDLE_MS);
@@ -65,20 +71,25 @@ const PlayerHost = () => {
         }
         setSuggestResult(result);
         setPlayKey((k) => k + 1);
+        setKaraoke(false);
+        setScoreOn(false);
     }
 
     const playFromQueue = (q, i) => {
         const song = q.songs[i];
         setIndex(i);
-        play({ song, emotion: song.emotion, message: null });
+        // hanh trinh cam xuc: bai dau kem loi dan cua NYX ("bat dau bang bai hop tam trang, roi vui dan len")
+        // + thong tin lan quet (C15: nut "Not right?" sua cam xuc, loi cam on sau khi sua)
+        play({ song, emotion: song.emotion, message: q.journey && i === 0 ? q.message : null, ...(q.journey && i === 0 ? q.scan : {}) });
     }
 
     const startQueue = (q, start) => {
         if (!q.songs.length) return;
         const first = Math.min(Math.max(start || 0, 0), q.songs.length - 1);
         setMode("playlist");
-        // dang bat Shuffle: bai duoc chon phat truoc, cac bai con lai tron ngau nhien (original de tat Shuffle thi ve thu tu cu)
-        if (shuffle) {
+        // dang bat Shuffle: bai duoc chon phat truoc, cac bai con lai tron ngau nhien (original de tat Shuffle thi ve thu tu cu).
+        // Hanh trinh cam xuc khong tron: thu tu buon -> vui chinh la y nghia cua no
+        if (shuffle && !q.journey) {
             const picked = q.songs[first];
             const rest = q.songs.filter((_, i) => i !== first);
             const mixed = { ...q, songs: [picked, ...shuffled(rest)], original: q.songs };
@@ -93,7 +104,26 @@ const PlayerHost = () => {
 
     // nhan lenh tu cac trang (quet xong, playlist, ca si, o tim kiem)
     const handleCommand = (cmd) => {
-        if (cmd.kind === "scan" || cmd.kind === "song") {
+        // I4: buon/gian keo dai -> backend tra ve hanh trinh ~5 bai (buon -> trung tinh -> vui): phat nhu 1 hang doi
+        // nhung VAN cham diem nghe (bai do AI chon theo cam xuc, khac playlist)
+        const journey = cmd.kind === "scan" ? cmd.result.journey : null;
+        if (journey?.songs?.length) {
+            startQueue({
+                name: journeyName(journey),
+                songs: journey.songs,
+                playlistId: null,
+                journey: { from: journey.from, to: journey.to },
+                message: cmd.result.message,
+                scan: {
+                    scanId: cmd.result.scanId,
+                    detectedEmotion: cmd.result.detectedEmotion,
+                    aiEmotion: cmd.result.aiEmotion,
+                    corrected: cmd.result.corrected,
+                    faceSaved: cmd.result.faceSaved,
+                    via: cmd.result.via,
+                },
+            }, 0);
+        } else if (cmd.kind === "scan" || cmd.kind === "song") {
             setMode("emotion");
             setQueue(null);
             play(cmd.kind === "scan" ? cmd.result : { song: cmd.song, emotion: cmd.song.emotion, message: null });
@@ -115,17 +145,22 @@ const PlayerHost = () => {
     useEffect(() => { handlerRef.current = handleCommand; });
     useEffect(() => registerPlayer((cmd) => handlerRef.current(cmd)), [registerPlayer]);
 
-    // den OLED (Pi): dang phat -> cam xuc; khong phat -> tat (ScanPage tu bao "scanning")
-    useEffect(() => {
-        setLed(suggestResult ? suggestResult.emotion : 'off');
-    }, [suggestResult])
-
-    // bao cho trang playlist biet bai nao dang phat (to sang dong do)
+    // bao cho trang playlist biet bai nao dang phat (to sang dong do); dang chay hanh trinh -> bao ca buoc may / tong
+    // (loi chao trang chu I3: "NYX is easing you ... (2/5)")
     const playingPlaylistId = mode === "playlist" ? queue?.playlistId : null;
     const playingSongId = suggestResult?.song?.id;
+    const journeyMeta = mode === "playlist" ? queue?.journey : null;
+    const journeyTotal = journeyMeta ? queue.songs.length : 0;
+    // I6: dang phat hay tam dung (MusicPlayer bao len) -> icon song nhay o cac trang dung yen khi tam dung
+    const [audioPlaying, setAudioPlaying] = useState(false);
     useEffect(() => {
-        setNowPlaying(playingSongId ? { songId: playingSongId, playlistId: playingPlaylistId ?? null } : null);
-    }, [playingSongId, playingPlaylistId, setNowPlaying])
+        setNowPlaying(playingSongId ? {
+            songId: playingSongId,
+            playlistId: playingPlaylistId ?? null,
+            journey: journeyMeta ? { ...journeyMeta, step: index + 1, total: journeyTotal } : null,
+            playing: audioPlaying,
+        } : null);
+    }, [playingSongId, playingPlaylistId, journeyMeta, index, journeyTotal, audioPlaying, setNowPlaying])
 
     // het bai / bam Next
     const playNextSong = () => {
@@ -133,8 +168,9 @@ const PlayerHost = () => {
             playFromQueue(queue, index + 1);
             return;
         }
-        // Repeat all: het hang doi -> quay lai bai dau, khong chuyen sang che do cam xuc
-        if (mode === "playlist" && queue && repeat === "all") {
+        // Repeat all: het hang doi -> quay lai bai dau, khong chuyen sang che do cam xuc.
+        // Hanh trinh da toi "vui" thi khong quay lai bai buon dau tien
+        if (mode === "playlist" && queue && repeat === "all" && !queue.journey) {
             playFromQueue(queue, 0);
             return;
         }
@@ -145,15 +181,29 @@ const PlayerHost = () => {
             setSuggestResult(null);
             navigate("/scan");
         }
-        // dang o man quet / nguoi dung dang nghe thu dong / chua tung quet -> quet lai
-        if (pathname === "/scan" || isIdle() || !lastMood) {
+        // Settings "Scan again after a song" (doc luc het bai -> doi o Settings la co tac dung ngay)
+        const rescan = loadRescan(user?.username);
+        // dang o man quet / nguoi dung dang nghe thu dong / chua tung quet -> quet lai (tru khi da tat o Settings)
+        if (pathname === "/scan" || (rescan && (isIdle() || !lastMood))) {
             goScan();
             return;
         }
-        // dang luot web: khong bat camera, chon bai theo cam xuc quet gan nhat
+        // tat quet lai ma chua quet lan nao -> bai hop gu nhat (Made for you), bo bai vua phat
+        if (!lastMood) {
+            const recent = new Set([suggestResult?.song?.id, ...history.slice(-3).map((h) => h.song?.id)]);
+            api.get('/songs/for-you')
+                .then((res) => {
+                    const song = res.data.find((s) => !recent.has(s.id));
+                    if (song) play({ song, emotion: song.emotion, message: null });
+                    else setSuggestResult(null);
+                })
+                .catch(() => setSuggestResult(null));
+            return;
+        }
+        // dang luot web (hoac da tat quet lai): khong bat camera, chon bai theo cam xuc quet gan nhat
         api.post('/suggest', { emotion: lastMood.emotion, auto: true })
             .then((res) => play(res.data))
-            .catch(goScan);
+            .catch(() => (rescan ? goScan() : setSuggestResult(null)));
     }
 
     // xin bai (menu ☰ -> Request a song): phat ngay bai do o che do cam xuc
@@ -219,7 +269,7 @@ const PlayerHost = () => {
                 onShuffle={toggleShuffle}
                 repeat={repeat}
                 onRepeat={cycleRepeat}
-                playlist={inQueue ? { name: queue.name, songs: queue.songs, index } : null}
+                playlist={inQueue ? { name: queue.name, songs: queue.songs, index, journey: !!queue.journey } : null}
                 onJump={jumpTo}
                 onRequest={playRequested}
                 showLyrics={onLyrics}
@@ -229,10 +279,13 @@ const PlayerHost = () => {
                 onVolumeChange={setSavedVolume}
                 karaoke={karaoke}
                 onKaraoke={setKaraoke}
+                scoreOn={scoreOn}
+                onScoreOn={setScoreOn}
                 mvWanted={mvWanted}
                 onMvWanted={setMvWanted}
                 panelCollapsed={panelCollapsed}
                 onPanelCollapse={setPanelCollapsed}
+                onPlayingChange={setAudioPlaying}
             />
         </div>
     )

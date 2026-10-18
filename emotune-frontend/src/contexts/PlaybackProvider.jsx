@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "../api";
 import { PlaybackContext } from "./playbackContext";
-import { loadLastMood, saveLastMood } from "../utils/moodSession";
+import { loadLastMood, markScanned, saveLastMood } from "../utils/moodSession";
 
 const PlaybackProvider = ({ children }) => {
     const [playlistsVersion, setPlaylistsVersion] = useState(0);
@@ -12,6 +12,9 @@ const PlaybackProvider = ({ children }) => {
     const likedRef = useRef(likedSongs);
     useEffect(() => { likedRef.current = likedSongs; });
     const playerRef = useRef(null);
+    // tang moi lan nguoi dung TU CHON bai / playlist / hang doi -> man quet (ScanPage) biet de thoi quet,
+    // khong de ket qua mat ve sau de len bai nguoi dung vua chon
+    const [pickVersion, setPickVersion] = useState(0);
 
     useEffect(() => {
         api.get("/likes").then((res) => setLikedSongs(res.data)).catch(() => { });
@@ -26,11 +29,17 @@ const PlaybackProvider = ({ children }) => {
     }, []);
 
     const send = useCallback((command) => playerRef.current?.(command), []);
+    // tu chon bai cung tinh la "da bat dau phien" -> nut Home ve trang chu duyet nhac, khong bat quet mat nua
+    const pick = useCallback((command) => {
+        markScanned();
+        setPickVersion((v) => v + 1);
+        send(command);
+    }, [send]);
 
     const playScanResult = useCallback((result) => send({ kind: "scan", result }), [send]);
-    const playPlaylist = useCallback((playlistId, start = 0) => send({ kind: "playlist", playlistId, start }), [send]);
-    const playQueue = useCallback((queue, start = 0) => send({ kind: "queue", queue, start }), [send]);
-    const playSong = useCallback((song) => send({ kind: "song", song }), [send]);
+    const playPlaylist = useCallback((playlistId, start = 0) => pick({ kind: "playlist", playlistId, start }), [pick]);
+    const playQueue = useCallback((queue, start = 0) => pick({ kind: "queue", queue, start }), [pick]);
+    const playSong = useCallback((song) => pick({ kind: "song", song }), [pick]);
     const control = useCallback((command) => send({ kind: "control", command }), [send]);
 
     const setLastMood = useCallback((emotion) => setLastMoodState(saveLastMood(emotion)), []);
@@ -55,10 +64,10 @@ const PlaybackProvider = ({ children }) => {
     const value = useMemo(() => ({
         playScanResult, playPlaylist, playQueue, playSong, control, registerPlayer,
         lastMood, setLastMood, nowPlaying, setNowPlaying, playlistsVersion, refreshPlaylists,
-        likedSongs, likedIds, toggleLike,
+        likedSongs, likedIds, toggleLike, pickVersion,
     }), [playScanResult, playPlaylist, playQueue, playSong, control, registerPlayer,
         lastMood, setLastMood, nowPlaying, playlistsVersion, refreshPlaylists,
-        likedSongs, likedIds, toggleLike]);
+        likedSongs, likedIds, toggleLike, pickVersion]);
 
     return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 };

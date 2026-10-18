@@ -75,3 +75,12 @@ test('ban dang lai kem phu de Trung / Han -> bo', () => {
     const items = [v('c', 'Taylor Swift-Blank Space [MV] 中文字幕', 'LittleCat')];
     assert.strictEqual(pickVideo(items, 'Blank Space', 'Taylor Swift'), null);
 });
+
+test('video gioi han do tuoi -> bo (trinh phat nhung khong phat duoc, loi 150)', () => {
+    const items = [
+        { ...v('age', 'Maroon 5 - Animals (Official Music Video)', 'Maroon5VEVO'), ageRestricted: true },
+        v('lyric', 'Maroon 5 - Animals (Lyric Video)', 'Maroon5VEVO'),
+    ];
+    assert.strictEqual(pickVideo(items, 'Animals', 'Maroon 5').id, 'lyric');
+    assert.strictEqual(pickVideo(items.slice(0, 1), 'Animals', 'Maroon 5'), null);
+});

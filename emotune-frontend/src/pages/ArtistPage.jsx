@@ -6,6 +6,8 @@ import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
 import MoodIcon from '../components/MoodIcon';
 import Shelf from '../components/Shelf';
 import { usePlayback } from '../contexts/playbackContext';
+import PlayingBars from '../components/PlayingBars';
+import { SkeletonPage } from '../components/Skeleton';
 import { buildMix, mixPath } from '../utils/mixes';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import { timeAgo } from '../utils/moodSession';
@@ -31,7 +33,7 @@ const MiniCover = ({ song }) => {
 
 const TrackRow = ({ index, song, plays, playing, onPlay }) => (
     <button className={`track-row ${playing ? 'playing' : ''}`} onClick={() => onPlay(song)} title={`Play ${song.title}`}>
-        <span className="track-index">{playing ? '♫' : index}</span>
+        <span className="track-index">{playing ? <PlayingBars /> : index}</span>
         <MiniCover song={song} />
         <span className="track-title">{song.title}</span>
         <span className="track-vibe"><MoodIcon emotion={song.emotion} size={16} /></span>
@@ -118,7 +120,7 @@ const ArtistView = ({ artistId }) => {
             .catch(() => setFollowed(before));
     }
 
-    if (data.status === 'loading') return <div className="browse-page artist-page"><p className="artist-note">Loading…</p></div>;
+    if (data.status === 'loading') return <div className="browse-page artist-page"><SkeletonPage round rows={5} /></div>;
     if (data.status !== 'ok') {
         return (
             <div className="browse-page artist-page">

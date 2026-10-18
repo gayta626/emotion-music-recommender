@@ -4,7 +4,7 @@ const createUser = async (username, passwordHash) => {
     const result = await db.query(
         `INSERT INTO users (username, password_hash)
          VALUES ($1, $2)
-         RETURNING id, username, survey_done_at`,
+         RETURNING id, username, role, locked_at, survey_done_at`,
         [username, passwordHash]
     );
     return result.rows[0];
@@ -13,7 +13,7 @@ const createUser = async (username, passwordHash) => {
 
 const findUserByUsername = async (username) => {
     const result = await db.query(
-        `SELECT id, username, password_hash, survey_done_at
+        `SELECT id, username, password_hash, role, locked_at, survey_done_at
          FROM users
          WHERE username = $1`,
         [username]
@@ -24,7 +24,7 @@ const findUserByUsername = async (username) => {
 const findUserById = async (userId) => {
     const result = await db.query(
         `
-        SELECT id ,username , survey_done_at 
+        SELECT id, username, role, locked_at, survey_done_at
         FROM users
         WHERE id = $1
         `,

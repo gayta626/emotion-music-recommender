@@ -167,6 +167,27 @@ body:has(.player-bar) {
     color: rgba(255, 255, 255, 0.9);
   }
 
+  // I2: "Why this song" — 1 dòng lý do dưới câu gợi ý
+  .stage-why {
+    max-width: 560px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+
+    .why-label {
+      margin-right: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+  }
+
   // chế độ playlist: thay câu gợi ý bằng "đang phát từ playlist nào"
   .stage-source {
     padding: 4px 12px;
@@ -325,7 +346,8 @@ body:has(.player-bar) {
   // hàng tên bài + nút gọn lại cho video được to nhất
   .stage-head { padding: 0 20px; }
   .stage-title { font-size: 22px; }
-  .stage-message { display: none; }
+  .stage-message,
+  .stage-why { display: none; }
 }
 
 // ---------- nền khung lớn theo thể loại ----------

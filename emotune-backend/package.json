@@ -13,8 +13,10 @@
     "fetch-lyrics": "node scripts/fetch-lyrics.js",
     "fetch-song-info": "node scripts/fetch-song-info.js",
     "fetch-mv": "node scripts/fetch-mv.js",
+    "make-karaoke": "node scripts/make-karaoke.js",
     "import-music": "node scripts/import-music.js",
     "seed-demo": "node scripts/seed-demo.js",
+    "set-admin": "node scripts/set-admin.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [
@@ -31,11 +33,25 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
     "pg": "^8.23.0",
     "sass": "1.97.3"
   },
   "devDependencies": {
     "nodemon": "3.1.14",
     "sass-embedded": "^1.104.1"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "karaoke/",
+      ".venv-karaoke/",
+      "music/",
+      "covers/",
+      "lyrics/",
+      "avatars/",
+      "import/",
+      "feedback_faces/",
+      "test/"
+    ]
   }
 }

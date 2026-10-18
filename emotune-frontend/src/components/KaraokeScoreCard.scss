@@ -1,0 +1,174 @@
+// Thẻ điểm karaoke (mẫu A): phủ mờ màn lời, thẻ tím than kiểu neon như /stats, số điểm vàng → hồng
+.karaoke-score {
+  position: absolute;
+  inset: 0 0 var(--player-bar-h);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 8, 18, 0.55);
+  backdrop-filter: blur(6px);
+  animation: ks-fade 0.25s ease-out;
+}
+
+.ks-card {
+  width: min(360px, 100%);
+  padding: 28px 28px 24px;
+  border-radius: 22px;
+  background: rgba(36, 37, 62, 0.94);
+  box-shadow: 0 0 48px rgb(255 122 200 / 0.25), 0 20px 50px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  animation: ks-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.ks-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #cfcbe6;
+}
+
+.ks-number {
+  margin-top: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 88px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, var(--karaoke-fill), #ff7ac8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ks-comment {
+  margin: 8px 0 18px;
+  font-size: 15px;
+  color: #e6e2f7;
+
+  &.ks-empty { margin: 18px 0 22px; }
+}
+
+.ks-bar {
+  display: grid;
+  grid-template-columns: 70px 1fr 30px;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #cfcbe6;
+}
+
+.ks-bar-label { text-align: left; }
+.ks-bar-value { text-align: right; font-variant-numeric: tabular-nums; color: #fff; }
+
+.ks-track {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.ks-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #9b7bff, #ff7ac8);
+  animation: ks-grow 1.2s ease-out;
+  transform-origin: left;
+}
+
+.ks-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ks-btn {
+  height: 40px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  background: none;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.12); }
+
+  &.primary {
+    border-color: #fff;
+    background: #fff;
+    color: #1a1530;
+
+    &:hover { background: #e9e5ff; }
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+// ---------- đang chấm: nút "Score me" + dòng trạng thái micro dưới nút Karaoke ----------
+.pill-toggle.score-toggle.on {
+  border-color: transparent;
+  background: #ff7ac8;
+  color: #1b1426;
+}
+
+.score-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 300px;
+  padding-top: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+// chấm sáng khi micro nghe ra giọng hát
+.score-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.1s, box-shadow 0.1s;
+
+  &.on {
+    background: #ff7ac8;
+    box-shadow: 0 0 12px #ff7ac8;
+  }
+}
+
+@keyframes ks-fade { from { opacity: 0; } }
+@keyframes ks-pop { from { opacity: 0; transform: scale(0.9); } }
+@keyframes ks-grow { from { transform: scaleX(0); } }
+
+@media (max-width: 900px) {
+  .lyrics-actions .score-toggle {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+
+    span { display: none; }
+  }
+
+  // .lyrics-song thành lưới 3 cột (ảnh | tên | nút) -> dòng trạng thái micro trải hết hàng dưới
+  .score-status {
+    grid-column: 1 / -1;
+    max-width: none;
+    padding-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .karaoke-score, .ks-card, .ks-fill { animation: none; }
+}

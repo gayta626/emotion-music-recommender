@@ -30,6 +30,21 @@ let ask = async (req, res) => {
     }
 }
 
+// C11 - POST /voice-mood { text }: micro an luc quet mat nghe duoc 1 cau -> cam xuc trong cau (null = khong phai cau ke cam xuc)
+let voiceMood = async (req, res) => {
+    const text = typeof req.body?.text === "string" ? req.body.text.trim() : ""
+    if (!text || text.length > MAX_TEXT) {
+        return res.status(400).json({ err: "Cau noi rong hoac qua dai" })
+    }
+    try {
+        return res.status(200).json(await assistantService.moodOf(text))
+    } catch (err) {
+        console.log("Loi hieu cam xuc tu cau noi :" + err)
+        return res.status(500).json({ err: "Loi server" })
+    }
+}
+
 module.exports = {
     ask: ask,
+    voiceMood: voiceMood,
 }

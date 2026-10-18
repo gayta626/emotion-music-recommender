@@ -104,4 +104,4 @@ Tự nhận diện dòng nhạc bằng AI, lấy metadata từ Internet (Spotify
 ## 10. Lưu ý triển khai
 
 - Kho nhạc hiện chỉ 10 bài (2 bài/cảm xúc) → tính năng chỉ thấy rõ khi có **≥ 8–10 bài mỗi cảm xúc**, nhiều dòng nhạc / ca sĩ.
-- Mỗi máy (PC, laptop, Pi) có DB riêng → chạy `migrate_002_taste.sql` và `analyze_music.py` trên từng máy. Trên Pi 5 cần venv riêng cho `librosa`.
+- Mỗi máy (PC, laptop) có DB riêng → chạy `migrate_002_taste.sql` và `analyze_music.py` trên từng máy.

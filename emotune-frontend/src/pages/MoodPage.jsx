@@ -10,6 +10,7 @@ import MoodSongs from '../components/stats/MoodSongs';
 import HitRateChart from '../components/stats/HitRateChart';
 import ConfidenceRose from '../components/stats/ConfidenceRose';
 import PreferenceGrid from '../components/stats/PreferenceGrid';
+import { SkeletonPanels } from '../components/Skeleton';
 import './MoodPage.scss';
 import '../components/stats/Stats.scss';
 
@@ -55,7 +56,7 @@ const MoodPage = () => {
     if (!stats) {
         return (
             <div className="mood-page stats-page">
-                {error ? <p className="stats-error">{error} {retry}</p> : <p className="mood-muted">Loading…</p>}
+                {error ? <p className="stats-error">{error} {retry}</p> : <SkeletonPanels count={6} />}
                 {/* /stats lỗi nhưng /mood-history được: ô Cheer-up vẫn hiện (spec §6) */}
                 {error && cheer && <section className="mood-tiles stats-tiles"><CheerTile cheer={cheer} /></section>}
             </div>

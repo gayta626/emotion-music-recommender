@@ -19,7 +19,7 @@ Thành công khi: các câu ở bảng mục 4.5 cho đúng kết quả (unit te
 |---|---|
 | Hiểu lệnh: **luật trước, LLM dự phòng** | Lệnh quen chạy tức thì, miễn phí, có test; phần "thông minh" tự viết, giải thích được khi bảo vệ. LLM chỉ lo câu tự do |
 | Bộ luật ở **backend** (`POST /assistant`), là **hàm thuần** | Test bằng `node:test` như `decideTarget`; key LLM không lộ ra trình duyệt; logic ở 1 chỗ |
-| Nhận giọng: **Web Speech API** của Chrome/Edge (`vi-VN`) | Đã là model speech-to-text (máy chủ Google), miễn phí, đủ chính xác. Tách thành module riêng để sau thay bằng Whisper/PhoWhisper cho Pi |
+| Nhận giọng: **Web Speech API** của Chrome/Edge (`vi-VN`) | Đã là model speech-to-text (máy chủ Google), miễn phí, đủ chính xác. Tách thành module riêng để sau thay bằng Whisper/PhoWhisper cho trình duyệt không có Web Speech |
 | LLM: **Claude Haiku 5.5** (`claude-haiku-5-5`), `effort: "low"` | Người dùng chọn model Claude rẻ nhất phục vụ được việc phân loại 1 câu ngắn; nhanh |
 | Phản hồi: **chữ + đọc to** (`speechSynthesis`, giọng `vi-VN`) | Demo ra dáng trợ lý ảo; không có giọng Việt thì chỉ hiện chữ |
 | Giao diện: **phủ toàn màn hình** theo Figma `284:120` | Người dùng chọn |
@@ -144,7 +144,7 @@ Lỗi: `text` rỗng / quá 300 ký tự → 400.
 
 ## 7. Ngoài phạm vi (để sau)
 
-- Nhận giọng trên **Pi** (Chromium không có Web Speech) → thay `speech.js` bằng bản gọi Whisper/PhoWhisper (giai đoạn B nếu kịp).
+- Trình duyệt không có Web Speech (vd Chromium, Firefox) → thay `speech.js` bằng bản gọi Whisper/PhoWhisper.
 - Từ đánh thức ("Hey EmoTune"), hội thoại nhiều lượt, đăng xuất bằng giọng, nút prev/shuffle/repeat (chưa có chức năng).
 
 ## 8. Kiểm tra

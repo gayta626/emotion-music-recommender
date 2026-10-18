@@ -1,8 +1,8 @@
 const songModel = require("../model/songModel")
 const artistModel = require("../model/artistModel")
 const playlistModel = require("../model/playlistModel")
-const { parseCommand, validateLlmAction, checkMv } = require("./assistantRules")
-const { classifyWithLlm } = require("./assistantLlm")
+const { parseCommand, validateLlmAction, checkMv, moodFromText } = require("./assistantRules")
+const { classifyWithLlm, moodWithLlm } = require("./assistantLlm")
 
 // danh muc de tro ly tim ten: ca kho nhac + ca si + playlist CUA NGUOI NAY
 let getCatalog = async (userId) => {
@@ -34,6 +34,16 @@ let ask = async (userId, text, options = {}) => {
     return finish(llm, "llm");
 }
 
+// C11: cau noi nghe duoc bang micro an luc quet mat -> chi tim CAM XUC (luat truoc, khong hieu thi hoi Gemini)
+// -> { emotion: "sad" | null, source: "rules" | "llm" | "none" }
+let moodOf = async (text) => {
+    const ruled = moodFromText(text)
+    if (ruled) return { emotion: ruled, source: "rules" }
+    const llm = await moodWithLlm(text)
+    return llm ? { emotion: llm, source: "llm" } : { emotion: null, source: "none" }
+}
+
 module.exports = {
     ask: ask,
+    moodOf: moodOf,
 }

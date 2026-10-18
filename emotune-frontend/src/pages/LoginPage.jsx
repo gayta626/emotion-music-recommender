@@ -1,12 +1,25 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api, { setToken } from "../api";
+import api, { setToken, LOCKED_KEY } from "../api";
 import "./AuthPage.scss";
+
+const LOCKED_MESSAGE = "This account has been locked. Ask an admin to unlock it";
+
+// vua bi day ra vi admin khoa tai khoan -> hien ly do 1 lan
+const takeLockedNotice = () => {
+    try {
+        const locked = sessionStorage.getItem(LOCKED_KEY) === "1";
+        sessionStorage.removeItem(LOCKED_KEY);
+        return locked ? LOCKED_MESSAGE : "";
+    } catch {
+        return "";
+    }
+};
 
 const LoginPage = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [error, setError] = useState(takeLockedNotice);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 

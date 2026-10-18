@@ -2,159 +2,139 @@
 BƯỚC 3/4: Backend Flask - phục vụ model cảm xúc cho web app
 Đề tài: Hệ thống gợi ý nhạc theo cảm xúc (phiên bản Web)
 
-File này chạy một server nhỏ, load model đã fine-tune (my_emotion_model/)
-MỘT LẦN DUY NHẤT lúc khởi động, sau đó liên tục nhận ảnh gửi từ trình
-duyệt (frontend web ở bước 4) để trả về cảm xúc hiện tại.
+Load model MỘT LẦN lúc khởi động, sau đó nhận ảnh từ trình duyệt và trả cảm xúc.
 
-Cách cài đặt:
-    pip install flask flask-cors torch transformers pillow
+Chọn model bằng biến môi trường EMOTION_MODEL:
+    emonet (mặc định nếu có my_emonet/emonet.pt) - CNN tự thiết kế, train từ đầu (train_emonet.py)
+    vit                                           - model ViT cũ (my_emotion_model/), dự phòng
 
 Cách chạy:
-    python 3_backend_server.py
+    python 3_backend_server.py                       # :5000
+    EMOTION_MODEL=vit python 3_backend_server.py     # quay về model cũ
+    PORT=5055 python 3_backend_server.py             # đổi cổng (chạy thử khi :5000 đang bận)
 
-Sau khi chạy, server sẽ lắng nghe tại: http://localhost:5000
-API chính:  POST /predict   - nhận ảnh, trả về cảm xúc
-Kiểm tra:   GET  /health    - kiểm tra server còn sống không
-
-Yêu cầu: đã chạy xong 2_finetune_model.py và có thư mục my_emotion_model/.
+API:  POST /predict  - nhận ảnh base64, trả cảm xúc
+      GET  /health   - kiểm tra server + model đang dùng
 """
 
 import base64
 import io
 import os
+import time
 
-import cv2
-import numpy as np
 import torch
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from PIL import Image
-from transformers import AutoImageProcessor, AutoModelForImageClassification
 
-MODEL_DIR = "my_emotion_model"
+from emonet import detect_and_crop_face, load_emonet, predict_probs, preprocess_face
+
+# Đường dẫn tính theo vị trí file này (không theo thư mục đang đứng) -> chạy bằng systemd vẫn tìm thấy model
+HERE = os.path.dirname(os.path.abspath(__file__))
+VIT_DIR = os.path.join(HERE, "my_emotion_model")
+EMONET_PATH = os.path.join(HERE, "my_emonet", "emonet.pt")
+MODEL_NAME = os.environ.get("EMOTION_MODEL") or ("emonet" if os.path.isfile(EMONET_PATH) else "vit")
 
 app = Flask(__name__)
 CORS(app)  # cho phép trang web (chạy ở port/domain khác) gọi API này
 
-# ====== PHÁT HIỆN KHUÔN MẶT - PHẢI DÙNG CÙNG LOGIC NHƯ LÚC THU THẬP DỮ LIỆU (BƯỚC 1) ======
-# QUAN TRỌNG: ảnh train (bước 1) đã được cắt sát khuôn mặt trước khi đưa vào model.
-# Nếu backend đưa thẳng ảnh webcam đầy đủ (có nền, tóc, vai...) vào model mà không
-# crop mặt trước, model sẽ nhận input rất khác với lúc train (domain mismatch),
-# dễ khiến model "collapse" - đoán bừa 1 nhãn cố định bất kể biểu cảm thật là gì.
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
-
-
-def detect_and_crop_face(pil_image):
-    """Phát hiện khuôn mặt lớn nhất trong ảnh và cắt sát viền, giống hệt bước 1."""
-    frame = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80))
-    if len(faces) == 0:
-        return None
-    x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
-    pad_w, pad_h = int(w * 0.10), int(h * 0.10)
-    y1 = max(0, y - pad_h)
-    y2 = min(frame.shape[0], y + h + pad_h)
-    x1 = max(0, x - pad_w)
-    x2 = min(frame.shape[1], x + w + pad_w)
-    face_bgr = frame[y1:y2, x1:x2]
-    face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
-    return Image.fromarray(face_rgb)
-
 # ====== LOAD MODEL MỘT LẦN DUY NHẤT LÚC KHỞI ĐỘNG SERVER ======
-# Đây là điểm quan trọng: nếu load model bên trong mỗi request sẽ RẤT CHẬM
-# (model ViT mất vài giây để load). Load 1 lần, tái sử dụng cho mọi request.
-print("Đang tải model đã fine-tune...")
-
-if not os.path.isdir(MODEL_DIR):
-    raise SystemExit(
-        f"LỖI: không tìm thấy thư mục '{MODEL_DIR}/'. "
-        f"Hãy chạy 2_finetune_model.py trước để tạo model."
-    )
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-processor = AutoImageProcessor.from_pretrained(MODEL_DIR)
-model = AutoModelForImageClassification.from_pretrained(MODEL_DIR)
-model.to(device)
-model.eval()  # chế độ suy luận (inference), không tính gradient -> nhanh hơn
+print(f"Đang tải model '{MODEL_NAME}'...")
+processor = None
+if MODEL_NAME == "emonet":
+    if not os.path.isfile(EMONET_PATH):
+        raise SystemExit(f"LỖI: không có '{EMONET_PATH}'. Chạy train_emonet.py trước, hoặc EMOTION_MODEL=vit.")
+    model, labels = load_emonet(EMONET_PATH, device)
+elif MODEL_NAME == "vit":
+    from transformers import AutoImageProcessor, AutoModelForImageClassification
 
-print(f"Đã tải xong model. Chạy trên: {device}")
-print(f"Các cảm xúc model nhận diện được: {list(model.config.id2label.values())}")
+    if not os.path.isdir(VIT_DIR):
+        raise SystemExit(f"LỖI: không tìm thấy thư mục '{VIT_DIR}/'.")
+    processor = AutoImageProcessor.from_pretrained(VIT_DIR)
+    model = AutoModelForImageClassification.from_pretrained(VIT_DIR).to(device).eval()
+    labels = [model.config.id2label[i] for i in range(len(model.config.id2label))]
+else:
+    raise SystemExit(f"LỖI: EMOTION_MODEL='{MODEL_NAME}' không hợp lệ (chỉ nhận emonet | vit).")
+
+print(f"Đã tải xong model '{MODEL_NAME}'. Chạy trên: {device}")
+print(f"Các cảm xúc model nhận diện được: {labels}")
+
+
+def classify(face_image):
+    """Ảnh mặt đã cắt -> mảng xác suất theo thứ tự `labels`."""
+    if MODEL_NAME == "emonet":
+        # Cùng tiền xử lý với lúc train (emonet.preprocess_face) + đoán cả ảnh lật ngang
+        return predict_probs(model, preprocess_face(face_image), device)
+    inputs = processor(images=face_image, return_tensors="pt").to(device)
+    with torch.no_grad():
+        return torch.softmax(model(**inputs).logits, dim=1)[0].cpu().numpy()
 
 
 def decode_base64_image(base64_string):
     """Chuyển chuỗi base64 (frontend gửi lên) thành ảnh PIL để đưa vào model."""
-    # Frontend thường gửi dạng "data:image/jpeg;base64,/9j/4AAQ..." -> cắt bỏ phần đầu
     if "," in base64_string:
         base64_string = base64_string.split(",", 1)[1]
-    image_bytes = base64.b64decode(base64_string)
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    return image
+    return Image.open(io.BytesIO(base64.b64decode(base64_string))).convert("RGB")
 
 
 @app.route("/health", methods=["GET"])
 def health_check():
-    """Endpoint đơn giản để kiểm tra server có đang chạy không."""
-    return jsonify({"status": "ok", "device": str(device)})
+    return jsonify({"status": "ok", "device": str(device), "model": MODEL_NAME})
+
+
+MAX_FRAMES = 10  # web chụp 5 tấm / lượt; chặn request quá lớn làm chậm server
 
 
 @app.route("/predict", methods=["POST"])
 def predict_emotion():
     """
-    Nhận JSON: { "image": "data:image/jpeg;base64,..." }
-    Trả về JSON:
-        {
-            "emotion": "happy",
-            "confidence": 0.87,
-            "all_scores": {"happy": 0.87, "sad": 0.03, ...}
-        }
+    Nhận JSON: { "image": "data:image/jpeg;base64,..." }  (1 tấm, kiểu cũ)
+           hoặc { "images": ["data:image/jpeg;base64,...", ...] }  (nhiều tấm chụp liền nhau trong 1 lượt quét)
+    Trả về JSON: { "emotion", "confidence", "all_scores", "debug_crop", "model", "inference_ms", "frames" }
+    Nhiều tấm: mỗi tấm cắt mặt + đoán riêng, tấm không thấy mặt bị bỏ, kết quả = TRUNG BÌNH xác suất
+    (1 khung hình có thể bắt đúng lúc chớp mắt / nói dở; gộp vài khung thì ổn định hơn).
     """
     data = request.get_json(silent=True)
-    if not data or "image" not in data:
-        return jsonify({"error": "Thiếu trường 'image' trong request"}), 400
+    if not data or ("image" not in data and "images" not in data):
+        return jsonify({"error": "Thiếu trường 'image' hoặc 'images' trong request"}), 400
+    frames = data["images"] if "images" in data else [data["image"]]
+    if not isinstance(frames, list) or not frames or len(frames) > MAX_FRAMES:
+        return jsonify({"error": f"'images' phải là danh sách 1-{MAX_FRAMES} ảnh"}), 400
 
     try:
-        image = decode_base64_image(data["image"])
+        images = [decode_base64_image(f) for f in frames]
     except Exception as e:
         return jsonify({"error": f"Không đọc được ảnh: {str(e)}"}), 400
 
-    # Cắt khuôn mặt trước khi đưa vào model - PHẢI làm bước này để khớp với
-    # định dạng ảnh lúc train (xem giải thích ở đầu file)
-    face_image = detect_and_crop_face(image)
-    if face_image is None:
+    # Cắt khuôn mặt trước khi đưa vào model - khớp với định dạng ảnh lúc train
+    faces = [face for face in (detect_and_crop_face(img) for img in images) if face is not None]
+    if not faces:
         return jsonify({"error": "no_face_detected", "message": "Không phát hiện khuôn mặt trong khung hình"}), 200
 
-    # Đưa ảnh qua model để dự đoán
-    inputs = processor(images=face_image, return_tensors="pt").to(device)
-    with torch.no_grad():
-        logits = model(**inputs).logits
-        probs = torch.softmax(logits, dim=1)[0]
+    t0 = time.perf_counter()
+    probs = sum(classify(face) for face in faces) / len(faces)
+    inference_ms = (time.perf_counter() - t0) * 1000
 
-    top_idx = int(torch.argmax(probs))
-    emotion = model.config.id2label[top_idx]
-    confidence = float(probs[top_idx])
+    top_idx = int(probs.argmax())
+    all_scores = {labels[i]: round(float(probs[i]), 4) for i in range(len(labels))}
 
-    all_scores = {
-        model.config.id2label[i]: float(probs[i])
-        for i in range(len(probs))
-    }
-
-    # Trả kèm ảnh ĐÃ CROP (chính là ảnh model dùng để dự đoán) dưới dạng base64,
-    # để debug: so sánh trực quan xem ảnh này có giống ảnh trong data/ lúc train không.
+    # Trả kèm ảnh ĐÃ CROP (tấm đầu tiên có mặt) để debug (so với ảnh trong data/ lúc train)
     debug_buffer = io.BytesIO()
-    face_image.save(debug_buffer, format="JPEG")
+    faces[0].save(debug_buffer, format="JPEG")
     debug_crop_base64 = "data:image/jpeg;base64," + base64.b64encode(debug_buffer.getvalue()).decode("utf-8")
 
     return jsonify({
-        "emotion": emotion,
-        "confidence": round(confidence, 4),
-        "all_scores": {k: round(v, 4) for k, v in all_scores.items()},
+        "emotion": labels[top_idx],
+        "confidence": round(float(probs[top_idx]), 4),
+        "all_scores": all_scores,
         "debug_crop": debug_crop_base64,
+        "model": MODEL_NAME,
+        "inference_ms": round(inference_ms, 1),
+        "frames": len(faces),
     })
 
 
 if __name__ == "__main__":
     # debug=False khi demo thật để tránh server tự restart giữa chừng làm mất model đã load
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)

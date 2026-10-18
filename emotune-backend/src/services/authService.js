@@ -13,7 +13,7 @@ const signToken = (userId) => {
 }
 
 const toPublicUser = (row) => {
-    return { id: row.id, username: row.username, surveyDone: row.survey_done_at ? true : false }
+    return { id: row.id, username: row.username, surveyDone: row.survey_done_at ? true : false, isAdmin: row.role === 'admin' }
 }
 
 const register = async (rawUsername, password) => {
@@ -51,6 +51,12 @@ const login = async (rawUsername, password) => {
     if (!checkPassword) {
         const err = new Error("Wrong username or password")
         err.status = 401;
+        throw err;
+    }
+    // bao "bi khoa" SAU khi dung mat khau -> nguoi doan mat khau khong biet duoc tai khoan nao bi khoa
+    if (row.locked_at) {
+        const err = new Error("This account has been locked. Ask an admin to unlock it")
+        err.status = 403;
         throw err;
     }
     return {

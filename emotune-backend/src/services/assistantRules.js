@@ -305,6 +305,9 @@ const detectEmotion = (words) => {
     return null;
 };
 
+// C11: micro an luc quet mat CHI nghe cam xuc -> chi xet tu dien cam xuc (bo qua lenh, ten bai) -> emotion | null
+const moodFromText = (text) => detectEmotion(toWords(text));
+
 const moodAction = (emotion) => ({
     action: { type: "mood", emotion },
     reply: `${MOOD_REPLIES[emotion]}, để mình chọn bài hợp tâm trạng nhé.`,
@@ -538,5 +541,5 @@ module.exports = {
     EMOTIONS, CONTROLS, PAGES, MIN_SCORE,
     normalize, toWords, findPhrase, has, scoreName, entityOf,
     playAction, navigateAction, runIntent, controlAction, unknownAction,
-    sanitizePending, sanitizeHistory, moodAction, parseCommand, validateLlmAction, checkMv, splitParts, MAX_STEPS, STEP_TYPES,
+    sanitizePending, sanitizeHistory, moodAction, moodFromText, parseCommand, validateLlmAction, checkMv, splitParts, MAX_STEPS, STEP_TYPES,
 };

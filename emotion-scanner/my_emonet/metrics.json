@@ -1,0 +1,51 @@
+{
+  "variant": "full",
+  "epochs": 30,
+  "source": "experiment_emonet.py full --final (14/10/2026): train 30 epoch trên mọi người tự chụp, không dừng sớm, lấy bản cuối",
+  "cv_full_3seeds": {
+    "macro_f1_mean_single_seed": 0.7322,
+    "per_seed": {
+      "42": {
+        "accuracy": [
+          0.7476267206452263,
+          0.07661829083763921
+        ],
+        "macro_f1": [
+          0.7540287497226859,
+          0.06645405452009441
+        ]
+      },
+      "1042": {
+        "accuracy": [
+          0.7158457820599929,
+          0.06411905668086425
+        ],
+        "macro_f1": [
+          0.7163559876512127,
+          0.05964308576901096
+        ]
+      },
+      "2042": {
+        "accuracy": [
+          0.7274188906084855,
+          0.06220651208710736
+        ],
+        "macro_f1": [
+          0.7262057044962134,
+          0.06333043112278873
+        ]
+      }
+    },
+    "ensemble": {
+      "accuracy": [
+        0.7259356205017867,
+        0.07219230086151188
+      ],
+      "macro_f1": [
+        0.7314450283626226,
+        0.06097808996421079
+      ]
+    }
+  },
+  "replaced": "emonet.pt cũ (dừng sớm, 12 epoch, macro-F1 73,5% với seed 42 / TB 70,2%) — lấy lại: git show 340ebff:emotion-scanner/my_emonet/emonet.pt"
+}

@@ -1,0 +1,371 @@
+Thiết bị: cuda · 72535 ảnh · đang nạp ảnh...
+
+=== mixup fold 1 seed 42: test ['mom', 'nhat'] ===
+  epoch 1: val 0.1235
+  epoch 2: val 0.3876
+  epoch 3: val 0.3921
+  epoch 4: val 0.5547
+  epoch 5: val 0.7013
+  epoch 6: val 0.6334
+  epoch 7: val 0.6996
+  epoch 8: val 0.6381
+  epoch 9: val 0.7149
+  epoch 10: val 0.6970
+  epoch 11: val 0.7184
+  epoch 12: val 0.7039
+  epoch 13: val 0.7442
+  epoch 14: val 0.7327
+  epoch 15: val 0.7367
+  epoch 16: val 0.7028
+  epoch 17: val 0.7269
+  epoch 18: val 0.7455
+  epoch 19: val 0.7461
+  epoch 20: val 0.7358
+  epoch 21: val 0.7485
+  epoch 22: val 0.7672
+  epoch 23: val 0.7661
+  epoch 24: val 0.7396
+  epoch 25: val 0.7661
+  epoch 26: val 0.7653
+  epoch 27: val 0.7615
+  epoch 28: val 0.7593
+  epoch 29: val 0.7600
+  epoch 30: val 0.7644
+  -> seed 42: acc 0.708, macro-F1 0.707
+
+=== mixup fold 1 seed 1042: test ['mom', 'nhat'] ===
+  epoch 1: val 0.1560
+  epoch 2: val 0.3084
+  epoch 3: val 0.5249
+  epoch 4: val 0.5603
+  epoch 5: val 0.6817
+  epoch 6: val 0.6952
+  epoch 7: val 0.6393
+  epoch 8: val 0.6962
+  epoch 9: val 0.6932
+  epoch 10: val 0.7568
+  epoch 11: val 0.6953
+  epoch 12: val 0.7401
+  epoch 13: val 0.7331
+  epoch 14: val 0.7428
+  epoch 15: val 0.7252
+  epoch 16: val 0.7569
+  epoch 17: val 0.7455
+  epoch 18: val 0.7752
+  epoch 19: val 0.7817
+  epoch 20: val 0.7530
+  epoch 21: val 0.7659
+  epoch 22: val 0.7698
+  epoch 23: val 0.7810
+  epoch 24: val 0.7767
+  epoch 25: val 0.7775
+  epoch 26: val 0.7869
+  epoch 27: val 0.7843
+  epoch 28: val 0.7861
+  epoch 29: val 0.7828
+  epoch 30: val 0.7812
+  -> seed 1042: acc 0.719, macro-F1 0.718
+
+=== mixup fold 1 seed 2042: test ['mom', 'nhat'] ===
+  epoch 1: val 0.1750
+  epoch 2: val 0.3948
+  epoch 3: val 0.5487
+  epoch 4: val 0.5762
+  epoch 5: val 0.6698
+  epoch 6: val 0.6991
+  epoch 7: val 0.7247
+  epoch 8: val 0.7156
+  epoch 9: val 0.7253
+  epoch 10: val 0.6738
+  epoch 11: val 0.6979
+  epoch 12: val 0.7355
+  epoch 13: val 0.6872
+  epoch 14: val 0.7450
+  epoch 15: val 0.7226
+  epoch 16: val 0.7171
+  epoch 17: val 0.7328
+  epoch 18: val 0.7538
+  epoch 19: val 0.7540
+  epoch 20: val 0.7423
+  epoch 21: val 0.7607
+  epoch 22: val 0.7418
+  epoch 23: val 0.7409
+  epoch 24: val 0.7510
+  epoch 25: val 0.7429
+  epoch 26: val 0.7491
+  epoch 27: val 0.7571
+  epoch 28: val 0.7621
+  epoch 29: val 0.7609
+  epoch 30: val 0.7600
+  -> seed 2042: acc 0.693, macro-F1 0.695
+  => GHÉP 3 seed fold 1: acc 0.734, macro-F1 0.736
+
+=== mixup fold 2 seed 42: test ['phuc', 'trung'] ===
+  epoch 1: val 0.2283
+  epoch 2: val 0.3007
+  epoch 3: val 0.3912
+  epoch 4: val 0.4340
+  epoch 5: val 0.5033
+  epoch 6: val 0.5264
+  epoch 7: val 0.5150
+  epoch 8: val 0.5089
+  epoch 9: val 0.5491
+  epoch 10: val 0.5877
+  epoch 11: val 0.5566
+  epoch 12: val 0.5870
+  epoch 13: val 0.5145
+  epoch 14: val 0.6469
+  epoch 15: val 0.6131
+  epoch 16: val 0.6062
+  epoch 17: val 0.6348
+  epoch 18: val 0.6159
+  epoch 19: val 0.6152
+  epoch 20: val 0.5848
+  epoch 21: val 0.6013
+  epoch 22: val 0.6143
+  epoch 23: val 0.6112
+  epoch 24: val 0.6044
+  -> seed 42: acc 0.734, macro-F1 0.738
+
+=== mixup fold 2 seed 1042: test ['phuc', 'trung'] ===
+  epoch 1: val 0.0396
+  epoch 2: val 0.4625
+  epoch 3: val 0.5108
+  epoch 4: val 0.4617
+  epoch 5: val 0.5419
+  epoch 6: val 0.5533
+  epoch 7: val 0.5270
+  epoch 8: val 0.5917
+  epoch 9: val 0.5575
+  epoch 10: val 0.6313
+  epoch 11: val 0.6474
+  epoch 12: val 0.5958
+  epoch 13: val 0.6176
+  epoch 14: val 0.5923
+  epoch 15: val 0.6133
+  epoch 16: val 0.6519
+  epoch 17: val 0.6452
+  epoch 18: val 0.5509
+  epoch 19: val 0.6818
+  epoch 20: val 0.6560
+  epoch 21: val 0.6507
+  epoch 22: val 0.6426
+  epoch 23: val 0.6714
+  epoch 24: val 0.6454
+  epoch 25: val 0.6324
+  epoch 26: val 0.6694
+  epoch 27: val 0.6634
+  epoch 28: val 0.6545
+  epoch 29: val 0.6585
+  -> seed 1042: acc 0.770, macro-F1 0.768
+
+=== mixup fold 2 seed 2042: test ['phuc', 'trung'] ===
+  epoch 1: val 0.0842
+  epoch 2: val 0.3124
+  epoch 3: val 0.5372
+  epoch 4: val 0.3733
+  epoch 5: val 0.5551
+  epoch 6: val 0.5388
+  epoch 7: val 0.4844
+  epoch 8: val 0.5824
+  epoch 9: val 0.6758
+  epoch 10: val 0.5543
+  epoch 11: val 0.5499
+  epoch 12: val 0.6629
+  epoch 13: val 0.5727
+  epoch 14: val 0.6443
+  epoch 15: val 0.6254
+  epoch 16: val 0.6101
+  epoch 17: val 0.6674
+  epoch 18: val 0.5450
+  epoch 19: val 0.5876
+  -> seed 2042: acc 0.667, macro-F1 0.651
+  => GHÉP 3 seed fold 2: acc 0.761, macro-F1 0.758
+
+=== mixup fold 3 seed 42: test ['ducvinh', 'vanquynh'] ===
+  epoch 1: val 0.1336
+  epoch 2: val 0.2280
+  epoch 3: val 0.4462
+  epoch 4: val 0.5270
+  epoch 5: val 0.5998
+  epoch 6: val 0.6032
+  epoch 7: val 0.5936
+  epoch 8: val 0.6072
+  epoch 9: val 0.5876
+  epoch 10: val 0.5892
+  epoch 11: val 0.6554
+  epoch 12: val 0.6068
+  epoch 13: val 0.7252
+  epoch 14: val 0.6221
+  epoch 15: val 0.6372
+  epoch 16: val 0.5994
+  epoch 17: val 0.6339
+  epoch 18: val 0.7125
+  epoch 19: val 0.6895
+  epoch 20: val 0.6850
+  epoch 21: val 0.7300
+  epoch 22: val 0.7369
+  epoch 23: val 0.6889
+  epoch 24: val 0.6830
+  epoch 25: val 0.6927
+  epoch 26: val 0.6766
+  epoch 27: val 0.6977
+  epoch 28: val 0.6881
+  epoch 29: val 0.6796
+  epoch 30: val 0.6737
+  -> seed 42: acc 0.730, macro-F1 0.727
+
+=== mixup fold 3 seed 1042: test ['ducvinh', 'vanquynh'] ===
+  epoch 1: val 0.1458
+  epoch 2: val 0.4200
+  epoch 3: val 0.5238
+  epoch 4: val 0.6585
+  epoch 5: val 0.6324
+  epoch 6: val 0.5760
+  epoch 7: val 0.6518
+  epoch 8: val 0.6138
+  epoch 9: val 0.6591
+  epoch 10: val 0.6643
+  epoch 11: val 0.5932
+  epoch 12: val 0.6423
+  epoch 13: val 0.6395
+  epoch 14: val 0.6593
+  epoch 15: val 0.6323
+  epoch 16: val 0.6256
+  epoch 17: val 0.6770
+  epoch 18: val 0.5909
+  epoch 19: val 0.6445
+  epoch 20: val 0.6703
+  epoch 21: val 0.7045
+  epoch 22: val 0.7108
+  epoch 23: val 0.6703
+  epoch 24: val 0.6850
+  epoch 25: val 0.6671
+  epoch 26: val 0.6670
+  epoch 27: val 0.6579
+  epoch 28: val 0.6912
+  epoch 29: val 0.6699
+  epoch 30: val 0.6699
+  -> seed 1042: acc 0.789, macro-F1 0.784
+
+=== mixup fold 3 seed 2042: test ['ducvinh', 'vanquynh'] ===
+  epoch 1: val 0.2261
+  epoch 2: val 0.3719
+  epoch 3: val 0.4649
+  epoch 4: val 0.4198
+  epoch 5: val 0.6322
+  epoch 6: val 0.6813
+  epoch 7: val 0.6035
+  epoch 8: val 0.5208
+  epoch 9: val 0.6448
+  epoch 10: val 0.6170
+  epoch 11: val 0.5829
+  epoch 12: val 0.5908
+  epoch 13: val 0.6441
+  epoch 14: val 0.5523
+  epoch 15: val 0.5823
+  epoch 16: val 0.5483
+  -> seed 2042: acc 0.632, macro-F1 0.608
+  => GHÉP 3 seed fold 3: acc 0.719, macro-F1 0.709
+
+=== mixup fold 4 seed 42: test ['dung', 'vy'] ===
+  epoch 1: val 0.1604
+  epoch 2: val 0.3422
+  epoch 3: val 0.2268
+  epoch 4: val 0.5129
+  epoch 5: val 0.5869
+  epoch 6: val 0.5335
+  epoch 7: val 0.7105
+  epoch 8: val 0.6481
+  epoch 9: val 0.6255
+  epoch 10: val 0.6249
+  epoch 11: val 0.7148
+  epoch 12: val 0.7334
+  epoch 13: val 0.6868
+  epoch 14: val 0.6677
+  epoch 15: val 0.7026
+  epoch 16: val 0.5902
+  epoch 17: val 0.6589
+  epoch 18: val 0.7193
+  epoch 19: val 0.6453
+  epoch 20: val 0.7479
+  epoch 21: val 0.6983
+  epoch 22: val 0.6920
+  epoch 23: val 0.6145
+  epoch 24: val 0.7500
+  epoch 25: val 0.7065
+  epoch 26: val 0.7453
+  epoch 27: val 0.6980
+  epoch 28: val 0.7443
+  epoch 29: val 0.7482
+  epoch 30: val 0.7479
+  -> seed 42: acc 0.631, macro-F1 0.649
+
+=== mixup fold 4 seed 1042: test ['dung', 'vy'] ===
+  epoch 1: val 0.1782
+  epoch 2: val 0.3802
+  epoch 3: val 0.4637
+  epoch 4: val 0.5248
+  epoch 5: val 0.6813
+  epoch 6: val 0.5572
+  epoch 7: val 0.6262
+  epoch 8: val 0.6923
+  epoch 9: val 0.6806
+  epoch 10: val 0.5324
+  epoch 11: val 0.6984
+  epoch 12: val 0.6944
+  epoch 13: val 0.5737
+  epoch 14: val 0.6803
+  epoch 15: val 0.6125
+  epoch 16: val 0.5720
+  epoch 17: val 0.5491
+  epoch 18: val 0.6291
+  epoch 19: val 0.6070
+  epoch 20: val 0.6713
+  epoch 21: val 0.6156
+  -> seed 1042: acc 0.620, macro-F1 0.638
+
+=== mixup fold 4 seed 2042: test ['dung', 'vy'] ===
+  epoch 1: val 0.1752
+  epoch 2: val 0.4442
+  epoch 3: val 0.5104
+  epoch 4: val 0.6262
+  epoch 5: val 0.5635
+  epoch 6: val 0.4767
+  epoch 7: val 0.7190
+  epoch 8: val 0.6501
+  epoch 9: val 0.6673
+  epoch 10: val 0.6793
+  epoch 11: val 0.6257
+  epoch 12: val 0.5863
+  epoch 13: val 0.6889
+  epoch 14: val 0.7310
+  epoch 15: val 0.7504
+  epoch 16: val 0.5675
+  epoch 17: val 0.7000
+  epoch 18: val 0.6224
+  epoch 19: val 0.7569
+  epoch 20: val 0.5875
+  epoch 21: val 0.7404
+  epoch 22: val 0.6973
+  epoch 23: val 0.7434
+  epoch 24: val 0.7096
+  epoch 25: val 0.7542
+  epoch 26: val 0.6767
+  epoch 27: val 0.7853
+  epoch 28: val 0.7547
+  epoch 29: val 0.7401
+  epoch 30: val 0.7401
+  -> seed 2042: acc 0.620, macro-F1 0.615
+  => GHÉP 3 seed fold 4: acc 0.631, macro-F1 0.643
+
+# Thử nghiệm EmoNet — mixup
+
+| | Acc (TB 4 fold) | Macro-F1 (TB 4 fold) |
+|---|---|---|
+| seed 42 | 70.1% ± 4.1% | 70.5% ± 3.4% |
+| seed 1042 | 72.5% ± 6.6% | 72.7% ± 5.7% |
+| seed 2042 | 65.3% ± 2.9% | 64.2% ± 3.4% |
+| **ghép 3 seed** | **71.1% ± 4.9%** | **71.2% ± 4.3%** |
+
+Macro-F1 1 seed: thấp nhất 64.2%, cao nhất 72.7% (dao động do may rủi). Epoch tốt nhất: [22, 26, 28, 14, 19, 9, 22, 22, 6, 24, 11, 27]

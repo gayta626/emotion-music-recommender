@@ -7,6 +7,7 @@ import { Cover } from './PlayerOverlays';
 import KaraokeLine from './KaraokeLine';
 import MicIcon from './MicIcon';
 import './LyricsView.scss';
+import './KaraokeScoreCard.scss';
 
 // nguoi dung tu cuon loi -> 3 giay khong tu cuon theo nhac (khong giat ve dong dang hat)
 const USER_SCROLL_PAUSE_MS = 3000;
@@ -17,8 +18,11 @@ const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)")
 // Thanh phat duoi cung van la thanh cua MusicPlayer (nam tren lop nay).
 // Karaoke (H15): MusicPlayer bo giong ca si; o day dong dang hat to hon, chu to mau dan theo nhac (KaraokeLine).
 // Loi bai do MusicPlayer tai (useLyrics) -> truyen vao `lyrics` / `loading`.
+// Cham diem (H15 phan 3, chi bai da tach giong bang AI): canScore -> nut "Score me" (scoreOn / onScoreOn),
+// scoreStatus + hearing = trang thai micro; scoreCard = the diem khi hat xong (MusicPlayer ve san).
 const LyricsView = (props) => {
-    const { song, coverSrc, lyrics, loading, currentTime, getTime, onSeek, onClose, actions, karaoke, onKaraoke } = props;
+    const { song, coverSrc, lyrics, loading, currentTime, getTime, onSeek, onClose, actions, karaoke, onKaraoke,
+        aiBeat, canScore, scoreOn, onScoreOn, scoreStatus, hearing, scoreCard } = props;
     const listRef = useRef(null);
     const userScrollAt = useRef(0);
     const closeRef = useRef(onClose);
@@ -92,11 +96,34 @@ const LyricsView = (props) => {
                                 <span>{karaoke ? "Karaoke on" : "Karaoke"}</span>
                             </button>
                         )}
+                        {karaoke && canScore && (
+                            <button
+                                className={`pill-toggle score-toggle ${scoreOn ? "on" : ""}`}
+                                onClick={() => onScoreOn(!scoreOn)}
+                                aria-pressed={!!scoreOn}
+                                title={scoreOn ? "Stop scoring (turns the microphone off)" : "Score me: NYX listens through your microphone and scores your singing"}
+                            >
+                                <ScoreIcon />
+                                <span>{scoreOn ? "Scoring" : "Score me"}</span>
+                            </button>
+                        )}
                         {actions}
                     </div>
                     {karaoke && canKaraoke && (
                         <p className="karaoke-note">
-                            Singer's voice reduced in the browser (left − right channel). Some echo of the voice may remain.
+                            {aiBeat
+                                ? "Singer's voice removed by AI (Demucs source separation)."
+                                : "Singer's voice reduced in the browser (left − right channel). Some echo of the voice may remain."}
+                        </p>
+                    )}
+                    {karaoke && canScore && scoreOn && (
+                        <p className="score-status" role="status">
+                            <span className={`score-dot ${hearing ? "on" : ""}`} aria-hidden="true" />
+                            {scoreStatus === "blocked"
+                                ? "Can't use the microphone. Allow it in the browser to get a score."
+                                : scoreStatus === "listening"
+                                    ? (hearing ? "Hearing you!" : "Listening… sing along. Headphones give a fairer score.")
+                                    : "Starting the microphone…"}
                         </p>
                     )}
                 </aside>
@@ -136,8 +163,17 @@ const LyricsView = (props) => {
                     )}
                 </section>
             </div>
+            {scoreCard}
         </div>
     );
 };
+
+// icon "cham diem": ngoi sao
+const ScoreIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9L12 3.5z"
+            stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+);
 
 export default LyricsView;

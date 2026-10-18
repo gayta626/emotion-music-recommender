@@ -21,4 +21,14 @@ const saveProfile = async (req, res) => {
     }
 }
 
-module.exports = { getProfile, saveProfile }
+// PUT /profile/faces { on }
+const setFaceConsent = async (req, res) => {
+    try {
+        return res.status(200).json(await profileService.setFaceConsent(req.userId, (req.body || {}).on))
+    } catch (err) {
+        if (!err.status) console.error("Loi luu dong y anh mat:", err);
+        return res.status(err.status || 500).json({ error: err.status ? err.message : "Server error" })
+    }
+}
+
+module.exports = { getProfile, saveProfile, setFaceConsent }

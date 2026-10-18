@@ -6,6 +6,11 @@ import SettingsPage from './pages/SettingsPage'
 import PlaylistPage from './pages/PlaylistPage'
 import LikedPage from './pages/LikedPage'
 import MoodPage from './pages/MoodPage'
+import AdminPage from './pages/AdminPage'
+import AdminUsersPage from './pages/AdminUsersPage'
+import AdminUserPage from './pages/AdminUserPage'
+import AdminLibraryPage from './pages/AdminLibraryPage'
+import AdminLayout from './components/admin/AdminLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SurveyPage from './pages/SurveyPage'
@@ -41,6 +46,13 @@ const App = () => {
                 <Route path='/stats' element={<MoodPage />} />
                 <Route path='/mood' element={<Navigate to='/stats' replace />} />
                 <Route path='/settings' element={<SettingsPage />} />
+                {/* admin: theo dõi cả hệ thống (C14) + quản lý tài khoản, kho nhạc; AdminLayout chặn người không phải admin */}
+                <Route path='/admin' element={<AdminLayout />}>
+                  <Route index element={<AdminPage />} />
+                  <Route path='users' element={<AdminUsersPage />} />
+                  <Route path='users/:id' element={<AdminUserPage />} />
+                  <Route path='library' element={<AdminLibraryPage />} />
+                </Route>
               </Route>
             </Route>
             <Route path='/login' element={<LoginPage />} />

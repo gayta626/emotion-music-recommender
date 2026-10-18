@@ -40,3 +40,25 @@ test("bai da ♥ duoc cong like_bonus (+1), cot noi bo khong lo ra", () => {
 test("dong khong co like_bonus (du lieu cu) van tinh duoc", () => {
     assert.strictEqual(rankForYou([row(1, 1, 0.5)], 10)[0].score, 1.5);
 });
+
+// C13 kNN: lang gieng (nguoi co gu giong) thich bai -> cong toi da KNN_WEIGHT (0.5)
+const knnOf = (songValues) => ({
+    neighbors: [{ userId: 2, sim: 0.9 }],
+    vectors: new Map([[2, new Map(Object.entries(songValues))]]),
+});
+
+test("bai lang gieng thich duoc cong diem kNN", () => {
+    const out = rankForYou([row(1, 0.3, 0), row(2, 0, 0)], 10, knnOf({ s2: 2 }));
+    assert.deepStrictEqual(out.map((s) => s.id), [2, 1]);
+    assert.strictEqual(out[0].score, 0.5);
+});
+
+test("kNN khong vuot qua 1 lan tu nghe het bai (hanh vi cua chinh minh quyet dinh)", () => {
+    const out = rankForYou([row(1, 1, 0), row(2, 0, 0)], 10, knnOf({ s2: 5 }));
+    assert.deepStrictEqual(out.map((s) => s.id), [1, 2]);
+});
+
+test("khong co lang gieng / khong truyen kNN -> nhu cu", () => {
+    const rows = [row(1, 1, 0), row(2, 0, 0.5)];
+    assert.deepStrictEqual(rankForYou(rows, 10, { neighbors: [], vectors: new Map() }), rankForYou(rows, 10));
+});

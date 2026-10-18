@@ -1,0 +1,214 @@
+Thiết bị: cuda · 72535 ảnh · đang nạp ảnh vào bộ nhớ...
+
+=== emonet fold 1: test ['mom', 'nhat'], val ducvinh ===
+    val: công khai 0.147 · ducvinh 0.129
+{'epoch': 1, 'loss': 1.6409, 'sec': 16.1, 'val': 0.1382}
+    val: công khai 0.418 · ducvinh 0.452
+{'epoch': 2, 'loss': 1.4793, 'sec': 7.2, 'val': 0.4351}
+    val: công khai 0.524 · ducvinh 0.701
+{'epoch': 3, 'loss': 1.2756, 'sec': 7.1, 'val': 0.6126}
+    val: công khai 0.637 · ducvinh 0.639
+{'epoch': 4, 'loss': 1.1626, 'sec': 7.1, 'val': 0.6383}
+    val: công khai 0.593 · ducvinh 0.782
+{'epoch': 5, 'loss': 1.1016, 'sec': 7.1, 'val': 0.6875}
+    val: công khai 0.638 · ducvinh 0.778
+{'epoch': 6, 'loss': 1.0561, 'sec': 7.1, 'val': 0.708}
+    val: công khai 0.688 · ducvinh 0.781
+{'epoch': 7, 'loss': 1.024, 'sec': 7.1, 'val': 0.7343}
+    val: công khai 0.622 · ducvinh 0.684
+{'epoch': 8, 'loss': 0.9931, 'sec': 7.0, 'val': 0.6526}
+    val: công khai 0.710 · ducvinh 0.719
+{'epoch': 9, 'loss': 0.9737, 'sec': 7.0, 'val': 0.7147}
+    val: công khai 0.673 · ducvinh 0.759
+{'epoch': 10, 'loss': 0.9551, 'sec': 7.0, 'val': 0.7159}
+    val: công khai 0.703 · ducvinh 0.791
+{'epoch': 11, 'loss': 0.9334, 'sec': 7.1, 'val': 0.7471}
+    val: công khai 0.745 · ducvinh 0.654
+{'epoch': 12, 'loss': 0.9175, 'sec': 7.0, 'val': 0.6999}
+    val: công khai 0.718 · ducvinh 0.736
+{'epoch': 13, 'loss': 0.9108, 'sec': 7.1, 'val': 0.7272}
+    val: công khai 0.712 · ducvinh 0.768
+{'epoch': 14, 'loss': 0.8951, 'sec': 7.1, 'val': 0.7399}
+    val: công khai 0.715 · ducvinh 0.811
+{'epoch': 15, 'loss': 0.8818, 'sec': 7.3, 'val': 0.7628}
+    val: công khai 0.740 · ducvinh 0.783
+{'epoch': 16, 'loss': 0.8701, 'sec': 7.4, 'val': 0.7612}
+    val: công khai 0.669 · ducvinh 0.767
+{'epoch': 17, 'loss': 0.8598, 'sec': 7.4, 'val': 0.718}
+    val: công khai 0.760 · ducvinh 0.818
+{'epoch': 18, 'loss': 0.8515, 'sec': 7.4, 'val': 0.7885}
+    val: công khai 0.744 · ducvinh 0.735
+{'epoch': 19, 'loss': 0.8414, 'sec': 7.2, 'val': 0.7398}
+    val: công khai 0.692 · ducvinh 0.817
+{'epoch': 20, 'loss': 0.8346, 'sec': 7.1, 'val': 0.7544}
+    val: công khai 0.757 · ducvinh 0.798
+{'epoch': 21, 'loss': 0.8285, 'sec': 7.1, 'val': 0.7771}
+    val: công khai 0.754 · ducvinh 0.797
+{'epoch': 22, 'loss': 0.8165, 'sec': 7.1, 'val': 0.7752}
+    val: công khai 0.759 · ducvinh 0.804
+{'epoch': 23, 'loss': 0.807, 'sec': 7.1, 'val': 0.7815}
+    val: công khai 0.759 · ducvinh 0.810
+{'epoch': 24, 'loss': 0.8035, 'sec': 7.1, 'val': 0.7849}
+    val: công khai 0.747 · ducvinh 0.802
+{'epoch': 25, 'loss': 0.8039, 'sec': 7.1, 'val': 0.7746}
+    val: công khai 0.769 · ducvinh 0.812
+{'epoch': 26, 'loss': 0.7954, 'sec': 7.2, 'val': 0.7908}
+    val: công khai 0.758 · ducvinh 0.796
+{'epoch': 27, 'loss': 0.789, 'sec': 7.1, 'val': 0.7769}
+    val: công khai 0.765 · ducvinh 0.805
+{'epoch': 28, 'loss': 0.7899, 'sec': 7.0, 'val': 0.7851}
+    val: công khai 0.753 · ducvinh 0.796
+{'epoch': 29, 'loss': 0.7894, 'sec': 7.1, 'val': 0.7745}
+    val: công khai 0.762 · ducvinh 0.804
+{'epoch': 30, 'loss': 0.7848, 'sec': 7.0, 'val': 0.7831}
+  -> test acc 0.740, macro-F1 0.751
+
+=== emonet fold 2: test ['phuc', 'trung'], val dung ===
+    val: công khai 0.214 · dung 0.172
+{'epoch': 1, 'loss': 1.6412, 'sec': 7.1, 'val': 0.1927}
+    val: công khai 0.405 · dung 0.304
+{'epoch': 2, 'loss': 1.478, 'sec': 7.2, 'val': 0.3547}
+    val: công khai 0.491 · dung 0.449
+{'epoch': 3, 'loss': 1.2732, 'sec': 7.2, 'val': 0.4696}
+    val: công khai 0.576 · dung 0.322
+{'epoch': 4, 'loss': 1.1659, 'sec': 7.1, 'val': 0.4494}
+    val: công khai 0.682 · dung 0.396
+{'epoch': 5, 'loss': 1.1001, 'sec': 7.1, 'val': 0.539}
+    val: công khai 0.632 · dung 0.552
+{'epoch': 6, 'loss': 1.052, 'sec': 7.1, 'val': 0.5923}
+    val: công khai 0.676 · dung 0.588
+{'epoch': 7, 'loss': 1.0194, 'sec': 7.2, 'val': 0.6318}
+    val: công khai 0.643 · dung 0.529
+{'epoch': 8, 'loss': 0.9867, 'sec': 7.1, 'val': 0.5859}
+    val: công khai 0.691 · dung 0.671
+{'epoch': 9, 'loss': 0.9664, 'sec': 7.2, 'val': 0.6811}
+    val: công khai 0.739 · dung 0.345
+{'epoch': 10, 'loss': 0.9534, 'sec': 7.1, 'val': 0.5417}
+    val: công khai 0.714 · dung 0.494
+{'epoch': 11, 'loss': 0.9351, 'sec': 7.1, 'val': 0.6044}
+    val: công khai 0.685 · dung 0.662
+{'epoch': 12, 'loss': 0.9147, 'sec': 7.1, 'val': 0.6736}
+    val: công khai 0.714 · dung 0.513
+{'epoch': 13, 'loss': 0.9056, 'sec': 7.2, 'val': 0.6136}
+    val: công khai 0.673 · dung 0.680
+{'epoch': 14, 'loss': 0.8951, 'sec': 7.1, 'val': 0.6764}
+    val: công khai 0.741 · dung 0.510
+{'epoch': 15, 'loss': 0.8796, 'sec': 7.1, 'val': 0.6251}
+    val: công khai 0.746 · dung 0.496
+{'epoch': 16, 'loss': 0.8689, 'sec': 7.1, 'val': 0.6208}
+    val: công khai 0.757 · dung 0.503
+{'epoch': 17, 'loss': 0.8612, 'sec': 7.2, 'val': 0.6302}
+    val: công khai 0.762 · dung 0.568
+{'epoch': 18, 'loss': 0.8457, 'sec': 7.3, 'val': 0.6646}
+    val: công khai 0.713 · dung 0.575
+{'epoch': 19, 'loss': 0.8384, 'sec': 7.3, 'val': 0.644}
+  -> test acc 0.743, macro-F1 0.748
+
+=== emonet fold 3: test ['ducvinh', 'vanquynh'], val nhat ===
+    val: công khai 0.199 · nhat 0.204
+{'epoch': 1, 'loss': 1.6485, 'sec': 7.3, 'val': 0.2016}
+    val: công khai 0.266 · nhat 0.240
+{'epoch': 2, 'loss': 1.4682, 'sec': 7.2, 'val': 0.2532}
+    val: công khai 0.556 · nhat 0.479
+{'epoch': 3, 'loss': 1.2801, 'sec': 7.2, 'val': 0.5173}
+    val: công khai 0.551 · nhat 0.496
+{'epoch': 4, 'loss': 1.1646, 'sec': 7.1, 'val': 0.5235}
+    val: công khai 0.680 · nhat 0.617
+{'epoch': 5, 'loss': 1.0989, 'sec': 7.2, 'val': 0.6482}
+    val: công khai 0.534 · nhat 0.673
+{'epoch': 6, 'loss': 1.0612, 'sec': 7.1, 'val': 0.6037}
+    val: công khai 0.617 · nhat 0.509
+{'epoch': 7, 'loss': 1.0194, 'sec': 7.1, 'val': 0.5629}
+    val: công khai 0.671 · nhat 0.757
+{'epoch': 8, 'loss': 0.9892, 'sec': 7.1, 'val': 0.7142}
+    val: công khai 0.661 · nhat 0.476
+{'epoch': 9, 'loss': 0.975, 'sec': 7.1, 'val': 0.5686}
+    val: công khai 0.702 · nhat 0.493
+{'epoch': 10, 'loss': 0.9571, 'sec': 7.1, 'val': 0.5974}
+    val: công khai 0.723 · nhat 0.522
+{'epoch': 11, 'loss': 0.936, 'sec': 7.1, 'val': 0.6227}
+    val: công khai 0.731 · nhat 0.623
+{'epoch': 12, 'loss': 0.9204, 'sec': 7.1, 'val': 0.677}
+    val: công khai 0.702 · nhat 0.546
+{'epoch': 13, 'loss': 0.9027, 'sec': 7.1, 'val': 0.6242}
+    val: công khai 0.689 · nhat 0.569
+{'epoch': 14, 'loss': 0.8943, 'sec': 7.3, 'val': 0.6292}
+    val: công khai 0.707 · nhat 0.596
+{'epoch': 15, 'loss': 0.8806, 'sec': 7.4, 'val': 0.6516}
+    val: công khai 0.690 · nhat 0.607
+{'epoch': 16, 'loss': 0.872, 'sec': 7.4, 'val': 0.6483}
+    val: công khai 0.717 · nhat 0.484
+{'epoch': 17, 'loss': 0.8625, 'sec': 7.4, 'val': 0.6004}
+    val: công khai 0.761 · nhat 0.624
+{'epoch': 18, 'loss': 0.8524, 'sec': 7.1, 'val': 0.6924}
+  -> test acc 0.805, macro-F1 0.800
+
+=== emonet fold 4: test ['dung', 'vy'], val phuc ===
+    val: công khai 0.204 · phuc 0.155
+{'epoch': 1, 'loss': 1.641, 'sec': 7.1, 'val': 0.1794}
+    val: công khai 0.448 · phuc 0.373
+{'epoch': 2, 'loss': 1.4702, 'sec': 7.0, 'val': 0.4109}
+    val: công khai 0.241 · phuc 0.320
+{'epoch': 3, 'loss': 1.2616, 'sec': 7.1, 'val': 0.2801}
+    val: công khai 0.465 · phuc 0.325
+{'epoch': 4, 'loss': 1.1593, 'sec': 7.1, 'val': 0.3947}
+    val: công khai 0.646 · phuc 0.740
+{'epoch': 5, 'loss': 1.0894, 'sec': 7.1, 'val': 0.6928}
+    val: công khai 0.636 · phuc 0.622
+{'epoch': 6, 'loss': 1.0479, 'sec': 7.1, 'val': 0.6291}
+    val: công khai 0.662 · phuc 0.662
+{'epoch': 7, 'loss': 1.0135, 'sec': 7.1, 'val': 0.6619}
+    val: công khai 0.661 · phuc 0.718
+{'epoch': 8, 'loss': 0.9859, 'sec': 7.0, 'val': 0.6892}
+    val: công khai 0.616 · phuc 0.718
+{'epoch': 9, 'loss': 0.9621, 'sec': 7.0, 'val': 0.6668}
+    val: công khai 0.672 · phuc 0.526
+{'epoch': 10, 'loss': 0.9458, 'sec': 7.0, 'val': 0.5994}
+    val: công khai 0.693 · phuc 0.752
+{'epoch': 11, 'loss': 0.9285, 'sec': 7.0, 'val': 0.7227}
+    val: công khai 0.637 · phuc 0.646
+{'epoch': 12, 'loss': 0.9152, 'sec': 7.1, 'val': 0.6413}
+    val: công khai 0.692 · phuc 0.691
+{'epoch': 13, 'loss': 0.9049, 'sec': 7.1, 'val': 0.6911}
+    val: công khai 0.746 · phuc 0.747
+{'epoch': 14, 'loss': 0.8962, 'sec': 7.1, 'val': 0.7462}
+    val: công khai 0.745 · phuc 0.848
+{'epoch': 15, 'loss': 0.8725, 'sec': 7.2, 'val': 0.7964}
+    val: công khai 0.694 · phuc 0.824
+{'epoch': 16, 'loss': 0.8667, 'sec': 7.2, 'val': 0.7588}
+    val: công khai 0.711 · phuc 0.582
+{'epoch': 17, 'loss': 0.8533, 'sec': 7.2, 'val': 0.6469}
+    val: công khai 0.747 · phuc 0.635
+{'epoch': 18, 'loss': 0.8454, 'sec': 7.1, 'val': 0.6912}
+    val: công khai 0.717 · phuc 0.532
+{'epoch': 19, 'loss': 0.8377, 'sec': 7.1, 'val': 0.6247}
+    val: công khai 0.748 · phuc 0.615
+{'epoch': 20, 'loss': 0.8287, 'sec': 7.1, 'val': 0.6818}
+    val: công khai 0.744 · phuc 0.694
+{'epoch': 21, 'loss': 0.8143, 'sec': 7.1, 'val': 0.7189}
+    val: công khai 0.726 · phuc 0.594
+{'epoch': 22, 'loss': 0.8103, 'sec': 7.2, 'val': 0.6598}
+    val: công khai 0.739 · phuc 0.698
+{'epoch': 23, 'loss': 0.8031, 'sec': 7.1, 'val': 0.7184}
+    val: công khai 0.769 · phuc 0.761
+{'epoch': 24, 'loss': 0.8001, 'sec': 7.1, 'val': 0.7649}
+    val: công khai 0.755 · phuc 0.705
+{'epoch': 25, 'loss': 0.7926, 'sec': 7.1, 'val': 0.7301}
+  -> test acc 0.620, macro-F1 0.643
+
+✓ Báo cáo: results/emonet_cv.md
+
+=== Model cuối: 12 epoch trên mọi người tự chụp ===
+{'epoch': 1, 'loss': 1.639, 'sec': 7.2}
+{'epoch': 2, 'loss': 1.456, 'sec': 7.1}
+{'epoch': 3, 'loss': 1.2715, 'sec': 7.2}
+{'epoch': 4, 'loss': 1.1728, 'sec': 7.3}
+{'epoch': 5, 'loss': 1.1068, 'sec': 7.3}
+{'epoch': 6, 'loss': 1.0604, 'sec': 7.3}
+{'epoch': 7, 'loss': 1.0139, 'sec': 7.2}
+{'epoch': 8, 'loss': 0.984, 'sec': 7.1}
+{'epoch': 9, 'loss': 0.9553, 'sec': 7.1}
+{'epoch': 10, 'loss': 0.9321, 'sec': 7.1}
+{'epoch': 11, 'loss': 0.915, 'sec': 7.1}
+{'epoch': 12, 'loss': 0.9122, 'sec': 7.1}
+✓ Đã lưu my_emonet\emonet.pt (11.2 MB)

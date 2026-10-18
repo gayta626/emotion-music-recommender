@@ -1,4 +1,5 @@
 const profileModel = require("../model/profileModel")
+const faceSamples = require("./faceSamples")
 
 const isIntArray = (a) => Array.isArray(a) && a.every((n) => Number.isInteger(n) && n > 0);
 
@@ -26,4 +27,16 @@ const saveProfile = async (userId, artistIds, genreIds) => {
     return { done: true, artistIds: artists, genreIds: genres };
 }
 
-module.exports = { getProfile, saveProfile }
+// C15: bat / tat dong y luu anh mat. Tat -> xoa ngay moi anh da luu cua nguoi nay (rut lai dong y = du lieu cung di)
+const setFaceConsent = async (userId, on) => {
+    if (typeof on !== "boolean") {
+        const err = new Error("on must be true or false");
+        err.status = 400;
+        throw err;
+    }
+    await profileModel.setFaceConsent(userId, on);
+    const removed = on ? 0 : faceSamples.removeUserFaces(userId);
+    return { shareFaces: on, removed };
+}
+
+module.exports = { getProfile, saveProfile, setFaceConsent }

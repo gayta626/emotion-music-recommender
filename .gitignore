@@ -4,3 +4,13 @@ __pycache__/
 
 # log/snapshot cua Playwright MCP (Claude thu giao dien)
 .playwright-mcp/
+
+# anh mat nguoi dung gop de train lai model (C15) - du lieu ca nhan, khong dua len git
+emotune-backend/feedback_faces/
+
+# mockup brainstorm (superpowers)
+.superpowers/
+
+# karaoke AI (Demucs): venv rieng (~3 GB) + beat / cao do giong do `npm run make-karaoke` tao ra (tu nhac co ban quyen)
+emotune-backend/.venv-karaoke/
+emotune-backend/karaoke/

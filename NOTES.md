@@ -1,1249 +1,627 @@
-# NOTES.md — EmoTune Project Session Log
+# NOTES.md — EmoTune (đồ án Xây dựng hệ thống thông minh) — nhật ký phiên làm việc
 
-> Phiên gần nhất: **10/10 khuya → 11/10/2026 (máy `C:\Users\Hi`)** — đọc **"🧭 TỔNG KẾT PHIÊN 10/10 khuya → 11/10"** ngay bên dưới (chi tiết từng phần ở các mục "khuya 2", "khuya" tiếp theo). Deadline HIC **15/10/2026**; deadline môn *Xây dựng hệ thống thông minh*: **chưa biết**.
-> Trạng thái: người dùng chốt **làm xong phần mềm trước, phần cứng (giai đoạn B) sau**. Giai đoạn H xong (thêm H6c trợ lý Gemini, H17 thẻ trang chủ), **I1 xong**. **Toàn bộ việc 10–11/10 CHƯA COMMIT (~216 file)**. Việc tiếp theo: commit (khi người dùng yêu cầu) → I2 → giai đoạn B (hạn HIC 15/10, còn 4 ngày).
-> **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận trực tiếp trong chat 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
-> **Bảng tiến độ: `TIEN_DO.md`** (gốc repo) — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
-> Phần cứng: mỗi tin nhắn 1 bước, chỉ chân Pi "hàng trên/dưới, chân thứ N"; lệnh Git Bash ngắn, 1 dòng.
-
----
-
-# 🧭 TỔNG KẾT PHIÊN 10/10 khuya → 11/10/2026 (máy `C:\Users\Hi`)
-
-## 1. Mục tiêu
-Đọc NOTES/TIEN_DO, tóm tắt tình trạng → người dùng chọn làm lần lượt: **I1** (nút "chết" + ♥) → sửa **ảnh bìa bài nước ngoài** + **ảnh Lệ Quyên vỡ** → hướng dẫn **import nhạc** → **trợ lý dùng AI** cho yêu cầu không có sẵn + chuỗi lệnh + MV (Claude → đổi sang **Gemini miễn phí**) → vẽ lại **2 thẻ cuối trang chủ** theo ảnh mẫu "Infographic Chart".
-
-## 2. Việc đã làm xong (TẤT CẢ CHƯA COMMIT)
-| Việc | File chính |
-|---|---|
-| **I1** ♥ thích bài (bảng `liked_songs`, `GET/POST/DELETE /likes`, `LIKE_BONUS` +1 khi gợi ý + `/songs/for-you`, trang `/liked`, dòng "Liked Songs" ở sidebar) · **Prev / Shuffle / Repeat** · chuông **"What NYX noticed"** (`GET /insights`, hàm thuần `buildInsights`) · "Explore Premium" → **"Your week"** · bỏ nút Devices · trợ lý "bài trước" / "thích bài này" | backend `db/migrate_likes.sql`, `src/model/likeModel.js`, `src/services/likeService.js`, `insightService.js`, `src/controllers/likeController.js`, `insightController.js`, `src/routes/web.js`, `suggestModel.js`, `songModel.js`, `songService.js`; frontend `components/HeartIcon.jsx`, `NotificationMenu.jsx/.scss`, `pages/LikedPage.jsx`, `PlayerHost.jsx`, `MusicPlayer.jsx/.scss`, `PlaybackProvider.jsx`, `Header.jsx/.scss`, `SideBar.jsx/.scss` (chi tiết: mục "khuya" bên dưới) |
-| **Ảnh bìa giả**: 41 bài có bìa = logo NhacCuaTui nhúng trong mp3 → `scripts/lib/coverCheck.js` (md5 logo đã biết hoặc cùng 1 ảnh ở ≥ 3 bài); `import-music` không chép, `fetch-images` tự xoá + tải bìa thật → 31/41 có bìa thật, 10 bài dùng ảnh ca sĩ | `emotune-backend/scripts/lib/coverCheck.js`, `scripts/import-music.js`, `scripts/fetch-images.js`, `test/coverCheck.test.js`; `covers/*.jpg` mới |
-| **Ảnh Lệ Quyên vỡ** (avatar 84px bị phóng to) → cắt chân dung 480px từ bìa album, `artists.photo = 'photos/le-quyen-portrait.jpg'` | `emotune-backend/avatars/photos/le-quyen-portrait.jpg` (mới, chưa có trong git) |
-| `import-music --apply` tự chạy thêm **`fetch-mv`** (nếu có `YOUTUBE_API_KEY`) | `scripts/import-music.js` |
-| **H6c trợ lý AI**: Gemini (`@google/genai`, model `gemini-3.5-flash-lite`) trả `queue` (gợi ý theo mô tả → phát), `answer` (hỏi đáp / trò chuyện, trợ lý vẫn mở), `sequence`; ngữ cảnh bài đang phát + cảm xúc + 6 câu gần nhất; luật: lệnh **`mv_on`/`mv_off`**, **chuỗi lệnh** ("nhỏ âm lượng, mở MV rồi bài kế"), `checkMv`, câu hỏi (`ASK_WORDS`) → Gemini; **âm lượng giữ qua các bài**; nhãn "✦ Trả lời bởi Gemini" | backend `src/services/assistantLlm.js`, `assistantRules.js`, `assistantService.js`, `src/controllers/assistantController.js`, `test/assistantLlm.test.js`, `test/assistantRules.test.js`, `.evn.example`, `package.json`; frontend `components/VoiceAssistant.jsx/.scss`, `MusicPlayer.jsx`, `PlayerHost.jsx` (chi tiết: mục "khuya 2") |
-| **H17 2 thẻ cuối trang chủ** theo ảnh mẫu: thẻ neon; 7 cột mảnh + vòng số nối vạch trắng + quầng sáng + donut tổng số lần quét; lưới chấm mỗi chấm 1 lần quét; bảng màu tách ra file chung với `/stats` | mới `emotune-frontend/src/components/HomeMood.jsx/.scss`, `src/styles/_moodPalette.scss`; sửa `pages/BrowsePage.jsx/.scss`, `components/stats/Stats.scss` |
-| Tài liệu | `TIEN_DO.md` (I1, H6c, H17), `CLAUDE.md` (API `/likes`, `/insights`, `/assistant` mới, Gemini, `HomeMood`, `coverCheck`), `NOTES.md`; bộ nhớ Claude: "ưu tiên AI miễn phí" |
-
-Kiểm tra cuối: backend `npm test` **117/117**; frontend `npx eslint src` sạch + `npm run build` OK; Playwright từng phần (1440 / 1920 / 390px); Gemini thử thật 12 câu (~1.2–2.4s/câu).
-
-## 3. Quyết định quan trọng và lý do
-| Quyết định | Lý do |
-|---|---|
-| ♥ = Liked Songs **+ AI cộng +1** (chỉ trong nhóm bài hợp cảm xúc đang quét) | Thể hiện "hệ thống học từ phản hồi" cho môn Hệ thống thông minh, không phát nhầm vibe |
-| Chuông = nhận xét sinh ở backend bằng hàm thuần + ngưỡng (≥ 3 lần quét/tuần, ≥ 10 điểm, khung 3 giờ ≥ 40%) | Test được; ít dữ liệu thì không kết luận bừa |
-| **Gemini thay Claude, bỏ hẳn code Claude** (người dùng chọn) | Không có ngân sách trả phí; Groq giới hạn token/phút quá thấp, Ollama máy yếu + tiếng Việt kém |
-| Model **`gemini-3.5-flash-lite`** + **tắt retry của SDK** | Đo thật: 3.8-flash > 20s không trả lời ở gói free, SDK tự thử lại mãi → treo; flash-lite ~1.5s |
-| Luật trước, AI sau; kết quả AI luôn kiểm lại với kho | Nhanh + miễn phí cho lệnh thường gặp; AI không bịa được bài / trang |
-| Chuỗi lệnh: luật chỉ tách khi MỌI đoạn đều hiểu được | Tên bài có "rồi"/"và" không bị cắt nhầm |
-| Ảnh bìa giả nhận bằng md5 + "cùng ảnh ở ≥ 3 bài" | Bắt được cả logo trang nhạc khác, vẫn giữ bìa chung của 2 bài cùng album |
-| Thẻ trang chủ dùng **chung bảng màu `/stats`** (file `_moodPalette.scss`) | Màu đã kiểm tra mù màu; 2 trang luôn đồng bộ |
-
-## 4. Lệnh đã chạy / cách chạy lại
-```bash
-# Backend (emotune-backend/) — người dùng chạy sẵn npm run dev ở 8080 (nodemon), frontend 5173: dùng chung, KHÔNG tắt
-npm install                                   # máy mới: đã gỡ @anthropic-ai/sdk, thêm @google/genai
-npm run db:migrate -- db/migrate_likes.sql     # máy khác / Pi: bảng liked_songs (an toàn chạy lại)
-npm run fetch-images                           # máy khác: tự xoá bìa giả (logo NCT) + tải bìa thật
-#   chạy xong: UPDATE artists SET photo = NULL WHERE name = 'Phạm Hoài Nam';  (Lệ Quyên đã có photo riêng, không bị đè)
-npm test                                       # 117/117
-# .env cần: GEMINI_API_KEY=... (aistudio.google.com -> Get API key, miễn phí; key dạng mới bắt đầu bằng "AQ")
-#           tuỳ chọn GEMINI_MODEL=...;  sửa .env xong gõ "rs" trong cửa sổ npm run dev (nodemon không theo dõi .env)
-# Nhập nhạc mới: npm run import-music -- --from "<thư mục mp3>"  -> sửa import/plan.json -> npm run import-music -- --apply
-# Frontend (emotune-frontend/)
-npx eslint src && npm run build
-```
-- Playwright MCP bị profile Chrome cũ giữ → phiên này dùng script `playwright-core` (`~/AppData/Local/npm-cache/_npx/9833c18b2d85bc59/node_modules/playwright-core`, `chromium.launch({ channel: 'chrome' })`); trang chủ chỉ hiện khi `sessionStorage.emotune_scanned = "1"`.
-- Bash tool: lệnh có heredoc Python dài chứa backtick / `\\` hay lỗi "unexpected EOF" → ghi script ra file trong `%TEMP%` rồi chạy.
-
-## 5. Lỗi / việc còn dở
-- **CHƯA COMMIT** toàn bộ việc 10–11/10 (~216 file, gồm `covers/` mới, `avatars/photos/le-quyen-portrait.jpg`). Người dùng chưa yêu cầu commit; cần quyết định có đưa ảnh lên git không.
-- Ảnh **Phạm Hoài Nam** vẫn 84px bị vỡ ở chỗ ảnh lớn — chờ người dùng chọn: cắt từ bìa album / dùng nguyên bìa / người dùng tự tìm ảnh `avatars/photos/pham-hoai-nam.jpg`.
-- 10 bài chưa có bìa thật (Beauty And A Beat, Biển Cạn, Chiều Nay Không Có Em, Chỉ Một Đêm Nữa Thôi, Dấu Tình Sầu, IDK, Lời Cuối Cho Em, Wtf Bby I'm Lit, Xa Xôi, Đánh Đổi) → bỏ ảnh `covers/<tên>.jpg` rồi `npm run fetch-images`.
-- Gemini gói free: giới hạn vài trăm câu/ngày (xem trong AI Studio); dữ liệu gói free có thể được Google dùng để cải thiện sản phẩm (nói rõ khi bảo vệ).
-- Người dùng chưa thử bằng **micro thật** (trợ lý, quả cầu sóng); chưa nghe karaoke bằng tai.
-- Còn từ trước: kho lệch vibe (angry, surprise ít), thiếu ảnh Nhan Nguyen / Groovie Lã Thắng, `gayta626` có độ tự tin AI giả, karaoke phần chấm điểm hát chưa làm.
-
-## 6. Bước tiếp theo
-1. Người dùng xem trang chủ mới (H17), thử trợ lý bằng giọng nói, góp ý.
-2. **Commit** khi người dùng yêu cầu.
-3. **I2 "Vì sao NYX chọn bài này?"** (dùng `score`, `taste_bonus`, `like_bonus`, `isEncourage` có sẵn trong `suggestModel` / `suggestService`) — ăn điểm bảo vệ, công sức nhỏ.
-4. **Giai đoạn B (Pi, hạn HIC 15/10)**: LD2410C, đồng bộ Pi qua git + `npm install` + migrate (`migrate_likes.sql`, `migrate_mv.sql`…) + `import-music` / `fetch-lyrics` / `fetch-images` / `fetch-mv`, `.env` có `GEMINI_API_KEY`, vỏ hộp, systemd + kiosk, slide, tập demo.
+> **Đồ án môn Xây dựng hệ thống thông minh (HTTM)**: chỉ phần mềm (AI nhận diện cảm xúc + backend gợi ý nhạc + web). Deadline môn: **chưa biết**.
+> Từ **11/10/2026** dự án tách làm 2 thư mục: thư mục này = HTTM; đồ án môn HIC là thư mục riêng `Documents\HIC\emotune-box` (nhật ký + tiến độ riêng). Nhật ký cũ trước khi tách (03/10 → 11/10) có đầy đủ trong commit `398cfcf` (`git show 398cfcf:NOTES.md`).
+> **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
+> **Bảng tiến độ: `TIEN_DO.md`** — Claude cập nhật mỗi khi xong 1 phần; mục "📍 Đang ở đâu" ở đầu file.
 
 ---
 
-# 🧭 PHIÊN 10/10/2026 (khuya 2) — trợ lý dùng AI (Claude → **Gemini Flash miễn phí**) cho yêu cầu không có sẵn + chuỗi lệnh + MV
+# 🧭 PHIÊN 18/10/2026 (sửa lỗi) — chọn bài khi đang quét + karaoke tự bật
+
+## 1. Lỗi người dùng báo
+(a) Nghe hết bài → dừng (rảnh ≥ 60s nên tự sang `/scan`) → người dùng tự bấm chọn 1 bài → màn quét mặt vẫn chạy và **đè lên bài người dùng chọn**. (b) Có bài vừa phát là **karaoke tự bật** → muốn chỉ bật khi người dùng chọn.
+
+## 2. Nguyên nhân + cách sửa (chưa commit)
+| Lỗi | Nguyên nhân | Sửa |
+|---|---|---|
+| (a) | Ở `/scan` header + thư viện vẫn bấm được; `playSong` phát bài nhưng `ScanPage` không biết → quét tiếp, có kết quả mặt thì `finish` → `playScanResult` thay bài | `PlaybackProvider`: `pickVersion` tăng mỗi lần `playSong` / `playQueue` / `playPlaylist` (người dùng tự chọn); `ScanPage` thấy đổi → `handledRef = true` (bỏ kết quả mặt về sau) + sang `/now-playing` |
+| (b) | `karaoke` / `scoreOn` giữ ở `PlayerHost` **cố ý mang sang bài sau** (H15) → bật 1 lần là mọi bài sau tự bỏ giọng | `PlayerHost.play()` đặt lại `karaoke` + `scoreOn` = false mỗi bài mới (kể cả "Next song" trên thẻ điểm) |
+
+**Kiểm tra:** `npx eslint src` sạch, `npm run build` OK, frontend `npm test` 9/9. Playwright (server của người dùng, tài khoản `demo`, `/scan-and-suggest` giả chậm 4s trả bài buồn): đợi máy quét gửi ảnh → chọn "Perfect" ở ô tìm kiếm → `/now-playing`, 6s sau vẫn `perfect.mp3`; bật Karaoke (→ `karaoke/perfect.beat.mp3`) → Next → `music/thuc_giac.mp3`, nút Karaoke `aria-pressed=false`.
+- Gặp lại lỗi Vite giữ bản biên dịch cũ (sửa file 2 lần liên tiếp, Vite chỉ nhận lần đầu) → `touch` file là hết. Nếu trình duyệt của người dùng vẫn thấy lỗi cũ: F5.
+- Lượt quét đang gửi dở lúc người dùng chọn bài vẫn được backend ghi vào `mood_history` (chỉ không phát bài) — chấp nhận.
+- **Lỗi (c) báo thêm:** mới mở web, chọn bài (không quét) → bấm Home vẫn ra màn quét. Nguyên nhân: `HomeRoute` hiện `BrowsePage` chỉ khi `hasScanned()` (cờ `emotune_scanned` trong `sessionStorage`), cờ chỉ bật khi quét / nói cảm xúc. Sửa: `PlaybackProvider.pick` (playSong / playQueue / playPlaylist) gọi `markScanned()` → cờ nghĩa là "đã bắt đầu phiên". Playwright phiên mới: màn chào → chọn "Perfect" → Home → trang chủ, không có camera, nhạc vẫn chạy. Lưu ý: chưa từng quét thì hết bài vẫn sang `/scan` (`!lastMood` trong `playNextSong`, đúng thiết kế cũ) → người dùng: "tạo thành 1 nút gạt trong Settings" → mục (d).
+- **(d) F22 công tắc "Scan again after a song"** (`/settings`, thẻ trên thẻ ảnh mặt): mặc định bật = như cũ (hết bài + rảnh ≥ 60s / chưa từng quét → `/scan`); tắt → không tự mở camera: có cảm xúc gần nhất → `/suggest auto`, chưa quét → bài đầu `/songs/for-you` không trùng bài vừa phát + 3 bài trước; lỗi mạng → dừng (không mở camera). Đang đứng ở `/scan` thì vẫn quét (người dùng chủ động vào đó). File: mới `utils/playPrefs.js` (`loadRescan` / `saveRescan`, `localStorage` khoá `emotune_rescan_<tên>`), `PlayerHost.jsx` (đọc lúc hết bài → đổi ở Settings có tác dụng ngay), `SettingsPage.jsx` (dùng lại style `.privacy` / `.switch`). **Quyết định:** lưu trên trình duyệt (không thêm cột DB) vì là tuỳ chọn tiện ích, giống "đã xem" của chuông; mặc định bật để giữ vòng "quét → gợi ý" (phần thông minh của đồ án). Lỗi gặp khi thử: mở thẳng `/settings` lúc `user` chưa tải → `undefined === undefined` → đọc `null.on` crash → sửa điều kiện. Playwright: bật → `/scan` + camera; tắt → `perfect.mp3` hết → `thuc_giac.mp3`, `/now-playing`, không camera; công tắc lưu qua tải lại, 390px không tràn ngang (`/listen-report` chặn giả để không ghi điểm thật của `demo`).
+
+---
+
+# 🧭 PHIÊN 18/10/2026 (khuya) — H15 phần 3: chấm điểm karaoke + tách giọng bằng AI (Demucs)
 
 ## 1. Mục tiêu
-Người dùng: "tích hợp API Claude để trả lời những yêu cầu không có sẵn" + "trợ lý mở nhỏ âm lượng, mở MV rồi dừng nhạc rồi bài kế". Brainstorm (bounded) → chốt: cả 3 loại (gợi ý theo mô tả → phát, hỏi đáp về nhạc / bài đang phát, trò chuyện chung), nhớ vài lượt, **giữ Claude Haiku 5.5** → duyệt thiết kế + phần bổ sung (MV, `sequence`).
+Đầu phiên: tóm tắt tình trạng. Người dùng: "làm phần chấm điểm karaoke" → hát xong hiện điểm **cho vui** (không lưu); xem 3 mẫu trên trình duyệt (visual companion), chọn **mẫu A** (thẻ điểm có 2 thanh On time / On key, bài kế chờ bấm). Người dùng báo thêm: bật karaoke có bài **chỗ nghe ca sĩ hát to, chỗ không có** → Claude giải thích nguyên nhân (L − R chỉ xoá giọng nằm giữa; điệp khúc có bè / giọng tách rộng / vang thì còn) và đề xuất **tách giọng bằng AI (Demucs)** → người dùng: "ok làm đi".
+Sau đó người dùng hỏi "còn việc nào chưa làm" (Claude liệt kê: F5, C3, H7, commit, micro thật, báo cáo, train lại C15, admin tạo tài khoản…) rồi chọn: **bài mới thêm qua admin phải tự chạy `make-karaoke`** (mục 5b). Cuối phiên: ghi tóm tắt vào `NOTES.md` + `TIEN_DO.md`.
 
-## 2. Việc đã làm xong (CHƯA COMMIT)
+## 2. Việc đã làm xong (chưa commit)
 | Việc | File |
 |---|---|
-| Luật: `mv_on`/`mv_off`, thêm "bài kế", "nhỏ/to âm lượng"; **chuỗi lệnh** `parseSequence` (tách theo "rồi/xong/và/sau đó"/dấu phẩy, chỉ khi MỌI đoạn là lệnh hiểu được, ≤ 5 bước, lời dẫn gom 1 câu "Ok, mình sẽ giảm âm lượng, mở MV, tạm dừng rồi chuyển bài."); `checkMv`; `ASK_WORDS` (câu hỏi / nhờ kể không có động từ phát → để Claude); `sanitizeHistory`; `validateLlmAction` nhận `queue` / `answer` / `sequence` | `emotune-backend/src/services/assistantRules.js`, `test/assistantRules.test.js` |
-| Claude: schema mới (`queue`, `answer`, `sequence` + `steps`), prompt (trả lời tiếng Việt ≤ 60 từ, không bịa, không tra web, từ chối khéo câu ngoài lề), hàm thuần `buildRequest` (kho nhạc kèm vibe/thể loại/có MV trong `system` + `cache_control`; bài đang phát, cảm xúc, lịch sử trong tin nhắn user), timeout 8s, log `usage` mỗi lần gọi | `src/services/assistantLlm.js`, mới `test/assistantLlm.test.js` |
-| Service / controller: nhận `history`, `nowPlayingId`, `mood`; `checkMv` cho cả luật lẫn LLM | `src/services/assistantService.js`, `src/controllers/assistantController.js` |
-| Frontend: `runStep` / `runSteps` (cách 0.8s), `queue` → phát hàng đợi, `answer` → giữ trợ lý mở, `mv_on` → sang `/now-playing`; gửi lịch sử 6 câu + `nowPlayingId` + `mood`; dòng "✦ Trả lời bởi Claude"; gợi ý mới "Mở nhạc cho buổi tối mưa", "Nhỏ tiếng rồi mở MV" | `emotune-frontend/src/components/VoiceAssistant.jsx/.scss` |
-| `MusicPlayer.runControl`: `mv_on` / `mv_off`; **âm lượng + tắt tiếng giữ qua các bài** (trước đây mỗi bài về 100%) | `components/MusicPlayer.jsx`, `PlayerHost.jsx` (`savedVolume`), `contexts/playbackContext.js` |
+| Script tách giọng: decode mp3 bằng ffmpeg → **Demucs htdemucs** (GPU) → nhạc đệm = trống + bass + nhạc cụ khác → `karaoke/<tên>.beat.mp3`; giọng ca sĩ → **YIN** (numpy, hop 0.05s) → `karaoke/<tên>.json` `{v, hop, duration, pitch: [MIDI×10 hoặc 0]}`; chỉ làm bài chưa có (`--force`, `--only`, `--cpu`) | mới `emotune-backend/scripts/make_karaoke.py`, `scripts/make-karaoke.js` (gọi venv riêng), `package.json` (`make-karaoke`) |
+| Venv riêng `emotune-backend/.venv-karaoke` (torch 2.14.1+cu130, demucs 4.1.0, numpy) — không đụng venv AI `emotion-scanner` (đang chạy :5000) | gitignore |
+| Chạy cả kho: **102/102 bài**, 0 lỗi, 8–17s/bài (RTX 5060 Ti), 556 MB. Kiểm tra Animals: beat dài bằng bản gốc, lệch 0 mẫu; giọng bắt đầu 0.5s khớp dòng lời 0.53s | `emotune-backend/karaoke/` (gitignore) |
+| Backend phục vụ `/karaoke` | `emotune-backend/src/server.js` |
+| Hàm thuần chấm điểm: `detectPitch` (YIN JS), `judgeFrame`, `scoreFromStats` (On time 60% + On key 40%, "nới tay": 80% thời gian / 70% trúng nốt = 100) + **9 test** (frontend có `npm test` lần đầu) | mới `emotune-frontend/src/utils/karaokeScore.js`, `test/karaokeScore.test.js`, `package.json` |
+| Tải bản AI: `useKaraokeTrack` (404 = chưa tách → karaoke L − R như cũ) | mới `hooks/useKaraokeTrack.js` |
+| Micro + chấm mỗi 50ms: nền ồn = mức nhỏ nhất gần đây (hạ nhanh / tăng chậm), to hơn 3 lần + YIN ra cao độ = đang hát; chỉ chấm khi nhạc chạy liền mạch; `echoCancellation` bật, `noiseSuppression` / `autoGainControl` tắt | mới `hooks/useSingScore.js` |
+| Thẻ điểm mẫu A (số đếm lên, nhận xét, 2 thanh, Sing again / Next song) + nút **Score me** + dòng trạng thái micro (chấm hồng sáng khi nghe ra giọng) | mới `components/KaraokeScoreCard.jsx/.scss`; sửa `components/LyricsView.jsx` |
+| Bật Karaoke → **cùng thẻ `<audio>` đổi `src` sang nhạc đệm**, nối đúng giây, giữ phát / dừng; nhạc đệm lỗi → về mp3 + L − R; điểm nghe cộng cả phần đã nghe trước khi đổi nguồn; hết bài lúc đang chấm → thẻ điểm, bài kế chờ; rời màn lời khi thẻ đang hiện → sang bài | `components/MusicPlayer.jsx`, `components/PlayerHost.jsx` (giữ `scoreOn` qua các bài) |
+| Tài liệu | `TIEN_DO.md` (H15), `CLAUDE.md`, file này, `.gitignore` |
 
-Đã kiểm tra: `npm test` **116/116**; lint + build sạch; Playwright: "nhỏ âm lượng, mở MV rồi dừng nhạc rồi bài kế" → âm lượng 1 → 0.8, MV mở ở `/now-playing`, tạm dừng, chuyển bài, âm lượng vẫn 0.8; "kể chuyện vui đi" không còn phát nhạc vui; frontend với câu trả lời backend giả: `answer` (giữ mở + nhãn Claude), câu 2 gửi kèm lịch sử + `nowPlayingId: 46`, `queue` phát 3 bài rồi đóng.
+**Kiểm tra:** backend `npm test` 177/177; frontend `npm test` 9/9, `npx eslint src` sạch, `npm run build` OK. Playwright (tài khoản `demo`, bài Animals): bật Karaoke → `src` = `karaoke/animals.beat.mp3`, nhạc chạy tiếp (2.5s → 5s); Score me → "Listening…"; tua tới cuối → thẻ điểm; Sing again → về đầu bài đang phát; tắt Karaoke → mp3 gốc đúng giây; micro giả **hát đúng cao độ ca sĩ (trễ 0.15s) → 100**, **lệch 4 cung → 65 (On key 12)**, thấp 1 quãng tám → On key 100; 1440 + 390px không tràn ngang, không lỗi console.
 
-**Đổi sang Gemini (cuối phiên):** người dùng không muốn trả phí Claude → chọn **Gemini Flash** (so với Groq: giới hạn token/phút quá thấp cho kho ~70 bài; Ollama: máy yếu + tiếng Việt kém), **bỏ hẳn code Claude** (gỡ `@anthropic-ai/sdk`, cài `@google/genai` 2.28). `assistantLlm.js`: `client.interactions.create({ model, system_instruction, input, response_format: {type:"text", mime_type:"application/json", schema}, generation_config: {thinking_level:"low", max_output_tokens:2048}, store:false }, { timeout_ms: 8000 })` (tên tham số đọc từ `dist/genai.d.ts`, model `gemini-3.8-flash` theo ai.google.dev/gemini-api/docs/models); log `usage` + lý do lỗi Google trả (`googleMessage`), 429 = hết lượt free. `.evn.example`: `GEMINI_API_KEY`, `GEMINI_MODEL` (tuỳ chọn). Nhãn "✦ Trả lời bởi Gemini". Thử bằng key giả: Google trả "API key not valid" → `null`, không sập. **Lưu ý khi bảo vệ:** gói free của Google có thể dùng dữ liệu gửi lên để cải thiện sản phẩm; thứ gửi đi chỉ là câu nói, kho nhạc, cảm xúc gần nhất (không thông tin cá nhân).
+**Lỗi phát hiện + đã sửa trong phiên:** (a) mẫu trên trình duyệt hiện khung trắng (khung mẫu co về rộng 0); (b) đo nền ồn trong 1 giây đầu → người hát ngay từ đầu bị coi giọng là nền, không bao giờ được tính → đổi sang nền = mức nhỏ nhất gần đây; (c) On time thấp dù hát đủ vì giọng trễ → thêm độ nương ±0.3s; (d) 390px dòng trạng thái micro bị ép vào cột ảnh bìa.
 
-## 3. Quyết định quan trọng và lý do
+## 3. Quyết định + lý do
 | Quyết định | Lý do |
 |---|---|
-| Vẫn **luật trước, AI sau**; kết quả Claude luôn kiểm lại với kho | Lệnh thường gặp nhanh + miễn phí + có test; Claude không bịa được bài / trang |
-| Chuỗi lệnh: luật chỉ tách khi **mọi đoạn đều hiểu được** | Tên bài có "rồi"/"và" (*Muộn Rồi Mà Sao Còn*) không bị cắt nhầm; câu lủng củng để Claude |
-| Lịch sử hội thoại do **client giữ**, server không lưu (tối đa 6 câu, đóng trợ lý là quên) | Đơn giản, không thêm bảng; đủ cho câu hỏi nối tiếp |
-| Lịch sử + ngữ cảnh gửi trong **1 tin nhắn user**, kho nhạc trong `system` có `cache_control` | Phần cố định giống nhau giữa các câu → cache được; lịch sử dạng văn bản không làm lẫn định dạng JSON của câu trả lời |
-| Nhãn "✦ Trả lời bởi Claude" | Khi bảo vệ chỉ rõ đâu là luật tự viết, đâu là LLM |
-| Âm lượng giữ ở `PlayerHost` (state) | MusicPlayer tạo lại mỗi bài; lint cấm đọc ref lúc render |
+| Tách giọng bằng Demucs chạy trước (offline), không tách trên trình duyệt | Mạng nơ-ron nặng (GPU); chạy 1 lần cho cả kho; trình duyệt chỉ phát file mp3 |
+| Venv riêng `.venv-karaoke` | Cài torch GPU vào venv AI đang chạy có thể hỏng / khoá file; tách bạch 2 việc |
+| Đổi `src` cùng thẻ `<audio>` thay vì phát 2 thẻ song song | Đồ thị Web Audio (sóng âm) gắn với thẻ; 2 thẻ dễ lệch nhau |
+| Cao độ ca sĩ tính sẵn ở Python (JSON ~15 KB/bài), trình duyệt chỉ đo giọng người hát | Giọng tách ra sạch → YIN chính xác; không tải thêm file giọng 5 MB |
+| On key so **tên nốt** (bỏ quãng tám), ±1 cung; On time ±0.3s; nới tay 80% / 70% | Nam hát bài nữ thấp 1 quãng tám; người hát theo thường trễ; "cho vui" như máy quán |
+| Nền ồn = mức nhỏ nhất gần đây, không đo 1 giây đầu | Người hát ngay từ đầu thì cách đo cũ coi giọng là nền (đã gặp khi thử) |
+| Micro chỉ mở khi bấm Score me, xử lý trên trình duyệt, không lưu | Quyền riêng tư (giống C11) |
+| Bài chưa tách vẫn karaoke kiểu L − R, chỉ không có Score me | Bài mới thêm qua admin / `import-music` chưa chạy `make-karaoke` vẫn dùng được |
+| `make-karaoke` là bước **cuối** chuỗi chạy nền, chỉ khi có `.venv-karaoke` | Nặng nhất, không bước nào cần chờ nó; máy khác chưa cài venv vẫn thêm bài được |
+| Sửa bằng `nodemonConfig.ignore` (không đổi chỗ ghi file) | Mọi script ghi dữ liệu (`karaoke/`, `import/plan.json`…) đều có thể làm backend khởi động lại; bỏ qua thư mục dữ liệu là gọn nhất |
+| Thử luồng admin trên nodemon riêng cổng 8099 | Không tắt / khởi động lại server của người dùng (quy tắc trong memory) |
 
-## 4. Lệnh / cách chạy lại
+## 4. Lệnh đã chạy + cách chạy lại
 ```bash
-# emotune-backend/.env: GEMINI_API_KEY=...   (aistudio.google.com -> Get API key; nodemon KHÔNG theo dõi .env -> gõ "rs" + Enter trong cửa sổ npm run dev)
-npm test          # 116/116
+# (emotune-backend/) cài 1 lần
+py -m venv .venv-karaoke
+.venv-karaoke/Scripts/pip install torch --index-url https://download.pytorch.org/whl/cu130
+.venv-karaoke/Scripts/pip install demucs numpy
+npm run make-karaoke                 # bài chưa tách; --only animals.mp3 / --force / --cpu
+npm test                             # 177/177
+# (emotune-frontend/)
+npm test                             # 9/9 (karaokeScore)
+npx eslint src && npm run build
+# Playwright: playwright-core trong scratchpad; micro giả = addInitScript thay getUserMedia bằng OscillatorNode
+#   phát đúng cao độ trong karaoke/animals.json theo audio.currentTime (ks_sing.mjs / ks_ui.mjs, mất khi hết phiên)
+```
+- Server lúc phiên chạy: AI :5000, backend :8080 (nodemon tự nạp `/karaoke`), web :5173 đều **của người dùng**.
+- Model htdemucs tải về thư mục cache của torch (`C:\Users\Hi\.cache\torch`), lần đầu cần mạng.
+- Thử: phát bài có lời → Lyrics → Karaoke → **Score me** → hát (nên đeo tai nghe) → hết bài xem điểm.
+- Mẫu giao diện (visual companion) lưu ở `.superpowers/brainstorm/834-1792298514/` (gitignore), server mẫu đã tắt.
+```bash
+# chạy lại cả dự án (3 cửa sổ) + PostgreSQL
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080 (tắt + bật lại 1 lần để nhận nodemonConfig mới)
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+# Phiên này không đổi schema DB. Máy khác muốn có karaoke AI: cài .venv-karaoke (3 lệnh trên) + npm run make-karaoke (~20 phút GPU cho 102 bài)
 ```
 
-## 5. Lỗi / việc còn dở
-- **Đã thử Gemini thật** (người dùng tạo key, dạng mới bắt đầu bằng `AQ`): `gemini-3.8-flash` quá 20s không trả lời (gói free) và SDK tự thử lại mãi → treo → đổi mặc định sang **`gemini-3.5-flash-lite`** (~1.2–2.4s, chọn bài hợp lý, schema JSON được chấp nhận) + `retries: {strategy: "none"}`. 12 câu thử đúng kiểu. Chỉnh prompt: lời dẫn lệnh bắt đầu "Mình sẽ…" (không nói "đã"), `answer` không hứa bật nhạc. Sửa luật: câu có từ hỏi xét TRƯỚC tên bài, chỉ là lệnh khi bắt đầu bằng động từ phát ("tại sao nghe nhạc buồn…" trước đây bị phát *Khúc Nhạc Buồn*). `npm test` 117/117. Khi có key: thử ~10 câu (gợi ý theo mô tả, hỏi "bài này của ai", hỏi nối tiếp, chào hỏi, câu ngoài lề, chuỗi lệnh lủng củng), xem log `Gemini: N in / M out` (miễn phí, chỉ để biết còn bao nhiêu lượt).
-- Chưa commit.
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa commit** (cộng dồn từ 11/10).
+- Chưa thử micro thật. Không đeo tai nghe thì nhạc đệm từ loa có thể lọt vào micro (khử vọng của trình duyệt không chắc bắt được tiếng của thẻ `<audio>`); tiếng bíp / huýt sáo cũng được tính là hát.
+- ~~Bài thêm mới phải chạy tay `make-karaoke`~~ (xong, mục 5b).
+- Máy khác: phải cài venv + chạy lại script (thư mục `karaoke/` 556 MB không vào git).
+- Lời tô chữ vẫn chia đều theo dòng LRC (chưa dùng thời điểm giọng ca sĩ thật).
+- Bài thử ở mục 5b làm `fetch-mv` tìm MV cho "Tmp Karaoke Test" (tốn ~100 đơn vị quota YouTube hôm nay, bài đã xoá).
+- Việc cũ còn trong bảng / ngoài bảng: F5 (Figma Sign in/up), C3 (có thể đánh ❌), H7 (chờ góp ý, chưa thử 390px), chưa thử micro thật C11, báo cáo theo khung C4, chưa train lại bằng ảnh phản hồi C15, admin chưa tạo tài khoản trên web, ảnh Phạm Hoài Nam, ID3 sai bài "chờ chút…", hạn nộp chưa biết.
 
-## 6. Bước tiếp theo
-1. ✅ Đã có key + thử thật. Người dùng thử bằng giọng nói thật (micro) trên web.
-2. I2 "Vì sao NYX chọn bài này?" → giai đoạn B (Pi, hạn 15/10).
-
----
-
-# 🧭 PHIÊN 10/10/2026 (khuya, máy `C:\Users\Hi`) — I1: nút "chết" chạy thật + ♥ + chuông nhận xét
-
-## 1. Mục tiêu
-Đọc NOTES/TIEN_DO, tóm tắt; người dùng chọn làm **I1** trước. Brainstorm (bounded) → 3 câu hỏi → người dùng chốt: ♥ = **Liked Songs + AI học**, "Explore Premium" → **"Your week"**, **bỏ** nút Devices → duyệt thiết kế → làm 4 bước.
-
-## 2. Việc đã làm xong (CHƯA COMMIT)
+## 5b. Thêm sau đó: bài mới tự tách giọng (người dùng: "làm cái này đi")
 | Việc | File |
 |---|---|
-| ① ♥ thích bài: bảng `liked_songs` (đã migrate DB máy này), `GET /likes`, `POST/DELETE /likes/:songId`; `LIKE_BONUS` +1 khi gợi ý theo cảm xúc + `/songs/for-you` (`rankForYou`); nút ♥ thanh phát + màn lời, `toggleLike` lạc quan trong `PlaybackProvider`, trang `/liked` + dòng "Liked Songs" ở sidebar | mới `emotune-backend/db/migrate_likes.sql`, `src/model/likeModel.js`, `src/services/likeService.js`, `src/controllers/likeController.js`; sửa `db/setup.sql`, `src/routes/web.js`, `src/model/suggestModel.js`, `src/model/songModel.js`, `src/services/songService.js`, `test/forYou.test.js`; frontend mới `components/HeartIcon.jsx`, `pages/LikedPage.jsx`; sửa `contexts/PlaybackProvider.jsx`, `playbackContext.js`, `components/MusicPlayer.jsx/.scss`, `LyricsView.scss`, `SideBar.jsx/.scss`, `pages/PlaylistPage.scss`, `App.jsx`, `index.css` (`--liked`) |
-| ② Prev / Shuffle / Repeat | `components/PlayerHost.jsx` (lịch sử `history` 20 bài, `toggleShuffle`, `cycleRepeat`, Repeat all quay về bài đầu), `MusicPlayer.jsx/.scss` (`handlePrev`, `handleEnded`, `scoredRef`) |
-| ③ Chuông "What NYX noticed" | mới `emotune-backend/src/services/insightService.js`, `src/controllers/insightController.js`, `test/insights.test.js`; frontend mới `components/NotificationMenu.jsx/.scss`; sửa `Header.jsx/.scss` |
-| ④ "Your week", bỏ Devices (xoá `assets/icons/bar_devices.svg`), trợ lý "bài trước" / "thích bài này" | `Header.jsx/.scss`, `MusicPlayer.jsx`; backend `src/services/assistantRules.js`, `assistantLlm.js`, `test/assistantRules.test.js` |
-| Tài liệu | `TIEN_DO.md` (I1), `CLAUDE.md` (API `/likes`, `/insights`, bảng `liked_songs`, thanh phát, header, test `insights`), `NOTES.md` |
+| `karaokePython` / `karaokeReady` (đường dẫn venv, đã cài chưa) dùng chung | mới `emotune-backend/scripts/lib/karaoke.js`; `scripts/make-karaoke.js` dùng lại |
+| Admin thêm bài trên web → chuỗi chạy nền thêm bước cuối `make-karaoke.js` (chỉ khi có venv); trạng thái trả thêm `karaoke` | `src/services/libraryEnrich.js` |
+| `import-music --apply` cũng chạy `make-karaoke` cuối cùng (không có venv → in hướng dẫn) | `scripts/import-music.js` |
+| Script Python chỉ nạp torch / demucs khi có bài cần tách → lượt không có gì làm 1.7s (trước ~6s) | `scripts/make_karaoke.py` |
+| Dải trạng thái trang Admin Library ghi "making karaoke tracks (AI vocal removal)", máy chưa cài venv thì báo bài mới chỉ có karaoke cơ bản | `emotune-frontend/src/pages/AdminLibraryPage.jsx` |
+| **Sửa lỗi:** nodemon theo dõi mọi `.json` trong `emotune-backend` → script ghi `karaoke/<tên>.json` làm backend khởi động lại (mất trạng thái chạy nền, có thể ngắt script giữa chừng khi thêm nhiều bài) → `nodemonConfig.ignore`: `karaoke/`, `.venv-karaoke/`, `music/`, `covers/`, `lyrics/`, `avatars/`, `import/`, `feedback_faces/`, `test/` | `emotune-backend/package.json` |
 
-Đã kiểm tra: `npm test` **101/101**; `npx eslint src` sạch + `npm run build` OK; curl `/likes` 9 trường hợp (2 tài khoản), `/insights` 3 tài khoản; Playwright (script `playwright-core`, tài khoản `demo`, đã dọn Liked Songs về rỗng): ♥ → sidebar → `/liked` → phát → bỏ thích; Prev 3 trường hợp; lặp 1 bài 2 vòng vẫn 1 `/listen-report`; Shuffle on/off; Repeat all; chuông (chấm đỏ, đóng = đã xem, F5 vẫn nhớ, bấm "On repeat" phát bài); trợ lý gõ "thích bài này", "bài trước"; 390px không tràn ngang.
-
-## 3. Quyết định quan trọng và lý do
-| Quyết định | Lý do |
-|---|---|
-| `LIKE_BONUS` = +1 (bằng 1 lần nghe hết), chỉ trong nhóm bài hợp cảm xúc đang quét | Phản hồi tích cực rõ ràng mạnh hơn khảo sát (+0.5); không phát bài vui khi đang buồn chỉ vì đã thích |
-| "Liked Songs" ở sidebar **mở trang** `/liked` (thiết kế duyệt ghi "bấm là phát") | Giống các playlist khác trong sidebar (đều mở trang) |
-| Prev không chấm điểm bài đang nghe; lặp 1 bài chấm 1 lần | Lùi bài không có nghĩa là không thích; lặp nhiều vòng không được cộng điểm ảo |
-| Shuffle chỉ cho hàng đợi | Ở chế độ cảm xúc thứ tự do AI quyết định |
-| Nhận xét chuông sinh ở backend bằng hàm thuần + ngưỡng (≥ 3 lần quét/tuần, ≥ 10 điểm, khung 3 giờ ≥ 40%) | Test được; ít dữ liệu thì không kết luận bừa (giải thích được khi bảo vệ) |
-| Chữ chuông bằng tiếng Anh | Khớp phần còn lại của giao diện |
-| "Đã xem" lưu `localStorage` theo tài khoản, đánh dấu khi **đóng** menu | Chỉ là tiện ích từng máy; lint cấm setState trong effect; đọc theo username (lúc header vừa hiện tài khoản có thể chưa tải xong) |
-
-## 4. Lệnh đã chạy / cách chạy lại
-```bash
-# Backend: server người dùng đang chạy sẵn ở 8080 (nodemon), frontend 5173: dùng chung, không tắt
-npm run db:migrate -- db/migrate_likes.sql   # máy khác / Pi cũng phải chạy (an toàn chạy lại)
-npm test                                     # 101/101
-# Frontend
-npx eslint src && npm run build
-```
-
-## 5. Lỗi / việc còn dở
-- **Đã sửa (người dùng hỏi "bài không phải nhạc Việt không có hình"):** 41 bài nhập bằng `import-music` có ảnh bìa = **logo NhacCuaTui** nhúng trong mp3 (41 file giống hệt nhau, md5 `0baadc14…`), `fetch-images` thấy "đã có bìa" nên bỏ qua. Thêm `scripts/lib/coverCheck.js` (+ 4 test, `npm test` 105/105): `import-music` không chép ảnh giả; `fetch-images` tự xoá ảnh giả rồi tải bìa thật → **31/41 có bìa thật**; 10 bài không có trên iTunes/Deezer (Beauty And A Beat, Biển Cạn, Chiều Nay Không Có Em, Chỉ Một Đêm Nữa Thôi, Dấu Tình Sầu, IDK, Lời Cuối Cho Em, Wtf Bby I'm Lit, Xa Xôi, Đánh Đổi) → hiện ảnh ca sĩ / bìa tự vẽ; muốn bìa thật thì bỏ ảnh vào `covers/<tên>.jpg` rồi chạy lại `fetch-images`. Đã đặt lại `photo = NULL` cho Phạm Hoài Nam / Lệ Quyên sau khi chạy. Máy khác / Pi: chạy `npm run fetch-images` là tự dọn.
-- **Đã sửa (người dùng: "ảnh Lệ Quyên bị vỡ"):** `photo` NULL → dùng `avatar` 84×84 px phóng to ở trang ca sĩ / Popular artists. Cắt chân dung 480px từ bìa album 1000px (không lấy chữ) → `avatars/photos/le-quyen-portrait.jpg`, `UPDATE artists SET photo = 'photos/le-quyen-portrait.jpg'`. File này mới, chưa có trong git; máy khác cần chép file + chạy lại câu UPDATE. **Phạm Hoài Nam cũng bị y hệt** (chưa sửa, chờ người dùng chọn).
-- **Chưa commit** (toàn bộ việc 10/10). Người dùng chưa yêu cầu.
-- Bật Shuffle rồi mới chọn hàng đợi: bài được chọn phát trước, Prev không lùi về các bài đứng trước nó trong thứ tự gốc (chấp nhận).
-- Prev ở chế độ cảm xúc không quay lại bài của playlist vừa phát trước đó (lịch sử chỉ nhớ bài cảm xúc).
+**Kiểm tra:** nodemon riêng cổng 8099: ghi file vào `karaoke/` không khởi động lại, sửa `src/` vẫn khởi động lại. Thử thật trên 8099: admin tải mp3 lên (`POST /admin/songs`, "Tmp Karaoke Test") → chạy nền 120s: fetch-images ✓, fetch-song-info ✓, fetch-mv ✓, **make-karaoke ✓ (8.1s)** → `/karaoke/tmp_karaoke_test.json` + `.beat.mp3` 200; đã xoá bài + file thử. Backend `npm test` 177/177, frontend lint + build sạch.
+- **Server `npm run dev` của người dùng đang chạy bằng cấu hình nodemon cũ** (nodemon chỉ đọc cấu hình lúc bật) → tắt + bật lại 1 lần.
 
 ## 6. Bước tiếp theo
-1. Người dùng thử I1 (♥, Prev/Shuffle/Repeat, chuông), góp ý.
-2. **I2** "Vì sao NYX chọn bài này?" (dùng `score`, `taste_bonus`, `like_bonus`, `isEncourage`).
-3. Commit khi người dùng yêu cầu → giai đoạn B (Pi, hạn 15/10).
+1. Tắt + bật lại `npm run dev` (backend) để nodemon nhận cấu hình mới.
+2. Người dùng hát thử bằng micro thật → góp ý độ khó chấm.
+3. Commit khi người dùng đồng ý; báo cáo theo khung C4 (thêm: Demucs tách nguồn âm thanh, YIN đo cao độ).
 
 ---
 
-# 🧭 PHIÊN 10/10/2026 (tối, máy `C:\Users\Hi`) — H15 Karaoke, H16 MV + cột phải kiểu Spotify
+# 🧭 PHIÊN 18/10/2026 (tối) — sửa MV "Animals" + kNN cho "Made for you" + I6 hiệu ứng nhỏ
 
 ## 1. Mục tiêu
-1. Đọc NOTES/TIEN_DO rồi làm tiếp: **H15 Karaoke** (đã chốt từ phiên trước), sau đó **H16 MV YouTube** (người dùng tạo `YOUTUBE_API_KEY` giữa phiên).
-2. Chỉnh MV theo góp ý liên tục (5 lượt) cho giống Spotify.
+Đầu phiên: đọc `NOTES.md` + `TIEN_DO.md`, tóm tắt tình trạng. Sau đó người dùng hỏi lần lượt và đều bảo "làm đi": (a) vì sao không mở được MV bài **Animals** → tìm nguyên nhân + sửa; (b) kNN là gì, vì sao cần → dùng kNN cho hàng **"Made for you"** (`/songs/for-you`); (c) I6 là gì → làm cả 3 hiệu ứng nhỏ.
 
-## 2. Việc đã làm xong (CHƯA COMMIT)
+## 2. Việc đã làm xong (chưa commit)
 | Việc | File |
 |---|---|
-| **H15 Karaoke**: nút Karaoke (khung lớn `/now-playing` + màn `/lyrics`, chỉ khi bài có lời đồng bộ). **Bỏ giọng ca sĩ trên trình duyệt**: L − R (giọng ở giữa bị triệt) + bù bass (L+R)/2 qua 2 tầng lọc thông thấp 150Hz; trái = bass + side, phải = bass − side; bật/tắt kéo dần dry ↔ wet ~0.3s. **Lời tô vàng dần từng chữ** (rAF ghi biến CSS `--p`; LRC chỉ có mốc theo dòng → chia đều thời gian dòng cho từng chữ, tối đa số chữ × 0.55s + 1s). Trạng thái karaoke giữ ở `PlayerHost` (sang bài vẫn bật). Màn lời cuộn lại dòng đang hát khi đổi cỡ cửa sổ | mới `emotune-frontend/src/utils/audioGraph.js` (tách `getGraph` khỏi `AudioVisualizer`, `setVocalCut`, `buildVocalCut`), `hooks/useLyrics.js`, `components/KaraokeLine.jsx`, `components/MicIcon.jsx`; sửa `AudioVisualizer.jsx`, `LyricsView.jsx/.scss`, `MusicPlayer.jsx/.scss`, `PlayerHost.jsx`, `utils/lyrics.js` (`karaokeWords`, `lineSpan`, `wordFill`), `index.css` (`--karaoke-fill`) |
-| **H16 MV — backend**: cột `songs.youtube_id` (`NULL` = chưa tìm, `''` = không có MV); `npm run fetch-mv` tìm MV chính thức bằng YouTube Data API v3, hàm thuần `pickVideo` (tên bài nguyên cụm + thừa ≤ 3 chữ, ca sĩ khớp tên video/kênh kể cả kênh viết liền kiểu `LanaDelReyVEVO`, bỏ cover/karaoke/remix/live/making/awards/upscale/phụ đề Trung-Hàn, bản lyrics/audio chỉ nhận từ kênh ca sĩ) + **12 test**. Đã chạy: **60/67 bài có MV**. 4 model trả thêm `youtube_id` | mới `emotune-backend/db/migrate_mv.sql`, `scripts/fetch-mv.js`, `scripts/lib/youtube.js`, `test/youtube.test.js`; sửa `db/setup.sql`, `package.json`, `.evn.example` (dòng `YOUTUBE_API_KEY`), `src/model/songModel.js`, `playlistModel.js`, `requestSongModel.js`, `suggestModel.js` |
-| **H16 MV — frontend (bản chốt sau 5 lượt góp ý)**: bấm **MV ở khung sóng âm** → MV **phủ hết vùng giữa** (chỉ chừa header, thư viện, thanh phát; class `.player.mv-on`). Rời `/now-playing` → MV sang **cột phải kiểu Spotify** (video khung vuông + tên bài + thẻ Lyrics tĩnh + About the artist; nút **thu gọn** → dải mỏng có nút ‹ để mở lại; ✕ = tắt MV). **Chỉ 1 trình phát YouTube, không bao giờ tạo lại**: nằm trong lớp nổi `.mv-float` (portal vào `.app-shell`), vòng `requestAnimationFrame` bám theo ô video đang hiện → đổi chỗ / thu gọn nhạc liền mạch; thu gọn thì MV vẫn chạy (ẩn). Video không bấm được (`controls: 0`, `pointer-events: none`), **chỉ điều khiển bằng thanh phát** (Play/Pause, tua, âm lượng, trợ lý giọng nói, nút cứng). Dừng → ẩn trình phát, hiện thumbnail. Tắt phụ đề tự bật (`unloadModule("captions")`). Chế độ MV giữ khi sang bài. Chỉ về mp3 khi Close MV / ✕ / mở `/lyrics` / MV lỗi (quy đổi thời điểm theo tỉ lệ thời lượng `mapTime`). Điểm nghe = max(mp3 đã nghe, MV xem liền mạch) | mới `utils/youtube.js`, `components/MvPlayer.jsx`, `components/NowPlayingPanel.jsx/.scss` (+ `NowPlayingStrip`), `contexts/panelSlotContext.js`; sửa `layouts/MainLayout.jsx/.scss` (ô `.right-panel-slot` cột lưới thứ 3, `--main-pad`), `MusicPlayer.jsx/.scss`, `PlayerHost.jsx` (`mvWanted`, `panelCollapsed`) |
-| Tài liệu | `TIEN_DO.md` (H15, H16, tổng quan H 17/17, nhật ký), `CLAUDE.md` (kiến trúc Karaoke/MV, lệnh `fetch-mv`, test `youtube`), `NOTES.md` |
+| **MV Animals:** MV gốc `qpgTC9MDx1o` bị YouTube **giới hạn độ tuổi** (`contentRating.ytRating = ytAgeRestricted`) → API vẫn báo `embeddable: true` nhưng trình phát nhúng từ chối (lỗi 150) → web quay về mp3. `searchVideos` hỏi thêm `videos.list part=contentDetails` (1 đơn vị quota) gắn `ageRestricted`, `pickVideo` bỏ video đó; lỗi hết quota ở bước này cũng dừng script như `search` | `emotune-backend/scripts/lib/youtube.js`, `test/youtube.test.js` (+1 test) |
+| Quét cả kho: chỉ Animals bị (1/86 bài có MV). **DB máy này:** Animals (id 72) → `youtube_id = '7BJ3ZXpserc'` (Lyric Video chính thức, kênh Maroon5VEVO) | DB (UPDATE tay) |
+| **kNN cho "Made for you":** `rankForYou(rows, limit, knn)` cộng `similarUsers.neighborSupport(song.id, knn).bonus` (≤ 0.5, đúng cách tính C13); `getForYou` gọi `loadNeighbors` song song với SQL | `emotune-backend/src/services/songService.js`, `test/forYou.test.js` (+3 test) |
+| **I6 ① sóng nhảy:** 4 vạch lệch nhịp ở dòng bài đang phát (Playlist / Liked / Mix / trang ca sĩ, thay `.eq` 3 vạch cũ + "♫") + ô nhỏ góc ảnh bìa thẻ bài (trang chủ, trang ca sĩ); **tạm dừng → vạch đứng yên** (`nowPlaying.playing`) | mới `emotune-frontend/src/components/PlayingBars.jsx/.scss`; sửa `components/MusicPlayer.jsx` (prop `onPlayingChange`, tính cả MV), `components/PlayerHost.jsx` (state `audioPlaying` → `nowPlaying.playing`), `components/BrowseCards.jsx`, `pages/PlaylistPage.jsx/.scss` (bỏ `.eq` cũ), `pages/LikedPage.jsx`, `pages/MixPage.jsx`, `pages/ArtistPage.jsx` |
+| **I6 ② khung xám khi tải:** `SkeletonCards` (hàng thẻ trang chủ: Made for you, Popular artists, New releases, Mixes), `SkeletonPage` (trang ca sĩ / Mix / Playlist), `SkeletonPanels` (`/stats`); vệt sáng lướt qua | mới `components/Skeleton.jsx/.scss`; sửa `pages/BrowsePage.jsx` (hàm `loading(state)`), `ArtistPage.jsx`, `MixPage.jsx`, `PlaylistPage.jsx`, `MoodPage.jsx` |
+| **I6 ③ chuyển trang mượt:** đổi `pathname` → con của `.app-main` hiện dần + trượt lên 8px (0.26s); `.now-playing` chỉ làm mờ `.player-stage` | mới `hooks/usePageTransition.js`; sửa `layouts/MainLayout.jsx` (ref `.app-main`) |
+| Tài liệu | `TIEN_DO.md` (C13, I6, tổng quan, nhật ký), `CLAUDE.md` (`/songs/for-you` có kNN, mô tả I6), file này |
 
-Đã kiểm tra: backend `npm test` **89/89**; frontend `npx eslint src` sạch + `npm run build` OK; Playwright 1440 / 1000 / 390px cho từng bước (không tràn ngang, không lỗi console). Bộ bỏ giọng đo bằng `OfflineAudioContext`: giọng giả ở giữa 440Hz còn 1.5%, 2kHz 0%, nhạc cụ lệch trái giữ 96%, bass giữ. MV: cùng 1 iframe suốt, thời gian MV chạy đều qua mọi lần đổi chỗ / thu gọn.
+**Kiểm tra:** backend `npm test` **177/177**; frontend `npx eslint src` sạch + `npm run build` OK. API thật: `mau_ballad` (2 láng giềng, độ giống 0.75 / 0.61) → điểm bài láng giềng thích tăng, "Phôi Pha" (chưa nghe) vào top 10. Playwright (tài khoản `demo30`, API giả lập chậm 2.5s) 1440 + 390px: 24 thẻ xám → 0 khi tải xong; vạch `running` ↔ `paused` theo nút Play/Pause; đổi trang có 1 animation ở nội dung, thanh phát 0; ô sóng nhảy trên thẻ trang chủ; không tràn ngang; lỗi duy nhất là 404 `lyrics/gia_nhu.lrc` (bài vốn không có lời, lỗi cũ).
 
-## 3. Quyết định quan trọng và lý do
+## 3. Quyết định + lý do
 | Quyết định | Lý do |
 |---|---|
-| Karaoke tách giọng bằng **xử lý tín hiệu trên trình duyệt** (L − R + giữ bass), không dùng AI tách nguồn | Demucs/Spleeter cần GPU + vài phút mỗi bài; cách này chạy tức thì, giải thích được. **Hạn chế phải nói khi bảo vệ**: không sạch như beat chuẩn, còn vang giọng, bài mono gần như chỉ còn bass, nhạc cụ đặt giữa cũng nhỏ đi; thời gian từng chữ là nội suy |
-| `fetch-mv` chọn video bằng **luật + test**, không lấy kết quả đầu | Lần chạy đầu lấy nhầm 4 bài (making MV, bản diễn AMA, bản 4K kênh lạ, lyric video kênh fan) → siết luật, đặt lại `NULL`, tìm lại riêng |
-| mp3 vẫn là **nguồn chính**, MV là tuỳ chọn | Sóng âm, karaoke, chấm điểm, chạy offline trên Pi đều dựa vào mp3 |
-| Giao diện MV qua 5 lượt: ô nhỏ góc → cột "Now playing" → **người dùng chốt**: MV thay khung sóng âm + cột phải chỉ để xem khi lướt trang khác + bỏ nút MV/nút cột trên thanh phát | Theo ảnh Spotify người dùng gửi |
-| Không vẽ gì đè lên trình phát YouTube; khi dừng thì **ẩn cả trình phát** (hiện thumbnail) thay vì che icon | Quy định nhúng YouTube cấm overlay lên player |
-| **Lớp giới thiệu YouTube ~5s lúc MV bắt đầu: giữ nguyên** (người dùng chọn) | Che đi = phát video bị giấu, trái điều khoản |
-| Cột phải thu gọn: **MV vẫn chạy ẩn** (người dùng yêu cầu để mở lại khớp nhạc) | Đã nói rõ với người dùng là phát ẩn cũng trái điều khoản YouTube → nếu bị hỏi khi bảo vệ thì đây là đánh đổi có chủ ý |
-| Khung video cột phải **vuông** | YouTube yêu cầu khung nhúng ≥ 200×200px |
-| 1 trình phát YouTube duy nhất trong lớp nổi bám theo ô video | Gỡ ra / gắn lại iframe vào chỗ khác làm trình phát tải lại (đứng 1–2s, lùi nhạc) |
+| Bỏ video giới hạn tuổi ngay trong `pickVideo` (dữ liệu từ `videos.list`) | `search.list` không lọc được loại này; thêm 1 đơn vị quota / bài, rẻ so với 100 của search |
+| Animals dùng Lyric Video chính thức thay vì bản script tự chọn ("Victoria's Secret Swim Special") | Bản kia là video trình diễn; MV gốc không có bản nào phát nhúng được; không chỉnh thuật toán thêm (thêm "special" vào danh sách bỏ thì lại chọn bản đăng lại của kênh giả "VEVO.") |
+| kNN ở "Made for you" dùng lại `neighborSupport` (không viết công thức mới) | 1 nguồn logic → giống hệt lúc chọn bài theo cảm xúc; ≤ 0.5 < 1 lần tự nghe hết → gu của chính người dùng vẫn quyết định |
+| Chuyển trang bằng Web Animations API trên phần tử có sẵn, không bọc thẻ / không `key` | Không gỡ / dựng lại trang → không mất state; không đổi CSS layout của `.app-main` |
+| Không làm mờ `.now-playing`; chỉ opacity `.player-stage` | `.now-playing` chứa thanh phát `position: fixed` (sẽ nhấp nháy); `transform` trên tổ tiên làm `position: fixed` bên trong lệch chỗ |
+| Tạm dừng → vạch đứng yên (không ẩn) | Vẫn biết bài nào đang mở; `aria-label` "Paused" / "Now playing" |
+| "Giảm chuyển động" tắt cả 3 hiệu ứng | Trợ năng |
 
-## 4. Lệnh đã chạy / cách chạy lại
+## 4. Lệnh đã chạy + cách chạy lại
 ```bash
-# Backend (emotune-backend/) — server người dùng đang chạy sẵn ở 8080 (nodemon), frontend 5173: dùng chung, không tắt
-npm run db:migrate -- db/migrate_mv.sql      # đã chạy trên DB máy này (an toàn chạy lại)
-npm run fetch-mv                             # đã chạy: 60/67 bài; chỉ tìm bài youtube_id NULL; --retry tìm lại bài ''
-npm test                                     # 89/89
-# Frontend (emotune-frontend/)
-npx eslint src && npm run build
+npm test                                   # (emotune-backend) 177/177
+npm run fetch-mv                           # (emotune-backend) chạy lại cho Animals sau khi đặt youtube_id = NULL
+npx eslint src && npm run build            # (emotune-frontend) sạch / OK
+# Playwright: npm i playwright-core@1.49.1 vào thư mục tạm, chromium.launch({ channel: 'chrome' }),
+#   localStorage.emotune_token + sessionStorage.emotune_scanned = "1"; page.route làm chậm /songs, /songs/for-you, /artists
+#   để thấy khung xám (script i6.mjs ở scratchpad phiên, mất khi hết phiên)
+# Máy khác / DB khác: UPDATE songs SET youtube_id = '7BJ3ZXpserc' WHERE title = 'Animals';
 ```
-- `.env` của backend đã có `YOUTUBE_API_KEY` (giới hạn chỉ YouTube Data API v3). Quota ngày 10/10 đã dùng ~7.300/10.000 (mỗi lần tìm 100).
-- Máy khác / Pi: `git pull` → `npm run db:migrate -- db/migrate_mv.sql` → `npm run fetch-mv` (cần key + mạng). Pi không mạng → bấm MV báo "Can't load the MV" sau ≤ 10s, nhạc vẫn chạy.
-- Thử: đăng nhập `demo30` / `demo1234`, tìm "perfect" → Enter → bấm ảnh bài ở thanh phát → `/now-playing` → nút **MV** / **Karaoke** góc phải trên.
-- Playwright MCP bị 1 Chrome của phiên Claude trước giữ profile (`mcp-chrome-401e365`) → phiên này chạy Playwright bằng script `playwright-core` riêng (`~/AppData/Local/npm-cache/_npx/9833c18b2d85bc59/node_modules/playwright-core`, `chromium.launch({ channel: 'chrome' })`).
+```bash
+# chạy lại cả dự án (3 cửa sổ) + PostgreSQL
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+# Phiên này không đổi schema DB.
+```
+- Server lúc phiên chạy: backend :8080 + web :5173 **của người dùng** (Claude không bật / tắt).
 
-## 5. Lỗi / việc còn dở
-- **Chưa commit** toàn bộ việc 10/10 (~168 file, gồm 60 ảnh bìa + 15 ảnh ca sĩ mới chưa quyết có đưa lên git không). Người dùng chưa yêu cầu commit.
-- **Chưa nghe thử karaoke bằng tai** (Playwright chạy không loa). Karaoke phần 3 (micro + chấm điểm hát) chưa làm; trợ lý giọng nói chưa hiểu "bật karaoke" / "xem MV".
-- 7 bài chưa có MV (6 bài RPT MCK / Nhan Nguyen + *Xích Thêm Chút (XTC Remix)*) → tự `UPDATE songs SET youtube_id = '<id>' WHERE title = '...';`.
-- Lớp giới thiệu YouTube (~5s) vẫn hiện mỗi lần MV bắt đầu — chấp nhận theo điều khoản.
-- Còn từ trước: vibe kho nhạc lệch (angry 6, surprise 4); thiếu ảnh ca sĩ Nhan Nguyen, Groovie Lã Thắng; thiếu lời *Giá Như*, *Khó Giữ Chân Thành*; `fetch-images` ghi ảnh album cho Phạm Hoài Nam / Lệ Quyên (chạy xong `UPDATE artists SET photo = NULL ...`); chưa thử micro thật với quả cầu trợ lý; tài khoản `gayta626` có độ tự tin AI giả; chưa có `ANTHROPIC_API_KEY`, `LASTFM_API_KEY`.
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa commit** (cộng dồn từ 11/10, rất nhiều file).
+- Vite dev từng giữ bản biên dịch dở khi file bị ghi nhiều lần liên tiếp → trang trắng, `loading is not defined` dù code đúng; lưu lại file / F5 là hết. Không phải lỗi code.
+- Chưa xem tận mắt hiệu ứng chuyển trang trên máy người dùng (chỉ đo bằng Playwright).
+- Việc cũ vẫn còn: chưa thử micro thật (C11), dữ liệu kNN phần lớn từ tài khoản mẫu `seed-demo`, admin chưa tạo tài khoản trên web, ảnh Phạm Hoài Nam, ca sĩ ID3 sai ở bài "chờ chút…", chưa train lại bằng ảnh phản hồi, hạn nộp chưa biết.
 
 ## 6. Bước tiếp theo
-1. Người dùng nghe thử Karaoke + xem MV, góp ý.
-2. Commit khi người dùng yêu cầu (quyết định có đưa `covers/` + `avatars/photos/` mới lên git không).
-3. Chọn tiếp trong "💡 Ý tưởng chờ làm" (`TIEN_DO.md`): đề xuất **I1** (Shuffle / Prev / Repeat / ♥ chạy thật) → **I2** "Vì sao NYX chọn bài này?" (ăn điểm bảo vệ) → I3 lời chào cá nhân → I4 playlist chuyển cảm xúc.
-4. Giai đoạn B (Pi, hạn HIC 15/10): LD2410C, đồng bộ Pi qua git + `import-music` / `fetch-lyrics` / `fetch-images` / `fetch-mv`, vỏ hộp, systemd + kiosk, slide, tập demo.
+1. Người dùng xem 3 hiệu ứng I6 + MV Animals + hàng "Made for you" → góp ý.
+2. Thử micro thật ở `/scan` (C11).
+3. **Commit** khi người dùng đồng ý (gom từ 11/10).
+4. Viết báo cáo theo khung C4 (mục tiêu đo được: macro-F1, Mood corrections, tỉ lệ nghe hết; kNN ở 2 chỗ: chọn bài theo cảm xúc + Made for you).
+5. Còn trong bảng tiến độ: F5 (Figma Sign in/up, chờ Figma MCP), C3 gu 65/35 (phần lớn đã thay bằng C13 + khảo sát → có thể đánh ❌).
 
 ---
 
-# 🧭 PHIÊN 10/10/2026 (cả ngày, máy `C:\Users\Hi`) — giao diện "bầu trời đêm", import nhạc hàng loạt, màn đang phát mới
+# 🧭 PHIÊN 18/10/2026 — C11 nghe cảm xúc bằng giọng nói song song khi quét mặt
 
 ## 1. Mục tiêu
-1. Đọc NOTES/TIEN_DO, tóm tắt. Người dùng chốt: **phần mềm xong rồi mới qua phần cứng** (đã lưu vào bộ nhớ Claude + đầu `TIEN_DO.md`).
-2. Chỉnh giao diện theo góp ý liên tục: quả cầu trợ lý AI, header/sidebar dính khi cuộn, nền mỗi trang, trang `/stats` + Settings rộng hơn, sidebar rộng hơn, màn đang phát + sóng âm.
-3. Sửa "màn lời bài không có lời" + làm công cụ **nhập nhạc hàng loạt** (người dùng tải ~60 mp3 từ NCT về `Downloads`).
-4. Bàn ý tưởng mới: **MV, Karaoke, phát từ YouTube** → ghi lại để phiên sau làm.
+Đầu phiên: tóm tắt tình trạng; trả lời "ảnh sau khi người dùng chọn lại lưu ở đâu" (`emotune-backend/feedback_faces/<cảm xúc>/u<id>_…jpg`, máy này đã có 1 ảnh thật `angry/u1_…`). Người dùng **bỏ C5, I5**. Hỏi C11 là gì → người dùng tự thiết kế lại C11: lúc quét, mở micro **song song nhưng ẩn giao diện**; nói cảm xúc thì **bài phát theo lời nói**, vẫn ghi lịch sử + thống kê; nếu mặt tự tin **≥ 75%** thì câu nói **không được dùng làm nhãn ảnh train** (tránh nhiễu dữ liệu); micro **chỉ mở trong lúc quét**; **chỉ nghe câu nói về cảm xúc**. Claude mô tả đầy đủ trong chat (không viết spec riêng), người dùng: "ok làm đi".
 
-## 2. Việc đã làm xong (CHƯA COMMIT)
-| Việc | File |
+## 2. Việc đã làm xong (chưa commit)
+**Backend `emotune-backend/`**
+| File | Việc |
 |---|---|
-| (sáng) F18 menu tài khoản + `/settings`, C12b 4 biểu đồ `/stats`, icon cảm xúc mới, "Surprised" → **"Explore"** (chỉ chữ hiển thị) | xem `TIEN_DO.md` F18 / C12b / H10 |
-| **H6b quả cầu sóng trợ lý AI** thay dải 43 vạch (theo ảnh mẫu "Infographic Chart"): canvas lưới tròn + 2 dải 22 sợi sóng 3 cánh (cam–hồng theo âm trầm, tím–xanh theo âm cao) + viền trắng gợn; nút micro ở lỗ giữa; nền tím than. **Phản ứng ngay khi nói**: micro mở 1 lần khi mở trợ lý, tự đo tiếng ồn nền (trung bình + độ dao động, vượt 3× độ dao động mới là giọng) — trước đây ngưỡng cố định làm micro nhỏ chỉ nhảy khi Web Speech ra chữ. **Không hiện lại lời người dùng nói** (câu dẫn của trợ lý là phần xác nhận). Quả cầu **to tới 600px / 58vh**, nghỉ 0.62 → nói 0.96 bán kính | mới `emotune-frontend/src/components/VoiceOrb.jsx`; xoá `VoiceWave.jsx`; sửa `VoiceAssistant.jsx/.scss`, `src/index.css` (`--assistant-bg #241d4f`, `--assistant-glow-rgb`) |
-| **F19** header + sidebar `sticky` (cuộn chỉ nội dung giữa trôi; header z-index 15) | `src/layouts/MainLayout.scss` |
-| **F20 nền "bầu trời đêm" theo trang**: lớp cố định 3 quầng cực quang trôi chậm + sao; màu theo trang bằng `body:has(.ten-trang)` (chào/quét tím–hồng, trang chủ theo cảm xúc quét gần nhất, Mix + now-playing theo vibe, trang ca sĩ theo màu ảnh ca sĩ `--artist-h`, `/stats` tím than, Playlist tím–hồng, Settings xám lam); `@property` → đổi trang chuyển màu 1s; header/sidebar kính mờ; tấm nền trang chủ / Mix / thẻ Settings / đầu Playlist hơi trong | mới `src/components/PageAmbient.jsx/.scss`; sửa `MainLayout.jsx/.scss`, `Header.scss`, `SideBar.scss`, `pages/BrowsePage.scss`, `MixPage.scss`, `SettingsPage.scss`, `PlaylistPage.scss`, `ArtistPage.jsx` |
-| **F21** `/stats` + Settings bỏ giới hạn rộng (1200/1088px) → trải hết; sidebar 240 → **300px** (ảnh 52px, chữ 13px), thanh cuộn sidebar mảnh tối | `components/stats/Stats.scss`, `pages/SettingsPage.scss`, `components/SideBar.scss` |
-| **Lời bài không hiện**: `emotune-backend/lyrics/` trên máy này **trống** (không có trong git) → chạy `npm run fetch-lyrics`. *Giá Như* (LRCLIB đánh dấu "không lời") và *Khó Giữ Chân Thành* (LRCLIB không có) vẫn thiếu → người dùng tự dán lời vào `lyrics/gia_nhu.lrc`, `kho_giu_chan_thanh.lrc` | — |
-| **C2 `npm run import-music`** (2 bước): `-- --from "<thư mục>"` = XEM TRƯỚC: đọc thẻ ID3 (tự viết, không thư viện), làm sạch (bỏ " - Vũ" cuối tên, album "NhacCuaTui.com", gộp "Vũ"/"Vũ."/"VU", "Ha Nhi"/"Hà Nhi", bỏ file trùng), tìm lời LRCLIB (cache `import/cache/`), **đoán vibe từ lời + tên bài** (từ điển cảm xúc Việt + Anh, từ mạnh ×2, tên bài ×5, mỗi từ tối đa 3 lần, "?" khi chưa chắc), đoán thể loại (thẻ NCT → pop/rap/ballad, theo ca sĩ, theo vibe) → `import/plan.json` (sửa được); `-- --apply` = chép mp3 → `music/`, ảnh bìa trong ID3 → `covers/`, lời → `lyrics/`, **chỉ THÊM** ca sĩ + bài vào DB (1 transaction), rồi tự chạy `fetch-images` + `fetch-song-info`. Tách phần LRCLIB của `fetch-lyrics` ra `scripts/lib/lrclib.js` | mới `emotune-backend/scripts/import-music.js`, `scripts/lib/id3.js`, `scripts/lib/importMusic.js`, `scripts/lib/lrclib.js`, `test/importMusic.test.js` (14 test), `import/.gitignore`; sửa `scripts/fetch-lyrics.js`, `package.json` |
-| **Nhập 59 bài** từ `C:\Users\Hi\Downloads` (13 vibe sửa tay theo gợi ý Claude, người dùng đồng ý) → kho **69 bài, 28 ca sĩ**, đủ bìa + thời lượng, 58 bài có lời; vibe: sad 35 · happy 15 · neutral 9 · angry 6 · surprise 4 | DB + `music/`, `covers/` (60 ảnh mới, **chưa commit, chưa quyết có đưa lên git không**), `avatars/photos/` (15 ảnh ca sĩ mới) |
-| Sửa tác dụng phụ: `fetch-images` ghi ảnh ALBUM của Phạm Hoài Nam / Lệ Quyên vào `artists.photo` (thay ảnh chân dung) → `UPDATE artists SET photo = NULL` cho 2 người (ghi chú trong `CLAUDE.md`) | DB |
-| **H14 màn đang phát**: nền khung lớn tối nhiều lớp (ảnh bìa nhoè + 4 quầng màu vibe trôi chậm + hạt nhiễu + viền tối) theo vibe (`--bg-a/b/c`, `--viz-1/2`, `--viz-glow`; vui = vàng kim) và **thể loại** (`data-genre`: rap = hạt gắt + vạch quét, ballad = đốm bokeh, chill = trôi chậm). **Sóng âm**: sau 2 lần thử (cột/sóng cong theo thể loại; "vệt sáng" theo ảnh mẫu) người dùng chốt **kiểu cột ban đầu làm đẹp**: trắng sáng giữa → màu vibe 2 đầu, quầng sáng elip cùng màu, **chấm đỉnh rơi chậm**, mượt hơn, **cao thấp theo độ to thật của bài** (so với đoạn to nhất của bài theo thang dB, nhớ ~30s; hình dạng theo phổ từng lúc). Backend trả thêm `genre` cho bài gợi ý | `src/components/MusicPlayer.jsx/.scss`, `src/components/AudioVisualizer.jsx`; backend `src/model/suggestModel.js`, `src/model/requestSongModel.js` |
-| Tài liệu | `TIEN_DO.md` (H6b, H14, H15, H16, F19–F21, C2, mục "💡 Ý tưởng chờ làm"), `CLAUDE.md`, `NOTES.md` |
+| `src/services/assistantRules.js` | `moodFromText(text)`: chỉ xét từ điển cảm xúc (`detectEmotion`, có phủ định), bỏ qua lệnh / tên bài |
+| `src/services/assistantLlm.js` | tách `askGemini` dùng chung; `buildMoodRequest` (hàm thuần, không gửi kho nhạc) + `moodWithLlm` (schema `{emotion}` có `none`) |
+| `src/services/assistantService.js`, `src/controllers/assistantController.js`, `src/routes/web.js` | `moodOf` (luật → Gemini) + `POST /voice-mood {text}` → `{emotion \| null, source}` |
+| `src/services/moodFixService.js` | `VOICE_TRUST_FACE_ABOVE = 0.75`, hàm thuần `canLabelFace(via, confidence)`; `fixMood(..., via)`: `via "voice"` → source `voice`, mặt ≥ 75% không lưu ảnh; trả thêm `via` |
+| `src/controllers/scanController.js`, `suggestController.js` | `/scan-feedback` + `/suggest` nhận `via: "voice"` |
+| `src/services/explainService.js` | lý do I2 `"You told NYX you feel …"` |
+| `test/voiceMood.test.js` (mới) | 6 test → `npm test` **173/173** |
 
-Đã kiểm tra: backend `npm test` **77/77**; frontend `npx eslint src` sạch + `npm run build` OK; Playwright 1440 / 1920 / 390px cho từng việc (không tràn ngang). Quả cầu + sóng âm thử bằng **micro giả / giọng đọc giả** trong Playwright (init script giả `getUserMedia`, `SpeechRecognition`, `speechSynthesis`).
+**Frontend `emotune-frontend/src/`**
+| File | Việc |
+|---|---|
+| `hooks/useMoodListener.js` (mới) | Web Speech nghe liên tục (tự mở lại sau mỗi câu), mỗi câu → `/voice-mood`; trả `listening`, `busy` (đang nói dở / đang hiểu câu), `voiceMood`; gọi `onMood` ngay khi nghe ra cảm xúc; chặn micro / mất mạng / không hỗ trợ → thôi nghe |
+| `pages/ScanPage.jsx` | quyết định cuối: nói khác mặt hoặc AI chưa chắc → `sendMoodFix(..., 'voice')`; nói giống mặt (AI chắc) → giữ bài AI chọn; không thấy mặt mà đã nói → `/suggest`; đang nói dở khi có kết quả mặt → giữ kết quả ≤ 5s (`HOLD_MS`); mở trợ lý giọng nói → micro ẩn tắt |
+| `components/EmotionScanner.jsx/.scss` | `paused` (đang giữ kết quả → thôi chụp gửi + ẩn nút chọn tay, tránh ghi `mood_history` 2 lần), `status`, chấm micro "Listening, you can also tell NYX how you feel" / "Heard you: Sad" |
+| `components/MoodCheck.jsx` | "You can just say it, too." khi micro đang nghe |
+| `utils/moodFix.js` | `sendMoodFix(scanId, emotion, via)`, `sendVoiceMood` |
+| `components/MusicPlayer.jsx`, `PlayerHost.jsx` | lời ghi chú "NYX read your face as Sad, but went with what you said"; giữ `via` cho bài đầu hành trình |
 
-## 3. Quyết định quan trọng và lý do
+**Kiểm tra:** `npm test` 173/173; `npx eslint src` sạch + `npm run build` OK; API thật (Node fetch): "Hôm nay mình mệt quá" → sad (luật, 4ms), "bài tiếp theo" → null, "deadline dí sấp mặt luôn" → sad (Gemini, ~0.9s); tài khoản tạm `tmpvoice_c11`: mặt sad 77% + nói happy → bài happy, `faceSaved false`; mặt 41% (chưa chắc) + nói sad → `faceSaved true`; bấm chọn (tap) mặt 77% → vẫn lưu như C15. Playwright (Chrome camera giả + Web Speech giả theo kịch bản, tài khoản tạm `tmpvoice_ui`): nói trước khi có kết quả → bài theo lời nói (~5.7s); đang nói dở → "Got it, finish what you're saying…" → nói xong mới chọn; chưa chắc → thẻ hỏi → nói → tự trả lời; trình duyệt không có Web Speech → không có chấm micro, quét như cũ; 390px không tràn ngang. 2 tài khoản tạm đã xoá (ảnh theo đó cũng xoá); 1 dòng `mood_history` thử của `demo` (id 1741) đã xoá.
+
+## 3. Quyết định + lý do
 | Quyết định | Lý do |
 |---|---|
-| Phần mềm trước, phần cứng sau (người dùng chốt) | Người dùng muốn web hoàn chỉnh trước; đã nhắc 1 lần rủi ro hạn HIC 15/10 |
-| Màu nền theo trang viết **thuần CSS** (`body:has(...)`), không React | Trang nào cũng không phải sửa; thêm trang mới = 1 quy tắc trong `PageAmbient.scss` |
-| Micro của quả cầu: **ngưỡng tự thích nghi** (trung bình + 3× độ dao động tiếng ồn) | Ngưỡng cố định: micro nhỏ không nhảy, phòng ồn thì nhảy lung tung |
-| Đoán vibe bằng **từ điển cảm xúc trên lời bài** (không phải phân tích âm thanh) | Máy không có ffmpeg / librosa; LRCLIB có lời sẵn; giải thích được khi bảo vệ. Hạn chế: chỉ hiểu lời, không nghe giai điệu (vd *Baby* lời buồn nhạc vui) → bước xem trước + sửa tay |
-| **Không dùng Google search** để gán thể loại/cảm xúc | Custom Search JSON API đóng đăng ký mới, tắt 01/01/2027; cào Google vi phạm điều khoản. Thay bằng: iTunes `primaryGenreName`, **Last.fm `track.getTopTags`** (tag cộng đồng, cần key miễn phí — chưa có) |
-| **Không viết tool tự tải nhạc từ NhacCuaTui** (người dùng hỏi 2 lần, kể cả "thầy nói không sao") | Bản quyền + điều khoản NCT; giải pháp: người dùng tự có file, `import-music` lo phần còn lại |
-| `import-music` 2 bước + chỉ THÊM vào DB | Xem/sửa vibe trước khi ghi; không đụng dữ liệu thật của người dùng |
-| Sóng âm: độ cao theo **chênh lệch dB so với đoạn to nhất của bài** | Analyser trả thang dB nên tỉ lệ thường luôn ≈ 1 (thử thấy intro = điệp khúc); phải dùng hiệu số |
-| Không phát nhạc từ YouTube thay mp3 → **lai: mp3 chính + YouTube chỉ cho MV** | Xem mục "💡 Ý tưởng chờ làm" trong `TIEN_DO.md` (điều khoản, mất sóng âm, quảng cáo, cần mạng) |
+| Lời nói thắng mặt khi chọn bài, ghi lịch sử theo lời nói | Người dùng chốt: người dùng biết cảm xúc của mình rõ hơn camera |
+| Mặt ≥ 75% + lời nói khác → không lưu ảnh | Người dùng chốt: có thể nói đùa / Web Speech nghe nhầm / người khác nói → nhãn sai làm nhiễu dữ liệu train |
+| Dùng lại đường C15 `/scan-feedback` (`via`) thay vì API riêng | 1 logic sửa cảm xúc: xoá dòng cũ, `ai_emotion`, chỉ số Mood corrections trên `/admin` vẫn đúng |
+| Hiểu câu nói = luật cảm xúc của trợ lý → Gemini (prompt chỉ hỏi cảm xúc, không gửi kho nhạc) | Nhanh, miễn phí phần lớn; Gemini lo câu không có từ khoá ("deadline dí") |
+| Giữ kết quả mặt ≤ 5s khi đang nói dở | Lượt quét chỉ ~3–5s, không đủ để nói hết câu; không nói thì không chậm thêm |
+| Vẫn hiện chấm micro nhỏ dù "ẩn giao diện" | Đạo đức: người dùng phải biết đang bị nghe; Web Speech gửi giọng lên máy chủ Google |
+| Nói giống mặt (AI chắc) → không ghi gì thêm | AI đã đúng, không phải sửa |
 
-## 4. Lệnh đã chạy / cách chạy lại
+## 4. Lệnh đã chạy + cách chạy lại
 ```bash
-# Backend (emotune-backend/) — server người dùng đang chạy sẵn ở 8080 (nodemon), frontend 5173: dùng chung, không tắt
-npm run fetch-lyrics                                        # máy mới / Pi: lyrics/ không có trong git
-npm run import-music -- --from "$USERPROFILE/Downloads"     # xem trước -> import/plan.json (sửa "vibe"/"genre")
-npm run import-music -- --apply                             # nhập thật + tự fetch-images + fetch-song-info
-npm test                                                    # 77/77
-# Frontend (emotune-frontend/)
-npx eslint src && npm run build
+npm test                          # (emotune-backend) 173/173
+npx eslint src && npm run build   # (emotune-frontend) sạch / OK
+# Playwright: playwright-core trong scratchpad; Web Speech giả bằng addInitScript (class SpeechRecognition phát onresult theo
+#   kịch bản; abort() phải trả câu chưa nói về hàng đợi vì StrictMode chạy effect 2 lần), route /scan-and-suggest thay ảnh thật
+#   (script: scratchpad của phiên voice_api.mjs / voice_fix.mjs / voice_ui.mjs - mất khi hết phiên; tài khoản tạm tự xoá cuối script)
 ```
-Đăng nhập thử: `demo30` / `demo1234` (dữ liệu mẫu). Máy mới / Pi muốn có 59 bài mới: chép mp3 rồi chạy lại `import-music` (DB máy khác chưa có các bài này).
+```bash
+# chạy lại cả dự án (3 cửa sổ) + PostgreSQL
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080 (.env cần GEMINI_API_KEY để hiểu câu không có từ khoá)
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+# C11 không đổi DB (không cần migrate). Máy khác: npm install + db/migrate_admin.sql + db/migrate_feedback.sql nếu DB cũ
+```
+- Server lúc phiên chạy: AI :5000, backend :8080 (nodemon tự nạp code mới), web :5173 đều **của người dùng**, Claude không bật / tắt.
+- Thử: `/scan` → thấy chấm micro dưới khung camera → nói "hôm nay mình mệt quá" trong lúc quét.
 
-## 5. Lỗi / việc còn dở
-- **Chưa commit** toàn bộ việc 10/10 (147 file, gồm 60 ảnh bìa + 15 ảnh ca sĩ mới chưa quyết có đưa lên git). Người dùng chưa yêu cầu commit.
-- Vibe kho nhạc lệch: **angry 6, surprise 4** (mục tiêu ≥ 8) → cần thêm bài rap gắt / bài lạ tai.
-- Thiếu ảnh ca sĩ **Nhan Nguyen**, **Groovie Lã Thắng** → bỏ ảnh vào `avatars/photos/nhan-nguyen.jpg`, `groovie-la-thang.jpg` rồi `npm run fetch-images`.
-- Thiếu lời *Giá Như*, *Khó Giữ Chân Thành* (LRCLIB không có).
-- `npm run fetch-images` sẽ lại ghi ảnh album cho Phạm Hoài Nam / Lệ Quyên → chạy xong nhớ `UPDATE artists SET photo = NULL WHERE name IN ('Phạm Hoài Nam','Lệ Quyên')`.
-- **Chưa thử micro thật** với quả cầu mới (chỉ micro giả). Chưa có `ANTHROPIC_API_KEY`, `LASTFM_API_KEY`, `YOUTUBE_API_KEY`.
-- Còn từ trước: tài khoản `gayta626` có độ tự tin AI **giả** (lệnh gỡ ở phiên 09/10 tối mục 5); Smart App Control có thể chặn `postgres.exe`.
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa commit** (cộng dồn từ 11/10).
+- Chưa thử micro thật (Web Speech thật cần Internet, Chrome / Edge).
+- Tiếng người khác / TV gần máy có từ cảm xúc ("vui", "buồn") cũng được tính.
 
 ## 6. Bước tiếp theo
-1. **H15 Karaoke** (người dùng đã đồng ý, làm ngay — chi tiết cách làm ở dòng H15 `TIEN_DO.md`): tách giọng L−R + giữ bass trên đồ thị Web Audio của `AudioVisualizer`, lời tô màu dần từng chữ, tuỳ chọn micro + chấm điểm.
-2. **H16 MV**: chờ người dùng tạo `YOUTUBE_API_KEY` → `npm run fetch-mv` + cột `songs.youtube_id` + nút "MV" nhúng YouTube IFrame.
-3. Hỏi người dùng chọn tiếp trong **"💡 Ý tưởng chờ làm"** (I1 nút chết + ♥, I2 "Vì sao NYX chọn bài này?", I3 lời chào, I4 playlist chuyển cảm xúc, I5 Mood Wrapped) — đề xuất thứ tự I1 → I2 → I3 → I4.
-4. Commit khi người dùng yêu cầu. Rồi giai đoạn B (Pi): LD2410C, đồng bộ Pi qua git + `import-music` / `fetch-lyrics` / `fetch-images`, vỏ hộp, systemd + kiosk, slide, tập demo.
+1. Người dùng thử micro thật ở `/scan`.
+2. Commit khi người dùng đồng ý.
+3. Báo cáo theo khung C4.
 
 ---
 
-# 🧭 PHIÊN 09/10/2026 (tối, laptop) — H6 trợ lý giọng nói, H13 Mix, trang thống kê `/stats` + giao diện neon
+# 🧭 PHIÊN 17/10/2026 (tối) — C7 ngưỡng "chưa chắc" + C15 vòng phản hồi + C13 kNN + I2 "Why this song" + sửa AI_NOTES
 
 ## 1. Mục tiêu
-1. `git pull` code mới (2 commit `7ee0951`, `9e57d5e`), đọc NOTES/TIEN_DO, tóm tắt tình trạng. Người dùng chốt: **làm phần mềm trước, Pi để sau**.
-2. **H6 trợ lý giọng nói**: bấm logo AI (Figma `284:120`) → overlay → nói hoặc gõ để: điều khiển nhạc, phát bài/ca sĩ/playlist, **nói cảm xúc → gợi ý bài** (kênh cảm xúc thứ 2, mục C11), **chuyển tới mọi trang** (trùng tên → hỏi lại). Quy trình: brainstorm → spec → plan → **subagent-driven** (mỗi task 1 agent làm + 1 agent review) → review cả nhánh.
-3. Chỉnh theo góp ý người dùng sau khi thử: lời dẫn + quãng nghỉ, tắt màn hình AI rồi mới phát; icon thanh phát to hơn; sóng âm nhạy theo giọng; nền tím nhạt dần thấy trang phía sau.
-4. **H13 trang Mix/Radio** theo Figma "frame 25" (`79:75`) — xong, xem cuối mục 2.
-5. Bảng bài kiểu Spotify (cột Album · Date added · ⏱) cho trang Mix + Playlist.
-6. **C12 trang thống kê `/stats` mới + `npm run seed-demo`** (thể hiện "hệ thống học được gì" cho môn Hệ thống thông minh): brainstorm → spec → plan 8 task → SDD (mỗi task 1 agent làm + 1 agent review) → review cả nhánh bằng model mạnh nhất → 1 đợt sửa (1 lỗi quan trọng + 5 lỗi nhỏ).
-7. Người dùng gửi ảnh mẫu dashboard ("Infographic Chart") → đổi `/stats` sang **giao diện neon** và đổi 1 biểu đồ thành **biểu đồ tròn** (chọn "How sure the face AI was" → hoa hồng).
-8. Cuối phiên: tóm tắt vào NOTES/TIEN_DO, **commit + push** (người dùng yêu cầu).
+Đầu phiên: tóm tắt tình trạng; trả lời vài câu hỏi (admin chưa thêm được tài khoản; nút "Fetching" chỉ điền chỗ còn thiếu; venv thiếu `scikit-learn` chỉ ảnh hưởng train / test — người dùng đã tự cài). Sau đó người dùng: "làm C15, C13 và I2, sửa AI_NOTES luôn". Claude đề xuất 1 màn demo "hệ thống học từ người dùng" (quét → AI chưa chắc thì hỏi / sửa "Not right?" → dòng "Why this song" có lý do kNN → `/admin` đo tỉ lệ sửa + ảnh để train lại), người dùng: "ok làm đi". Không viết spec riêng (giống I3 / I4).
 
-## 2. Việc đã làm xong (đã commit + push cuối phiên)
-| Việc | File |
+## 2. Việc đã làm xong (chưa commit)
+**Backend `emotune-backend/`**
+| File | Việc |
 |---|---|
-| Spec + plan H6 | `docs/superpowers/specs/2026-10-09-voice-assistant-design.md`, `docs/superpowers/plans/2026-10-09-voice-assistant.md` |
-| **Backend `POST /assistant`** (cần đăng nhập): body `{text, pending?, pick?}` → `{action, reply, source}`; `action.type` = `navigate` / `play` / `mood` / `control` / `choose` / `unknown`; `source` = `rules` / `llm` / `none`. `pending` (từ client) luôn qua `sanitizePending` | `emotune-backend/src/controllers/assistantController.js`, `src/services/assistantService.js` (danh mục: `songModel.getAllSongs`, `artistModel.getArtistsData`, `playlistModel.getPlaylists(userId)`), `src/routes/web.js` |
-| **Bộ luật** `parseCommand` (hàm thuần). Thứ tự xét: trả lời lượt hỏi lại → tên đọc nguyên văn + động từ → điều khiển nhạc → trang cố định → tên bài/ca sĩ/playlist (khớp theo **đoạn chữ liền nhau**, không dấu; chữ dính liền "hiếu thứ hai" = HIEUTHUHAI) → cảm xúc (từ điển + phủ định "không vui" → sad) → chưa hiểu. Trùng tên (điểm cách nhau ≤ 0.15) → `choose` tối đa 4 nút; playlist rỗng / ca sĩ chưa có bài → mở trang thay vì phát. Câu phát: "Mình sẽ phát bài “X” của Y nhé." | `emotune-backend/src/services/assistantRules.js`, `test/assistantRules.test.js` (tổng `npm test` **43/43**) |
-| **LLM dự phòng** Claude Haiku 5.5 `claude-haiku-5-5` (`effort: low`, JSON schema): chỉ khi luật không hiểu **và** có `ANTHROPIC_API_KEY`; timeout 6s, thử lại 1 lần; kết quả kiểm lại bằng `validateLlmAction` (loại hành động, đường dẫn trang, id có thật; câu trả lời ≤ 200 ký tự) | `emotune-backend/src/services/assistantLlm.js`, `.evn.example` (thêm `ANTHROPIC_API_KEY`), `package.json` (`@anthropic-ai/sdk` 0.132.1) |
-| **Kênh điều khiển `control(command)`**: pause / resume / next / volume_up / volume_down / mute / not_for_me / duck / unduck (không có prev). `PlayerHost` giữ cờ **duck** (`duckRef`) để bài mới vẫn nhỏ khi trợ lý đang nói. "Không thích bài này" khi phát playlist → chỉ bỏ qua bài, không chấm điểm | `emotune-frontend/src/contexts/playbackContext.js`, `PlaybackProvider.jsx`, `src/components/PlayerHost.jsx`, `MusicPlayer.jsx` |
-| **Overlay `VoiceAssistant`**: logo AI `button.ai-btn` mở; Esc/✕ đóng; ô gõ "Hoặc gõ yêu cầu…"; 3 câu gợi ý; nút chọn khi trùng tên; `turnRef` chống lượt cũ đóng nhầm lượt mới; bắt đầu nghe bằng `setTimeout(0)` (StrictMode); Esc bắt ở pha capture (không đóng luôn màn lời bài hát). `MainLayout` đóng trợ lý khi bị gỡ (sang `/survey`, `/login`) | `emotune-frontend/src/components/VoiceAssistant.jsx/.scss`, `src/contexts/AIAssistantContext.jsx`, `src/components/Header.jsx`, `src/layouts/MainLayout.jsx`, icon `src/assets/icons/assistant_logo.svg`, `assistant_mic.svg` (tải từ Figma) |
-| **Giọng nói**: Web Speech `vi-VN` + đọc to `speechSynthesis` (không có giọng Việt → chỉ hiện chữ) | `emotune-frontend/src/utils/speech.js` |
-| **Góp ý 1 — lời dẫn + quãng nghỉ, tắt màn hình rồi mới phát**: hiểu lệnh → `prepare` (chưa làm gì; nói cảm xúc thì gọi `/suggest` chọn bài trước, **chưa phát**) → đọc lời dẫn có tên bài ("Nghe bạn hơi buồn, mình sẽ phát bài “…” của …, hợp với tâm trạng của bạn nhé."; bài động viên: "Dạo này bạn hay buồn, mình đổi không khí bằng bài …") → nghỉ 1s (không giọng Việt: để chữ 2.5s) → đóng overlay → trả âm lượng → **mới** phát / chuyển trang / dừng (`deferredRef`, chạy ở cleanup). Esc / ✕ / gõ yêu cầu mới giữa chừng = huỷ lệnh | `VoiceAssistant.jsx`, `assistantRules.js` |
-| **Góp ý 2 — icon thanh phát to hơn**: nút điều khiển 20→26px, Play 42→50px (icon 22px), icon phải + tim 18→24px, loa 16→22px; SVG co giãn theo nút (`svg {width:100%; height:100%}`) | `emotune-frontend/src/components/MusicPlayer.scss` |
-| **Góp ý 3 — sóng âm nhạy theo giọng**: viết lại giống `AudioVisualizer` của trình phát: mỗi vạch 1 dải tần (90Hz–5kHz, trầm ở giữa), tự cân theo mức to nhất gần đây, lên nhanh xuống chậm; `AudioContext.resume()`; dự phòng nhảy theo chữ Web Speech đang nhận (`activityRef`) khi không đọc được mic | `emotune-frontend/src/components/VoiceWave.jsx`, `VoiceAssistant.jsx` |
-| **Góp ý 4 — nền**: `radial-gradient` tím `#261925` đậm giữa (97%) nhạt dần ra mép (35%) → thấy trang phía sau; nút ✕ nền đặc + viền | `VoiceAssistant.scss`, `src/index.css` (thêm `--assistant-bg-rgb: 38 25 37`) |
-| **Bảng bài kiểu Spotify** (người dùng gửi ảnh Spotify): trang Mix `/mix/...` và trang Playlist thêm cột **Album · Date added · ⏱ thời lượng** (ca sĩ vẫn ở dưới tên bài; trang Mix giữ cột Vibe, bỏ Genre). DB: cột mới `songs.album`, `songs.duration` (giây), `songs.added_at` — **đã chạy migrate trên DB laptop** + `npm run fetch-song-info` (đủ thời lượng 10/10, album 8/10; *Meditation*, *Reduce Stress* không có ca sĩ → "—"). Trang playlist dùng ngày thêm vào playlist thật (`playlist_songs.added_at`); trang mix dùng `songs.added_at` → 10 bài cũ cùng hiện thời điểm chạy migrate. Tách hàm dùng chung: `scripts/lib/mp3Duration.js` (fetch-lyrics dùng), `scripts/lib/itunes.js` (fetch-images dùng). Màn ≤ 1000px ẩn Date added, điện thoại chỉ giữ # · Title · Vibe · ⏱. Cột chia theo tỉ lệ để trải đều (trang Mix: grid `60px 4fr 3fr 2fr 1fr 1fr`; trang Playlist: `table-layout: fixed`, Title 40% · Album 30% · Date 20% · ⏱ 72px) | `emotune-backend/db/migrate_song_info.sql`, `db/setup.sql`, `scripts/fetch-song-info.js`, `scripts/lib/*.js`, `scripts/fetch-images.js`, `scripts/fetch-lyrics.js`, `package.json`, `src/model/songModel.js`, `src/model/playlistModel.js`; `emotune-frontend/src/utils/format.js` (`formatDuration`, `formatAdded`), `src/assets/icons/clock.svg`, `src/pages/MixPage.jsx/.scss`, `src/pages/PlaylistPage.jsx/.scss` |
-| Tài liệu | `TIEN_DO.md` (H6 ✅, H13 mới), `CLAUDE.md` (mô tả `/assistant`, `VoiceAssistant`, `control`, test `assistantRules`), `NOTES.md` |
-| **H13 trang Mix/Radio** (Figma `79:75`, 1 lượt `get_design_context`): route `/mix/:key` (`/mix/happy?genre=2` từ trang chủ theo chip thể loại, `/mix/sad?artist=8`, `/mix/radio?artist=8` từ trang ca sĩ). Banner màu theo vibe + ảnh bìa mix 320px + tên 48px + mô tả; Play tròn 80px `#faddff` + Shuffle (icon `mix_play.svg`, `mix_shuffle.svg` tải từ Figma); bảng # / Title / Genre / Vibe, bấm dòng = `playQueue(mix, i)`; "You might also like" = mix khác (bỏ trùng tên). Thẻ mix: **bấm = mở trang, bỏ nút ▶**. `buildMix` / `mixPath` (hàm thuần) thay code dựng mix lặp ở 2 trang; `MixArt` tách khỏi `MixCard` | mới `emotune-frontend/src/pages/MixPage.jsx/.scss`, `src/assets/icons/mix_play.svg`, `mix_shuffle.svg`; sửa `src/utils/mixes.js`, `components/BrowseCards.jsx`, `pages/BrowsePage.jsx`, `pages/ArtistPage.jsx`, `App.jsx` |
-| **Trang thống kê mới `/stats` + `npm run seed-demo`** (spec `docs/superpowers/specs/2026-10-09-stats-page-design.md`, plan `docs/superpowers/plans/2026-10-09-stats-page.md`): 2 phần **"You"** (5 ô tổng quan, "Scans per day, by mood", "Mood by time of day", Top songs / Top artists, "What you play when you feel…") và **"What NYX learned about you"** ("How often NYX got it right", "How sure the face AI was", "What NYX thinks you like, by mood"); nút 7 / 30 ngày; 4 biểu đồ có "View as table"; chú thích hiện khi rê chuột / focus; mốc co giãn bằng container query ở ≤ 1000px và ≤ 640px. Backend `GET /stats?days=7\|30` (`statsModel` → `statsService` hàm thuần → `statsController`). `seed-demo` tạo 5 tài khoản mẫu (`demo30`, `mau_ballad`, `mau_rap`, `mau_pop`, `mau_chill`, mật khẩu `demo1234`) với lịch sử 30 ngày, chỉ xoá / tạo lại chính chúng. **`demo30` và `mau_*` là dữ liệu MẪU do script sinh, khi demo phải nói rõ.** | mới `emotune-backend/src/model/statsModel.js`, `src/services/statsService.js`, `src/controllers/statsController.js`, `scripts/seed-demo.js`, `test/stats.test.js`, `test/demoHistory.test.js`; `emotune-frontend/src/components/stats/*`, `src/pages/MoodPage.jsx`; sửa `src/routes/web.js`, `package.json` |
+| `db/migrate_feedback.sql` (mới), `db/setup.sql` | `mood_history.ai_emotion` (cảm xúc AI đoán khi người dùng sửa / xác nhận), `users.face_consent_at` (đồng ý lưu ảnh). **Đã chạy migrate trên DB máy này** (DB dùng chung HIC, cột cho phép NULL → HIC không ảnh hưởng) |
+| `src/services/moodFixService.js` (mới) | nhớ tạm lượt quét trong RAM (`scanId`, 30 phút, ≤ 500), `isUnsure` (dùng `UNSURE_BELOW` của `adminService`), `fixMood`: xoá dòng gợi ý cũ → `generateSuggestion(..., {source: "fix", aiEmotion})` → lưu ảnh nếu đồng ý |
+| `src/services/faceSamples.js` (mới) | lưu / đếm / xoá ảnh mặt `feedback_faces/<camxuc>/u<id>_<camxuc>_<thời điểm>.jpg` (thời điểm không có `_` để `prepare_data.person_of` tách đúng) |
+| `src/services/similarUsers.js` (mới), `src/model/similarModel.js` (mới) | C13 kNN: `buildVectors`, `cosine`, `nearestNeighbors` (k = 3, ≥ 0.1), `neighborSupport` (≤ 0.5), `rankSongs`, `loadNeighbors` |
+| `src/services/explainService.js` (mới) | I2 `explainPick` → ≤ 3 lý do `{kind, text}` |
+| `src/services/suggestService.js` | `generateSuggestion` dùng kNN, gắn `song.why` (cả từng bài hành trình), nhận `source` / `aiEmotion`, trả `historyId` (bỏ khỏi API bằng `publicResult`) |
+| `src/services/journeyService.js` | `createJourney(userId, from, knn)` xếp hạng có kNN |
+| `src/model/suggestModel.js` | `SONG_COLS` chung, tách `taste_artist` / `taste_genre`, `logSuggestion` ghi `ai_emotion` + `RETURNING id`, `deleteSuggestion` |
+| `src/controllers/scanController.js` | `rememberScan`, chưa chắc → `{unsure, scanId, emotion, confidence, scores}`, chắc → kết quả + `scanId`; `fixMood` cho `POST /scan-feedback` |
+| `src/controllers/suggestController.js` | `source` pick / auto, `publicResult` |
+| `src/model/profileModel.js`, `services/profileService.js`, `controllers/profileController.js` | `GET /profile` trả `shareFaces`; `PUT /profile/faces {on}` (tắt → xoá ảnh) |
+| `src/model/adminModel.js`, `services/adminService.js` | chỉ số thứ 5 `corrections` (≤ 15% / > 30%, drift 0.1) + theo người; `getHealth` trả `faces` (đếm ảnh) |
+| `src/services/adminUserService.js` | xoá tài khoản → xoá ảnh |
+| `src/routes/web.js` | `PUT /profile/faces`, `POST /scan-feedback` |
+| `test/similarUsers.test.js`, `test/explain.test.js`, `test/faceSamples.test.js` (mới), `test/adminHealth.test.js` | `npm test` **167/167** |
 
-Đã kiểm tra trang `/stats` (Task 8, Playwright, tài khoản `demo30`): 1440px đủ 2 phần + 8 mục, 5 ô tổng quan có số, 7 → 30 ngày (30 cột, không nhảy trang), chú thích hiện ở cột ngày / ô theo buổi / cột "got it right" và nằm trọn trong viewport, "View as table" bật tắt được ở 4 biểu đồ, bấm Top songs → thanh phát đổi bài, bấm Top artists → `/artist/<id>`, thanh `Angry` ngắn nhất; tài khoản mới (đã xoá `tmp_stats`) → mọi mục hiện lời nhắc, không lỗi JS; 1000px `scrollWidth` 985, 390px `scrollWidth` 375 (không tràn ngang), bảng điểm sở thích cuộn ngang trong thẻ. Chỉ có lỗi `localhost:5001` (gpio, bình thường).
+**Frontend `emotune-frontend/src/`**
+| File | Việc |
+|---|---|
+| `components/MoodCheck.jsx/.scss` (mới) | `MoodCheck` (thẻ "Not quite sure…", "NYX's guess", Scan again), `MoodFix` ("NYX read you as Sad · Not right?" → 4 cảm xúc còn lại), `MoodChoices` dùng chung |
+| `utils/moodFix.js` (mới) | `sendMoodFix` (410 → `/suggest`), `moodLabel` |
+| `pages/ScanPage.jsx` | kết quả `unsure` → tắt camera, hiện `MoodCheck` |
+| `components/MusicPlayer.jsx/.scss` | dòng "WHY THIS SONG" (ẩn khi MV phủ khung), `MoodFix`, lời cảm ơn sau khi sửa / xác nhận |
+| `components/PlayerHost.jsx` | hành trình I4 giữ thông tin lượt quét cho bài đầu (`q.scan`) |
+| `pages/SettingsPage.jsx/.scss` | thẻ "Help NYX read moods better" + công tắc (`role="switch"`, lưu ngay) |
+| `pages/AdminPage.jsx/.scss`, `components/admin/adminMeta.js`, `UserTable.jsx` | 5 ô (lưới 5 / 3 / 2 / 1 cột theo bề rộng), banner đếm đúng số chỉ số, thẻ "Learning from corrections", cột Corrected |
 
-**Giao diện "neon" cho `/stats` (theo ảnh mẫu người dùng gửi, 09/10 tối):** thẻ xanh tím than gradient, 5 màu cảm xúc mới (`--mood-*` chỉ trong `.stats-page`: happy `#d4741f`, surprise `#a35cf0`, neutral `#1fa99c`, sad `#4d74f0`, angry `#e8456e`; màu kết quả nghe good `#3f7ff5` / neutral `#73758f` / bad `#c4861a` / declined `#e0407a`; phân kỳ sở thích `#4d74f0` / `#e8456e`) — đã chạy `validate_palette` trên nền `#24253e` (xám "about half" cố ý ít màu, luôn có chữ). Mỗi phần tử có class cảm xúc mang biến `--c` → gradient tối→sáng của **chính màu đó** + viền sáng (không trộn màu khác, giữ 1 cảm xúc = 1 màu). Đổi hình: cột ngày **mảnh bo tròn** trên rãnh mờ; "Mood by time of day" thành **lưới chấm** (đường kính ∝ √số lần quét); "got it right" có **donut** lớn (giữa là %) + cột 100% mảnh; **"How sure the face AI was" = biểu đồ hoa hồng** (`ConfidenceRose.jsx`, thay `ConfidenceBars.jsx`: mỗi cảm xúc 1 cánh 72°, độ dài cánh = độ tự tin, giữa = trung bình có trọng số theo số lần quét, rê danh sách/cánh thì cánh khác mờ); ô "Most common mood" có donut tỉ lệ cảm xúc, ô "Scans" có sparkline; ô sở thích bo tròn. Component dùng chung `components/stats/Donut.jsx`. Đã thử Playwright 1440 / 1000 / 390px (`demo30`, 7 và 30 ngày): không tràn ngang (`scrollWidth` 985 / 375), chú thích cột ngày 3 cột đầu/cuối căn mép thẻ. Lưu ý: chuột Playwright phiên này không gửi được sự kiện (lỗi công cụ, DOM `click()` chạy đúng).
+**AI `emotion-scanner/`:** `prepare_data.py` (`FEEDBACK_DIR`, `process_own(..., data_dir, source)`, nguồn "feedback" luôn vào train) + test; `3_backend_server.py`, `requirements.txt` bỏ chữ Pi. Python test **43/43** (venv đã có `scikit-learn`).
 
-Đã kiểm tra (trước trang thống kê): backend `npm test` **43/43**; frontend `npx eslint src` sạch, `npm run build` OK. Playwright (gõ chữ, tài khoản `demo`): 9/9 luồng (xem ca sĩ, phát bài, tạm dừng / phát tiếp / bài tiếp, cảm xúc → `/now-playing`, mở thống kê, chưa có bài, câu lạ, Esc, trùng tên → 2 nút); lời dẫn hiện khi nhạc **chưa** phát, ~2.5s sau đóng rồi mới phát; Esc giữa chừng → không phát; 390px không tràn. Sóng âm thử bằng **mic giả** (Web Audio): cột nhảy 0.5→1.0 theo nhịp, nhiều cột khác nhau. Console chỉ có lỗi `localhost:5001` (gpio, bình thường).
+**Tài liệu:** `AI_NOTES.md` (gỡ Raspberry Pi / hộp nhạc, đầu file: bản đang chạy = full 73,2%, bản 73,5% đã thay; mục 7.1 + 7.2 mới), `TIEN_DO.md`, `CLAUDE.md`, file này; `.gitignore` thêm `emotune-backend/feedback_faces/` + `.superpowers/`.
 
-## 3. Quyết định quan trọng và lý do
+**Kiểm tra:** `npm test` 167/167; `npx eslint src` sạch + `npm run build` OK; Python 43/43; API thật (Node fetch, tài khoản tạm `tmpfix_c15` đã xoá): quét sad 78% → sửa angry → dòng cũ bị thay bằng `angry / ai_emotion sad`; sửa lần 2 cùng `scanId` → 410; ảnh happy 41% → `unsure`; bật đồng ý → ảnh lưu `feedback_faces/happy/u45_…jpg`; tắt → xoá 1 ảnh; `on: "yes"` → 400; `/suggest` không lộ `historyId`; hành trình 5 bài mỗi bài lý do riêng; `mau_ballad` có bài được 2 người giống thích (+0.39). Playwright (Chrome camera giả, ảnh thật từ `data/`): thẻ "Not quite sure" → chọn Sad → `/now-playing` có "Why this song" + lời cảm ơn; quét chắc → "Not right?" → Angry → đổi bài + "NYX had read you as Sad"; công tắc Settings bật / tắt; `/admin` 5 ô ở 1440 / 1100 / 390px; không tràn ngang, không lỗi console.
+
+## 3. Quyết định (Claude chọn, người dùng duyệt màn demo) + lý do
 | Quyết định | Lý do |
 |---|---|
-| **Luật trước, Haiku 5.5 dự phòng** (người dùng chọn) | Lệnh thường gặp nhanh + miễn phí + có test; phần "thông minh" tự viết, giải thích được khi bảo vệ. Haiku = model Claude rẻ nhất (người dùng chọn) |
-| Bộ luật ở **backend**, hàm thuần | Test bằng `node:test`; key LLM không lộ ra trình duyệt |
-| Kết quả LLM **kiểm lại với danh mục** | Không cho LLM bịa id / trang |
-| **Web Speech `vi-VN`**, không tự chạy model speech-to-text | Web Speech đã là STT (máy chủ Google), miễn phí; `speech.js` tách riêng để sau thay Whisper/PhoWhisper cho Pi (Chromium trên Pi không có Web Speech) |
-| Khớp tên theo **đoạn chữ liền nhau**; tên chỉ gồm từ cảm xúc ("Nhạc Buồn") thua câu kể cảm xúc nếu không nói rõ "playlist/bài/ca sĩ" | Tránh hiểu nhầm câu thường ("phát tiếp lần nữa nha" → ca sĩ Lân Nhã; "mình buồn" → playlist "Buồn" thay vì gợi ý) |
-| Trợ lý **nói xong → nghỉ → tắt màn hình → mới làm lệnh**; Esc giữa chừng = huỷ | Người dùng muốn có quãng nghỉ, không phát chen lúc trợ lý đang nói |
-| Nhạc **duck 20%** suốt lúc overlay mở; cờ duck giữ ở `PlayerHost` | Micro không thu lẫn nhạc; bài mới mount vẫn nhỏ |
-| "Không thích bài này" trong playlist chỉ bỏ qua | Playlist không chấm điểm (quy tắc cũ) |
-| Sóng 43 vạch (spec ghi ~45) | Frame Figma thật có 43 vạch |
-| Làm theo SDD nhưng **không commit, không tạo nhánh**; diff để review lấy từ ảnh chụp cây thư mục (index tạm + `write-tree`) | Quy tắc repo: không commit khi chưa được yêu cầu |
-| Thẻ Mix/Radio: **bấm = mở trang** danh sách bài, **bỏ nút ▶ trên thẻ** (người dùng chọn) | Giống album; phát bằng nút Play trong trang |
-| Mix **không lưu DB**, dựng lại từ `/songs` theo đường dẫn (`?genre=`, `?artist=`) | Mix chỉ là bộ lọc kho nhạc; link mở lại / F5 vẫn ra đúng mix, không cần API mới |
-| `/stats`: số liệu tính ở **backend** (`statsModel` 9 câu SQL, đều lọc `user_id` → `statsService` hàm thuần có test) | Test được bằng `node:test`; trình duyệt không phải tải cả lịch sử |
-| Cột cảm xúc lúc quét đặt bí danh **`mood`** trong SQL (`m.emotion AS mood`) | Trùng tên `s.emotion` (vibe bài) → `pg` giữ cột sau, số liệu bị lấy nhầm |
-| `seed-demo`: 1 transaction, **chỉ xoá/tạo 5 tài khoản mẫu**; 5 tên này **bị cấm đăng ký** (`authValidation` lấy từ `PROFILES`) | Không đụng dữ liệu người thật; tránh người thật trùng tên bị xoá im lặng |
-| 3 ngày gần nhất của `demo30` toàn buồn/giận | Để Cheer-up mode **luôn bật** đúng theo luật thật (24h ≥ 4 lần quét, không thì 72h) khi demo |
-| Bố cục `/stats` co giãn bằng **container query** (`container: stats`), không theo cửa sổ | Sidebar chiếm 240px; theo bề rộng vùng nội dung mới đúng |
-| Nút 7/30 ngày chỉ đổi khi **số liệu mới đã về**; lỗi thì quay lại | Nút và số liệu không bao giờ lệch nhau |
-| `/stats` lỗi nhưng `/mood-history` được → **ô Cheer-up vẫn hiện** (`CheerTile.jsx`) | Spec §6; khi demo gặp lỗi DB vẫn thấy trạng thái động viên |
-| Giao diện neon: gradient chỉ **tối→sáng của chính màu cảm xúc**, không trộn cam→hồng→tím trong 1 cột như ảnh mẫu | 1 cảm xúc = 1 màu, người xem không lẫn đoạn nào là cảm xúc nào |
-| Biểu đồ tròn = **hoa hồng cho độ tự tin AI** (5 giá trị, 5 cánh) + danh sách số bên cạnh; bỏ các hình chỉ trang trí của ảnh mẫu (mạng nhện, dây sóng) | Mỗi hình phải đọc ra số liệu — khi bảo vệ trả lời được "biểu đồ này nói gì" |
-| Bảng màu mới chạy `validate_palette` (dataviz) trên nền `#24253e` | Người mù màu vẫn phân biệt được các màu đứng cạnh nhau |
-| Trang Mix bỏ cột Album / Date added / thời lượng, ảnh nhỏ cạnh nút Play, footer công ty (Figma có) → cột **Genre + Vibe** | DB không có album, ngày thêm, thời lượng; ảnh nhỏ không có chức năng; không bịa dữ liệu |
+| Gộp C7 vào C15: chưa chắc → hỏi, không đoán | Cùng 1 thao tác "người dùng nói cảm xúc thật"; ngưỡng 0.6 dùng chung `/admin` |
+| Lượt quét nhớ trong RAM (không bảng mới), ảnh chỉ ghi đĩa khi đồng ý | Ít dữ liệu nhạy cảm nhất; backend khởi động lại thì chỉ mất khả năng sửa (web tự gọi `/suggest`) |
+| Sửa cảm xúc = xoá dòng gợi ý cũ + ghi dòng mới có `ai_emotion` | Xu hướng 1–3 ngày + thống kê dùng cảm xúc thật, không đếm 2 lần; vẫn đo được AI sai |
+| Ảnh mặt: mặc định tắt, tắt / xoá tài khoản → xoá ảnh, tên file theo id | Dữ liệu sinh trắc học → cần đồng ý rõ ràng (đạo đức dữ liệu, dễ bị hỏi khi bảo vệ) |
+| Ảnh phản hồi = nguồn "feedback" luôn vào train | Không đổi các fold người lạ → số macro-F1 cũ vẫn so được |
+| kNN trên vector bài + khảo sát, cosine, k = 3, cộng ≤ 0.5 | Đúng thuật toán chương 2; người mới (chỉ khảo sát) vẫn có láng giềng; hành vi của chính mình vẫn quyết định |
+| "Why this song" lấy đúng các điểm đã dùng, không có thì nói "Something new" | XAI trung thực (không bịa lý do) |
+| Chữ giao diện mới tiếng Anh | Khớp giao diện (giống I3) |
 
-## 4. Lệnh đã chạy / cách chạy lại
+## 4. Lệnh đã chạy + cách chạy lại
 ```bash
-git pull --ff-only                       # a4352df -> 9e57d5e (đầu phiên)
-# Backend (emotune-backend/): .env có sẵn; ANTHROPIC_API_KEY để trống = chỉ dùng bộ luật
-npm install                              # đã cài @anthropic-ai/sdk (máy mới cần chạy lại)
-npm run dev                              # :8080
-npm test                                 # 62/62
-npm run db:migrate -- db/migrate_song_info.sql   # MÁY MỚI / Pi: cột album, duration, added_at (an toàn chạy lại)
-npm run fetch-song-info                  # điền thời lượng (đọc mp3) + album (iTunes) còn thiếu
-npm run seed-demo                        # 5 tài khoản MẪU (demo30, mau_ballad, mau_rap, mau_pop, mau_chill / demo1234) + lịch sử 30 ngày; chỉ xoá/tạo lại chính chúng (id đổi mỗi lần chạy → trình duyệt đang đăng nhập bằng chúng phải đăng xuất rồi đăng nhập lại; 5 tên này bị cấm đăng ký)
-# Frontend (emotune-frontend/)
-npm run dev                              # :5173 — đăng nhập demo/demo1234
-npx eslint src && npm run build
-# curl tiếng Việt trên Git Bash bị hỏng đối số -> dùng \uXXXX trong JSON hoặc --data-binary @body.json (UTF-8)
+npm run db:migrate -- db/migrate_feedback.sql   # (emotune-backend) đã chạy trên DB máy này; máy khác chạy 1 lần
+npm test                                        # (emotune-backend) 167/167
+npx eslint src && npm run build                 # (emotune-frontend) sạch / OK
+PYTHONUTF8=1 venv/Scripts/python -m unittest discover -s tests -t .   # (emotion-scanner) 43/43
+# Playwright: playwright-core trong scratchpad, chromium.launch({ channel: 'chrome', args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }),
+#   page.route('**/scan-and-suggest') thay body bằng ảnh thật trong emotion-scanner/data/ (happy[5] = 41% -> chưa chắc; sad[3..4] = 78%)
 ```
-Thử: Chrome/Edge (cần Internet cho Web Speech) → bấm logo AI → cho phép micro → nói "phát nhạc Sơn Tùng", "bài tiếp", "hôm nay tôi hơi buồn", "cho tôi xem ca sĩ Taylor Swift", "mở trang thống kê"; hoặc gõ vào ô dưới cùng.
-**Khi Claude cần thử Playwright**: kiểm tra cổng trước (`netstat -ano | grep -E ":(8080|5173) .*LISTEN"`); server người dùng đang chạy thì **dùng chung, không tắt** (phiên này từng tắt nhầm server của người dùng nhiều lần).
+```bash
+# chạy lại cả dự án (3 cửa sổ) + PostgreSQL
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+# máy khác: npm install (backend) + npm run db:migrate -- db/migrate_admin.sql + db/migrate_feedback.sql
+```
+- Server lúc phiên chạy: AI :5000, backend :8080 (nodemon), web :5173 đều **của người dùng** (Claude không bật / tắt). Phiên mới kiểm tra cổng trước, đang chạy thì dùng chung.
+- File `docs/EmoTune_bao_cao_cuoi_ki.pptx` (chưa theo dõi trong git) là của người dùng, Claude không đụng.
+- Thử: quét thật → nếu AI chưa chắc sẽ hỏi; ở `/now-playing` bấm "Not right?"; `/settings` → "Help NYX read moods better"; `/admin` → ô Mood corrections + thẻ Learning from corrections.
 
-## 5. Lỗi / việc còn dở
-- **Sự cố tối 09/10 — Windows Smart App Control chặn `postgres.exe`**: tối 09/10 (sau 21:46; lúc 21:46 DB vẫn trả lời truy vấn), Code Integrity (policy `{0283ac0f-…}`, "did not meet the Enterprise signing level") chặn `postgres.exe`. Triệu chứng: PostgreSQL reset mọi kết nối, đăng nhập backend trả 500, rồi dịch vụ không khởi động được (Error 1067). **Cách sửa:** tắt Smart App Control (Windows Security → App & browser control), rồi Start dịch vụ `postgresql-x64-17`. Chẩn đoán: `Get-WinEvent -LogName "Microsoft-Windows-CodeIntegrity/Operational"` và chạy `& "C:\Program Files\PostgreSQL\17\bin\postgres.exe" -V` trong PowerShell (Git Bash: bỏ `&`) (hiện "An Application Control policy has blocked this file"). Nếu lặp lại thì kiểm tra Smart App Control trước.
-- **10/10 rạng sáng — vẽ lại 4 biểu đồ `/stats` theo 4 ảnh mẫu (C12b, chưa commit)**: `DailyChart` thanh ngang chồng; `HourlyChart` (mới, thay `DaypartGrid` đã xoá) sóng chồng theo giờ, nội suy đơn điệu `monotoneSample` để lớp không âm/không cắt nhau; `HitRateChart` vòng đường cong (nội suy bán kính theo góc, không dùng dây cung → không đè số giữa) + 4 sparkline; `ConfidenceRose` mỗi lần quét 1 cánh. Hàm vẽ: `components/stats/chartMath.js`. Backend: `hourly` (24 giờ, `buildHourly`) thay `dayparts`/`buildDayparts`/`daypartOf`; `getConfidence` trả từng lần quét, `buildConfidence` tính `avg`, `count`, `values` (60 lần gần nhất). Tooltip thử bằng chuột Playwright (`browser_hover`) chạy được.
-- **Độ tự tin GIẢ trên tài khoản thật `gayta626` (id 19), 09/10 23:45**: người dùng yêu cầu "fake cho lên biểu đồ" "How sure the face AI was" (tài khoản chỉ chọn cảm xúc bằng tay → `confidence` NULL hết). Đã điền `mood_history.confidence` cho 19 dòng `suggested` (happy ~0.89, surprise ~0.80, neutral ~0.72, sad ~0.66, angry ~0.53 — angry thấp nhất cho khớp điểm yếu thật của model). Chỉ biểu đồ này đọc cột `confidence`. **Gỡ:** `UPDATE mood_history SET confidence = NULL WHERE user_id = 19 AND id IN (30,31,39,41,42,47,49,51,83,84,92,93,95,96,100,101,103,104,105);`. Khi demo phải nói rõ đây là số mẫu.
-- **Giao diện neon `/stats`**: người dùng **chưa xem/góp ý**. Chuột Playwright phiên này không gửi được sự kiện (lỗi công cụ) → nút 7/30 và rê chuột chỉ thử bằng sự kiện DOM; nên tự bấm thử 1 lần trên trình duyệt thật.
-- Việc nhỏ hoãn ở `/stats`: `role="img"` bọc phần tử focus được; mốc ngày DB (`CURRENT_DATE`) và Node (`dayKey`) phải cùng múi giờ (1 máy thì ổn); `seed-demo` chạy 2 lần vắt qua mốc giờ có thể lệch số dòng; số liệu "got it right" gồm cả bài tự bấm phát ở chế độ cảm xúc (câu chữ đã ghi đúng). Quan sát 1 lần (chưa chắc): đổi cỡ 1000 → 390px khi xem 30 ngày thì nút về 7 ngày. Vite dev chạy lâu mà thiếu mục → khởi động lại `npm run dev` frontend.
-- **H13**: người dùng chưa xem trang Mix → chờ góp ý.
-- **Chưa thử micro thật** sau khi viết lại sóng âm (chỉ thử mic giả). Nếu sóng vẫn đứng: xem Console (F12).
-- **Chưa có `ANTHROPIC_API_KEY`** → đường Haiku chưa chạy thật. Khi thêm key: nên đổi `maxRetries: 1` → `0` trong `assistantLlm.js` (tránh chờ ~12s), đặt giới hạn chi tiêu trong Console.
-- Việc nhỏ H6 đã duyệt, hoãn: `/suggest` của cảm xúc chưa chặn lượt cũ; focus / `aria-live` của hộp thoại; kéo thanh âm lượng khi đang duck ghi đè mức duck; `pick` ngoài phạm vi trả 200 `unknown`; chưa rate limit đường LLM; cảm xúc hoà điểm chọn theo thứ tự từ điển; 3 chữ liền nhau của tên 5 chữ vẫn tính là khớp; "bài tiếp" sau 1 bài lẻ khi chưa từng quét → `/scan`; "Mình đang nghe…" còn hiện khi bị chặn micro.
-- DB laptop: tài khoản `demo` đã bị bấm **Skip khảo sát** khi thử; còn 2 tài khoản thử cũ `tmp_h7`, `vinh` (có từ trước).
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa commit** (cộng dồn từ 11/10).
+- Chưa train lại model bằng ảnh phản hồi (chưa có ảnh thật; cần GPU + `data_public/` ở bản HIC). Nhãn người dùng có thể sai → xem ảnh trước khi train.
+- Lượt "chưa chắc" mà người dùng bỏ đi không trả lời thì không ghi → tỉ lệ Unsure trên `/admin` hơi thấp hơn thực tế.
+- ~~kNN chưa dùng cho `/songs/for-you`~~ (xong 18/10); dữ liệu người thật ít, láng giềng phần lớn là tài khoản mẫu `seed-demo` (nói rõ khi demo).
+- Admin vẫn chưa thêm tài khoản được trên web (người dùng hỏi, chưa trả lời có làm không).
+- Việc cũ: ảnh Phạm Hoài Nam, chưa thử micro thật, hạn nộp chưa biết; bài "chờ chút…" ca sĩ ID3 sai (`TINH HÀ "SAY HI"`, đã nhắc người dùng sửa).
 
 ## 6. Bước tiếp theo
-1. Người dùng xem `/stats` giao diện neon (đăng nhập `demo30` / `demo1234`, bấm 7/30 ngày, rê chuột lên hoa hồng) + trang Mix → góp ý.
-2. Người dùng thử micro thật cho trợ lý giọng nói → sửa nếu sai.
-3. Viết spec **C13 "gợi ý theo người dùng tương tự" (lọc cộng tác)**, dùng 4 người dùng mẫu `mau_*` của `seed-demo` làm "hàng xóm".
-4. **Giai đoạn B (Pi), hạn HIC 15/10**: LD2410C, đồng bộ Pi qua git (`git pull` + `npm install` + `npm run db:migrate -- db/migrate_song_info.sql` + `fetch-song-info` / `fetch-images` / `fetch-lyrics` + `seed-demo` nếu cần demo), vỏ hộp, systemd + kiosk, sửa slide, tập demo. Web Speech không chạy trên Chromium của Pi → trợ lý giọng nói trên Pi chỉ dùng ô gõ (hoặc thay `speech.js` bằng Whisper).
-5. Khi demo: nói rõ `demo30` / `mau_*` là **dữ liệu mẫu do script sinh**.
+1. Người dùng thử 3 chỗ trên + góp ý.
+2. (Nếu muốn) admin thêm tài khoản trên web (`POST /admin/users`, mật khẩu tạm).
+3. Viết báo cáo theo khung C4 (mục tiêu đo được: macro-F1, Mood corrections, tỉ lệ nghe hết); commit khi người dùng đồng ý.
 
 ---
 
-# 🧭 PHIÊN 09/10/2026 (chiều, laptop) — màn lời bài hát H12
+# 🧭 PHIÊN 17/10/2026 (chiều) — A-17 admin quản lý tài khoản + kho nhạc (thêm bài trên web giống `import-music`)
 
 ## 1. Mục tiêu
-1. Đọc NOTES/TIEN_DO, tóm tắt tình trạng dự án.
-2. Sửa frame **lyrics** trong Figma (`91:283`) cho giống ảnh NhacCuaTui người dùng gửi (ảnh bìa trái, lời chữ to đậm phải, nền ảnh bìa mờ) — **ít lượt gọi Figma MCP nhất**.
-3. Code màn lời bài hát theo frame đó; **nền mỗi bài một màu khác, không "đen xì"**.
-4. Ghi NOTES, commit + push.
+- Người dùng hỏi "admin làm được những gì" → Claude liệt kê 4 việc CHƯA làm được → "làm những cái này luôn đi" (**bỏ qua phần hỏi thiết kế**, Claude tự chọn): ① đổi quyền trên web, ② khoá / xoá / đặt lại mật khẩu, ③ thêm / sửa / xoá bài hát + ca sĩ, ④ xem dữ liệu riêng 1 người.
+- Sau đó người dùng muốn: **admin thêm bài trên web = như bỏ mp3 vào `music/` rồi chạy script** (tự đọc thông tin, lấy ảnh ca sĩ, bìa, album, MV…) và admin vẫn sửa được.
+
+## 2. Việc đã làm xong (chưa commit)
+**Backend `emotune-backend/`**
+| File | Việc |
+|---|---|
+| `db/migrate_admin.sql` (mới), `db/setup.sql` | cột `users.locked_at` (NULL = bình thường). **Đã chạy migrate trên DB máy này** (DB dùng chung HIC, cột cho phép NULL → HIC không ảnh hưởng) |
+| `src/middleware/auth.js` | `requireAuth` async: verify JWT rồi **hỏi DB** → không còn tài khoản 401, bị khoá 401 `{error:"locked"}`, gắn `req.user`; `requireAdmin` dùng `req.user` |
+| `src/model/userModel.js`, `src/services/authService.js` | thêm `locked_at`; đăng nhập tài khoản khoá → 403 (chỉ báo khi đúng mật khẩu) |
+| `src/model/adminUserModel.js`, `src/services/adminUserService.js`, `src/controllers/adminUserController.js` (mới) | `GET /admin/users`, `GET/PATCH/DELETE /admin/users/:id` (PATCH `{role}` / `{locked}`), `POST /admin/users/:id/reset-password`; hàm thuần `checkUserAction`, `makeTempPassword`, `groupPlaylists`, `summarizeMoods` |
+| `src/model/adminLibraryModel.js`, `src/services/adminLibraryService.js`, `src/controllers/adminLibraryController.js` (mới) | `GET /admin/library`, `GET /admin/library/enrich`, `POST /admin/songs/analyze`, `POST/PATCH/DELETE /admin/songs[/:id]`, `POST/PATCH/DELETE /admin/artists[/:id]`; upload **multer** (RAM, ≤ 40MB); hàm thuần `validateSongFields`, `parseYoutubeId`, `uniqueBase`, `findDuplicate`, `artistGenreOf` |
+| `src/services/libraryEnrich.js` (mới) | chạy nền `fetch-images` → `fetch-song-info` → `fetch-mv` (chỉ khi có `YOUTUBE_API_KEY`), 1 lượt mỗi lúc, có bài mới giữa chừng thì chạy thêm 1 lượt, giữ 30 dòng log |
+| `scripts/lib/mp3Duration.js` | nhận cả Buffer |
+| `src/routes/web.js` | 14 route `/admin/...` (đều `requireAuth, requireAdmin`) |
+| `test/adminManage.test.js` (mới) | 13 test → `npm test` **153/153** |
+| `package.json` | thêm `multer@^2.4.0` |
+
+**Frontend `emotune-frontend/src/`**
+| File | Việc |
+|---|---|
+| `components/admin/AdminLayout.jsx` (mới) | chặn người không phải admin + `AdminTabs` (Health / Users / Library) |
+| `components/admin/AdminDialog.jsx` (mới) | `<dialog>` gốc (`showModal`, Esc, `useId` cho tiêu đề) |
+| `components/admin/UserActions.jsx` (mới) | Make/Remove admin, Lock/Unlock, Reset password (hiện mật khẩu tạm + Copy), Delete (gõ lại tên) |
+| `components/admin/SongForm.jsx` (mới) | chọn mp3 → `/admin/songs/analyze` → điền sẵn tên / ca sĩ / thể loại / vibe (kèm lý do đoán) / album, xem bìa trong file, báo lời tìm được, báo trùng (khoá nút Add); ca sĩ + thể loại gõ tên mới được (datalist) |
+| `components/admin/ArtistForm.jsx` (mới) | tên + ảnh |
+| `pages/AdminUsersPage.jsx`, `pages/AdminUserPage.jsx`, `pages/AdminLibraryPage.jsx`, `pages/AdminManage.scss` (mới) | `/admin/users` (tìm, lọc All/Admins/Locked/Sample, nút Manage), `/admin/users/:id` (tóm tắt, gu, bài nghe nhiều, điểm AI học, playlist, bài thích, 100 hoạt động), `/admin/library` (Songs / Artists, dải trạng thái script nền + Show log, tự tải lại khi xong) |
+| sửa `App.jsx`, `pages/AdminPage.jsx`, `components/admin/UserTable.jsx`, `components/AccountMenu.jsx`, `api.js`, `pages/LoginPage.jsx` | route lồng `/admin/*`; tab trên trang Health; tên người dùng → trang chi tiết; menu "Admin"; bị khoá → trang đăng nhập báo lý do |
+
+**Tài liệu:** `TIEN_DO.md` (A-17 + A-17b), `CLAUDE.md` (API admin, trang admin, migrate, test), file này.
+
+**Kiểm tra:** `npm test` 153/153; `npx eslint src` sạch + `npm run build` OK; curl đủ trường hợp (403 người thường, 409 tự khoá mình / xoá admin / trùng bài / trùng tên ca sĩ, 400 mp3 giả, 401 token của tài khoản đã khoá / xoá); Playwright 1440 + 390px không tràn ngang, không lỗi console: khoá → đăng nhập bị chặn, mật khẩu tạm đăng nhập được, xoá phải gõ tên, chọn mp3 → điền sẵn đúng (Ai Rồi Cũng Sẽ Khác · Hà Nhi · ballad · sad 72%, lời synced, bìa trong file, báo trùng), thêm bài → 3 script nền chạy xong → bảng cập nhật. **Dữ liệu thử đã xoá hết** (kho vẫn 101 bài, 32 ca sĩ).
+
+**Lỗi phát hiện + đã sửa trong phiên:** bảng Users 4 nút/dòng tràn ngang → 1 nút Manage; `.sr-only` trong `th` thoát khỏi bảng cuộn → `th { position: relative }`; 2 hộp thoại chồng nhau trùng `id` tiêu đề → `useId`. (curl Git Bash gửi tiếng Việt sai mã → thử bằng Node `fetch`, không phải lỗi server.)
+
+## 3. Quyết định quan trọng (Claude tự chọn) + lý do
+| Quyết định | Lý do |
+|---|---|
+| Khoá = cột `locked_at` + `requireAuth` hỏi DB mỗi request | Khoá / xoá có hiệu lực ngay (JWT sống 7 ngày); thêm 1 SELECT không đáng kể |
+| Không tự đổi quyền / khoá / xoá mình; admin khác phải gỡ quyền trước khi khoá / xoá | Luôn còn ≥ 1 admin; tránh bấm nhầm mất tài khoản quản trị |
+| Đặt lại mật khẩu = server sinh mật khẩu tạm (`crypto`, 10 ký tự không dễ nhầm), hiện 1 lần | Admin không biết mật khẩu người dùng; DB chỉ lưu bcrypt |
+| Xoá tài khoản phải gõ lại tên | Không hoàn tác (CASCADE xoá lịch sử, playlist…) |
+| Thêm bài trên web **dùng lại đúng hàm của `import-music`** (`scripts/lib/id3`, `importMusic`, `lrclib`, `coverCheck`) + chạy nền 3 script `fetch-*` có sẵn | Người dùng yêu cầu; 1 nguồn logic, web và script cho cùng kết quả; script chỉ điền chỗ thiếu nên chạy lại an toàn |
+| 2 bước: analyze (không ghi gì) → admin xem lại → create | Giống "xem trước → --apply" của script; vibe đoán từ lời có thể sai nên phải cho người duyệt |
+| Ca sĩ / thể loại nhận **tên**, chưa có thì tạo (`canonicalArtists` gộp "Vũ"/"Vũ."/"VU") | Giống script; trước đó chỉ chọn id có sẵn nên không thêm được thể loại mới |
+| Báo trùng theo tên bài + ca sĩ không dấu | Giống script (bài đã có thì bỏ qua) |
+| Script chạy **nền**, request trả ngay; trang hỏi trạng thái mỗi 3s | `fetch-images` mất vài chục giây; không treo form |
+| Upload giữ trong RAM, kiểm tra xong mới ghi file; DB lỗi thì xoá file vừa ghi | Không để file rác |
+| Xoá bài chỉ xoá dòng DB, **giữ file mp3**; ca sĩ còn bài không cho xoá | Lỡ tay thêm lại được; FK `SET NULL` sẽ làm bài mất tên ca sĩ |
+| Trang chi tiết người dùng ghi "Private data of one person…" | Đạo đức dữ liệu (dễ bị hỏi khi bảo vệ) |
+
+## 4. Lệnh đã chạy + cách chạy lại
+```bash
+# đã chạy trong phiên (emotune-backend/)
+npm install multer@2.4.0
+npm run db:migrate -- db/migrate_admin.sql     # đã chạy trên DB máy này
+npm test                                       # 153/153
+# (emotune-frontend/)
+npx eslint src && npm run build                # sạch / OK
+# Playwright: playwright-core trong scratchpad (mất khi hết phiên) -> npm i playwright-core vào thư mục tạm,
+#   chromium.launch({ channel: 'chrome' }), token ở localStorage.emotune_token, sessionStorage.emotune_scanned = "1"
+
+# chạy lại dự án
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+```
+- Máy khác: `npm install` (backend, có multer) + `npm run db:migrate -- db/migrate_admin.sql`.
+- Thử: đăng nhập `demo` / `demo1234` → menu tài khoản → **Admin** → tab Users / Library → Add song → chọn 1 file mp3.
+- Hiện **không có server nào đang chạy** (backend Claude bật nền đã dừng khi phiên kết thúc; frontend :5173 cũng đã tắt) → phiên mới tự bật.
+
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa commit** (cộng dồn từ 11/10: tách HTTM, EmoNet, I3/I4, C14, A-17). `.superpowers/` chưa có trong `.gitignore`.
+- Lượt `fetch-mv` khi thử đã **tìm thêm MV thật cho 5 bài cũ** còn thiếu (Payphone, Si mê you, Sugar, Thức Giấc, Tự Sự) — đúng việc script, giữ lại.
+- Mỗi lượt chạy nền `fetch-images` / `fetch-song-info` lại thử tìm bìa / album cho **mọi** bài còn thiếu (chậm vài chục giây, không hại).
+- Ảnh bìa / ảnh ca sĩ cũ khi thay ảnh mới vẫn nằm trong thư mục; xoá bài không xoá file mp3.
+- Chưa có đổi tên / xoá **thể loại** trên web; chưa thay được file mp3 của bài đã có.
+- Trạng thái script nền chỉ nằm trong RAM của backend (khởi động lại backend là mất log).
+- Việc cũ: `AI_NOTES.md` còn nhắc Pi + số "73,5%" sai, venv thiếu `scikit-learn`, ảnh Phạm Hoài Nam, chưa thử micro thật, hạn nộp chưa biết.
+
+## 6. Bước tiếp theo
+1. Người dùng thử trang Admin (Users, Library, thêm 1 bài mp3 mới thật) → góp ý.
+2. **C7 ngưỡng "chưa chắc"** khi quét (dùng `adminService.UNSURE_BELOW` 0.6 → trả "chưa chắc" + cho chọn lại cảm xúc).
+3. **C15 vòng phản hồi**: lưu cảm xúc người dùng sửa (+ ảnh) để train lại → chỉ số "tỉ lệ sửa cảm xúc" trên `/admin`.
+4. C13 kNN, I2 "Vì sao NYX chọn bài này?"; sửa `AI_NOTES.md`; commit khi người dùng đồng ý; báo cáo theo khung C4.
+
+---
+
+# 🧭 PHIÊN 17/10/2026 — C14 trang admin theo dõi hệ thống + phân quyền admin
+
+## 1. Mục tiêu
+Đầu phiên: đọc `NOTES.md` + `TIEN_DO.md`, tóm tắt tình trạng cho người dùng. Sau đó làm **C14** — phần đồ án còn thiếu theo tài liệu môn C3-2 ("Monitoring success criteria"): trang admin theo dõi **toàn hệ thống** + cảnh báo khi chỉ số tụt. Người dùng chọn gợi ý "hàng 4 ô chỉ số, ô tụt ngưỡng tô đỏ + cảnh báo" và **giao Claude tự thiết kế theo vibe web** (không hỏi thêm). Cuối phiên người dùng hỏi "có phân quyền chưa" → đã giải thích (mục 3).
 
 ## 2. Việc đã làm xong
-| Việc | File |
+**Backend (`emotune-backend/`)**
+| File | Việc |
 |---|---|
-| Figma: frame `91:283` vẽ lại kiểu NhacCuaTui (1440×1024: nền ảnh bìa mờ, trái bìa 300px + tên + ca sĩ + ♥/chia sẻ/⋯, phải 8 dòng lời DM Sans Bold 34, nút ⌄ góc phải, đáy = bản sao thanh phát H11 `186:214` nền trong suốt). Bản cũ giữ ở **`316:300` "lyrics (bản cũ – backup)"** (x = 3247, y = −4120). Tốn **2 lượt** `use_figma` (1 đọc, 1 dựng + chụp trong cùng script) | Figma `lycGTr71v02BpzYgjmZZS3` |
-| Script **`npm run fetch-lyrics`**: tìm lời trên **LRCLIB** (lrclib.net, miễn phí, không key) theo tên bài + ca sĩ; tự đo độ dài mp3 từ header (không cần ffmpeg) để chọn bản **có mốc thời gian khớp ±3s**, không có thì lưu lời thường; có file rồi thì bỏ qua. Kết quả **6/8 bài có lời chạy theo nhạc** (lệch ≤ 0.1s) | mới `emotune-backend/scripts/fetch-lyrics.js`, `emotune-backend/lyrics/.gitignore`; sửa `emotune-backend/package.json` |
-| Backend phục vụ tĩnh `GET /lyrics/<tên mp3>.lrc` (404 = chưa có lời) | `emotune-backend/src/server.js` |
-| Màn **`/lyrics`** (do `PlayerHost` vẽ như `/now-playing`, route `element={null}`): `LyricsView` phủ toàn màn hình (z 19, dưới thanh phát z 20); trái bìa + tên + ca sĩ (link `/artist/:id` nếu có `artist_id`) + nút "Not for me" (chế độ cảm xúc); phải lời: dòng đang hát trắng sáng, tự cuộn tới ~1/3 trên (dừng tự cuộn 3s khi người dùng tự cuộn), bấm dòng = tua; lời thường thì hiện hết + ghi chú; không có lời → "No lyrics for this song yet." / bài không ca sĩ → "Instrumental…". Đóng: nút ⌄ hoặc Esc → về trang trước (nhạc vẫn chạy). Màn ≤ 900px: 1 cột, bìa 64px nằm ngang | mới `emotune-frontend/src/components/LyricsView.jsx/.scss`, `src/utils/lyrics.js` (`parseLrc`, `activeLineIndex`, `lyricsFileName`) |
-| **Nền theo màu ảnh bìa**: `useCoverColor` vẽ bìa lên canvas 40×40 → `dominantColor` (12 dải sắc độ, bỏ điểm xám/đen/trắng) → `lyricsPalette` đặt `--ly-h`, `--ly-s`, `--ly-glow-l`; CSS dựng gradient + ảnh bìa mờ (blur 80px, opacity .24) + lớp tối. Thử: CILU tím 282°, Có Chắc Yêu Là Đây xanh ngọc 169°, Giá Như nâu cam 19°, Muộn Rồi Mà Sao Còn vàng ô-liu | mới `src/utils/coverColor.js`, `src/hooks/useCoverColor.js` |
-| Thanh phát: nút **Lyrics** chạy (bật/tắt `/lyrics`, sáng khi đang mở; điện thoại vẫn hiện), thanh phát gần trong suốt khi đang mở lời | `src/components/MusicPlayer.jsx/.scss`, `src/components/PlayerHost.jsx`, `src/App.jsx` |
-| Tài liệu: H12 ✅ + "Đang ở đâu"; lệnh `fetch-lyrics` + mô tả `/lyrics` | `TIEN_DO.md`, `CLAUDE.md`, `NOTES.md` |
+| `src/middleware/auth.js` | thêm `requireAdmin` (đặt sau `requireAuth`; hỏi `users.role` trong DB mỗi lần → không phải admin = 403) |
+| `src/model/userModel.js`, `src/services/authService.js` | các câu SELECT/RETURNING trả thêm `role`; `toPublicUser` trả `isAdmin` → `/auth/me`, login, register đều có |
+| `src/model/adminModel.js` (mới) | SQL **toàn hệ thống** (không lọc 1 `user_id`): `getDailyRows` (theo ngày, 2 kỳ liền nhau), `getUserRows` (theo người); tham số loại tài khoản mẫu |
+| `src/services/adminService.js` (mới) | hằng số `UNSURE_BELOW = 0.6`, `MIN_SAMPLES = 5`, `MIN_PREV_SCANS = 10`, `TARGETS`, `SAMPLE_USERNAMES` (lấy từ `scripts/lib/demoHistory.js` `PROFILES`); hàm thuần `sumRows`, `metricValues`, `splitPeriods`, `judge`, `buildHealth`, `buildUsers` (có `levels` từng ô); `getHealth` ghép |
+| `src/controllers/adminController.js` (mới), `src/routes/web.js` | route `GET /admin/health?days=7\|30&sample=0\|1` (`requireAuth, requireAdmin`) |
+| `src/services/statsService.js` | export thêm `dayRange` (dùng lại) |
+| `scripts/set-admin.js` (mới), `package.json` | `npm run set-admin -- <tên> [--off]` |
+| `db/setup.sql` | `demo` tạo sẵn với `role = 'admin'`; sửa chú thích cột `role` |
+| `test/adminHealth.test.js` (mới) | 9 test hàm thuần |
 
-Đã kiểm tra: `npx eslint src` sạch, `npm run build` OK, `npm test` 15/15; Playwright 1440px + 390px (4 bài 4 màu nền, dòng sáng + tự cuộn, bấm dòng tua đúng, ⌄ đóng về trang trước nhạc vẫn chạy, không tràn ngang). Console chỉ có lỗi `localhost:5001` (gpio, bình thường) và 404 `gia_nhu.lrc` (bài chưa có lời — đúng).
+**Frontend (`emotune-frontend/src/`)**
+| File | Việc |
+|---|---|
+| `pages/AdminPage.jsx` + `AdminPage.scss` (mới) | trang `/admin`: đầu trang (công tắc "Include sample accounts", 7/30 ngày), dải trạng thái, 4 ô, biểu đồ, bảng người dùng, "How these are measured"; không phải admin → "Admins only" |
+| `components/admin/adminMeta.js` (mới) | nhãn mức `STATUS`, mô tả `METRIC_INFO`, định dạng (`formatValue`, `targetText`, `deltaOf`, `shortDay`, `lastActive`) |
+| `components/admin/trendMath.js` (mới) | `yDomain`, `segments` (ngày trống = đứt nét), `segmentPath` (đường cong đơn điệu, dùng `stats/chartMath.monotoneSample`) |
+| `components/admin/HealthTile.jsx` (mới) | 1 ô chỉ số + `StatusPill` (icon + chữ) + sparkline có vạch mục tiêu |
+| `components/admin/TrendChart.jsx` (mới) | biểu đồ theo ngày (vạch Target/Alert, vùng báo động, chấm rỗng = ngày < 5 mẫu, rê chuột/Tab, View as table — dùng lại `stats/StatsCard`) |
+| `components/admin/UserTable.jsx` (mới) | bảng theo người, tô ô có vấn đề, nhãn "sample" |
+| `App.jsx` | route `/admin` |
+| `components/AccountMenu.jsx` | mục "System health" (chỉ khi `user.isAdmin`) |
+| `components/PageAmbient.scss` | nền `/admin` xanh ngọc – chàm, có báo động thì ngả hồng đỏ (`[data-health='alert']`) |
+
+**Tài liệu:** `TIEN_DO.md` (C14 ✅, A-16 phân quyền ✅, tổng quan, nhật ký), `CLAUDE.md` (API `/admin/health`, trang `/admin`, `set-admin`, test `adminHealth`), file này.
+
+**Kiểm tra:** `npm test` **140/140**; `npx eslint src` sạch + `npm run build` OK; curl: admin 200, `demo30` 403, không token 401; Playwright 1440px (7/30 ngày, công tắc mẫu, rê chuột, View as table 30 dòng, menu tài khoản có/không có "System health") + 390px (không tràn ngang), không lỗi console.
+
+**Lỗi phát hiện + đã sửa trong phiên:** (a) 390px tràn ngang 88px do chữ `.sr-only` (absolute) trong bảng cuộn ngang thoát ra ngoài → `.rate-cell { position: relative }`; (b) sparkline không vẽ ngày đứng riêng (line dài 0) → path `h0.01` đầu tròn; (c) đường theo ngày nhảy 0 ↔ 100% vì ngày chỉ 1 lượt nghe → chấm rỗng + chú thích; (d) helper vẽ tách khỏi `HealthTile.jsx` sang `trendMath.js` (luật react-refresh).
 
 ## 3. Quyết định quan trọng và lý do
 | Quyết định | Lý do |
 |---|---|
-| Figma: sửa thẳng `91:283` (giữ id) + clone bản cũ làm backup; bỏ bước dò thư viện design system | Người dùng muốn ít lượt MCP; file không dùng thư viện |
-| Nguồn lời: **LRCLIB** qua script tải về file (giống `fetch-images`), không gọi API lúc chạy web | Web/Pi không cần mạng khi demo; có mốc thời gian để làm kiểu karaoke |
-| Chọn bản lời theo **độ dài mp3** (±3s) | Mỗi bài trên LRCLIB có nhiều bản (radio/MV/999s); lấy nhầm thì lời lệch nhạc |
-| Lời bài **không đưa lên git** (`lyrics/.gitignore` = `*` + `!.gitignore`, giống `music/`) | Có bản quyền; máy mới / Pi chạy `npm run fetch-lyrics` |
-| Nền = **màu chủ đạo ảnh bìa**, chỉ lấy sắc độ + độ đậm, độ sáng CSS giữ tối vừa; không ảnh / ảnh đen trắng → màu theo tên bài (`hueFromText`) | Người dùng: "mỗi bài mỗi background, đừng đen xì"; chữ trắng vẫn đọc rõ |
-| `@property --ly-h/--ly-s/--ly-glow-l` | Đổi bài nền chuyển màu mượt (biến CSS thường không chuyển dần) |
-| Hue 40–190 (vàng/xanh lá) vệt sáng 26% (khác 36%), phủ tối 16%, dòng mờ 58% trắng, dòng đang hát có quầng sáng | Bìa vàng làm dòng mờ khó đọc (đã thấy khi thử) |
-| Dòng đang hát sáng, dòng khác mờ (Figma để trắng hết) | Có mốc thời gian thì kiểu karaoke dễ theo hơn |
-| Giữ thanh phát H11 (tiến độ ở giữa), không làm thanh tiến độ dài full như NCT; bỏ ♥/chia sẻ/số lượt (Figma có) | Code dùng chung 1 thanh phát mọi trang; DB không có lượt thích/chia sẻ |
-| Font lời: Be Vietnam Pro 700 (Figma ghi DM Sans) | Vẽ riêng cho tiếng Việt, dấu không chồng; đã dùng cho tên bài ở `/now-playing` |
+| 4 chỉ số: **tỉ lệ nghe hết** (good / mọi lượt nghe kể cả Not for me — giống `/stats`), **độ tin cậy AI trung bình** (chỉ quét camera), **tỉ lệ quét "chưa chắc"**, **lượt quét** (camera + chọn tay) | Đo cả 2 module thông minh (nhận diện: tin cậy, chưa chắc; gợi ý: nghe hết) + mức sử dụng |
+| "Chưa chắc" = tin cậy < `UNSURE_BELOW` **0.6**, đặt 1 chỗ | Dữ liệu thật ~12% lần quét < 0.6. **C7 dùng lại hằng số này** → trang admin và suy luận cùng định nghĩa |
+| Ngưỡng (Claude tự chọn, đổi ở `TARGETS`): nghe hết ≥ 50% / < 40%; tin cậy ≥ 70% / < 60%; chưa chắc ≤ 15% / > 25%; lượt quét giảm 25% = theo dõi, 50% = báo động (chỉ so khi kỳ trước ≥ 10 lượt); 0 lượt = báo động | Đặt quanh mức dữ liệu hiện có để thấy khi tụt |
+| **Drift**: xấu đi so với kỳ trước ≥ 10 điểm (tin cậy ≥ 5) → báo động dù vẫn trên ngưỡng | Tinh thần C3: bắt hệ thống "trôi", không chỉ ngưỡng cố định |
+| < 5 mẫu → "Low data", không đoán | 1 lượt nghe = 0% hoặc 100% → tránh báo động giả |
+| Tài khoản mẫu seed-demo **ẩn mặc định** (công tắc bật lại) | Trung thực khi bảo vệ |
+| Bảng theo từng người | Tài liệu môn: phân bố lỗi theo người |
+| **Phân quyền**: dùng cột `users.role` có sẵn (`user`/`admin`); chặn thật ở backend (`requireAdmin`), frontend chỉ ẩn menu + hiện "Admins only"; **không ghi role vào JWT**, hỏi DB mỗi lần | Gỡ quyền có hiệu lực ngay; sửa frontend không vượt được backend; đăng ký không nhận `role` từ client → không tự phong admin |
+| Chỉ 2 vai trò, chỉ `/admin/health` cần admin; API khác vẫn "chỉ dữ liệu của mình" (lọc `user_id`) | Đủ cho đồ án; chưa có giao diện đổi quyền (dùng lệnh `set-admin`) |
+| Giao diện tiếng Anh, thẻ neon như `/stats`; màu MỨC riêng xanh `#3ccf8e` / vàng `#f5b031` / hồng đỏ `#ff5c7a` / xám `#8f91ad` (tương phản ≥ 4.5:1 trên `#24253e`, đã đo), luôn kèm icon + chữ; ô báo động phát sáng nhịp chậm (tắt khi "giảm chuyển động") | Khớp giao diện; không nhầm màu cảm xúc; đọc được khi mù màu |
 
-## 4. Lệnh đã chạy / cách chạy lại
+## 4. Lệnh đã chạy + cách chạy lại
 ```bash
-# Backend (emotune-backend/) — .env có sẵn trên laptop, PostgreSQL 17 đang chạy
-npm run fetch-lyrics        # tải lời còn thiếu vào lyrics/ (cần mạng; có file rồi thì bỏ qua)
-npm run dev                 # :8080 (nodemon)
-npm test                    # 15 test
-curl -I localhost:8080/lyrics/cilu.lrc          # 200
-# Frontend (emotune-frontend/)
-npm run dev                 # :5173 — đăng nhập demo/demo1234
-npx eslint src && npm run build
-```
-Thử: phát 1 bài (ô tìm kiếm gõ "cilu" + Enter, hoặc chọn cảm xúc) → bấm icon **Lyrics** (cột phải thanh phát) → `/lyrics`.
-Playwright MCP báo "Browser is already in use" → còn Chrome của phiên trước: tìm `chrome.exe` có `mcp-chrome-970c08b` trong dòng lệnh (không có `--type=`) rồi `Stop-Process`.
+# đã chạy trong phiên
+npm run set-admin -- demo            # (emotune-backend) cấp admin cho demo trên DB máy này
+npm test                             # (emotune-backend) 140/140
+npx eslint src && npm run build      # (emotune-frontend) sạch / OK
+# Playwright: npm i playwright-core vào thư mục tạm, chromium.launch({ channel: 'chrome' }),
+#   token ở localStorage.emotune_token, sessionStorage.emotune_scanned = "1"
 
-## 5. Lỗi / việc còn dở
-- *Giá Như*, *Khó Giữ Chân Thành*: LRCLIB không có → tự tạo `emotune-backend/lyrics/gia_nhu.lrc`, `kho_giu_chan_thanh.lrc` (mỗi dòng 1 câu; thêm `[mm:ss.xx]` đầu dòng thì chạy theo nhạc).
-- Máy khác / Pi chưa có lời → `npm run fetch-lyrics` (lyrics/ không có trong git).
-- Backend trên laptop đang chạy bằng `node src/server.js` (Claude bật nền) → không tự nạp lại khi sửa code; tắt rồi `npm run dev`.
-- Figma `91:283`: chưa vẽ trạng thái "dòng đang hát" như code; backup `316:300` xoá tay nếu không cần.
-- Còn từ trước: Figma `294:134` icon thừa `298:210`; ảnh Phạm Hoài Nam / Lệ Quyên là ảnh album; lời nhắn backend tiếng Việt; shuffle/prev/repeat/thiết bị chưa chạy; tài khoản `demo` đã Skip khảo sát.
-- `.claude/settings.json` (cá nhân) và `docs/*.pptx`, `docs/script-*`, `docs/figma/`, `emotion-scanner/docs/` cố ý không commit.
+# chạy lại dự án
+# AI (emotion-scanner/):   PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py     # :5000, EmoNet
+# Backend (emotune-backend/):  npm run dev     # :8080
+# Frontend (emotune-frontend/): npm run dev    # :5173
+```
+- Thử trang admin: đăng nhập `demo` / `demo1234` → bấm tên tài khoản → **System health** (hoặc `/admin`). Bật "Include sample accounts" để có nhiều dữ liệu (nói rõ là dữ liệu mẫu).
+- Cấp/gỡ quyền: `npm run set-admin -- gayta626` / `npm run set-admin -- gayta626 --off`.
+- Dữ liệu mẫu kết thúc ~08–10/10 → kỳ 7 ngày ít dữ liệu; làm mới bằng `npm run seed-demo` (chỉ xoá/tạo lại 5 tài khoản mẫu).
+- Cuối phiên Claude đã bật backend `node src/server.js` (:8080) + frontend `npx vite` (:5173) nền cho người dùng xem; phiên mới kiểm tra cổng trước, đang chạy thì dùng chung.
+
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa commit** (tách 11/10 + EmoNet + I3/I4 + C14). `.superpowers/` chưa có trong `.gitignore`.
+- Số liệu thật 17/10 (kỳ 7 ngày, không tính mẫu): độ tin cậy 69% (tụt 5 điểm), chưa chắc 50% (`demo`, 8 lần quét), lượt quét giảm 79% → 3 báo động — **đúng dữ liệu, không phải lỗi**.
+- Chưa có giao diện đổi quyền trên web (đã đề xuất: cột "Role" + nút trong bảng "By user"; người dùng chưa trả lời).
+- Ô chỉ số tô màu thay đổi theo chiều tốt/xấu kể cả khi đổi rất nhỏ (vd −2 điểm màu hồng dù "Healthy") — cố ý theo quy tắc dataviz, có thể đổi nếu người dùng thấy rối.
+- Lưu ý cũ phiên 16–17/10 (mục 5 bên dưới) vẫn còn: `AI_NOTES.md` cũ + nhắc Pi, venv thiếu `scikit-learn`, ảnh Phạm Hoài Nam, chưa thử micro thật, hạn nộp chưa biết.
 
 ## 6. Bước tiếp theo
-1. Người dùng mở web xem màn lời bài, góp ý (màu, cỡ chữ).
-2. **H6 trợ lý giọng nói** (Figma `284:120`) — chốt Web Speech API hay cách khác; luật từ khoá hay LLM; đặt lại nút mic.
-3. **Giai đoạn B phần cứng HIC (hạn 15/10)**: LD2410C, đồng bộ Pi qua git + migrate DB + `fetch-images`/`fetch-lyrics`, vỏ hộp, systemd + kiosk, sửa slide ("đèn LED" → OLED + nút chạm + cảm biến), tập demo.
-4. Hỏi yêu cầu nộp môn *Xây dựng hệ thống thông minh*.
+1. **C7 ngưỡng "chưa chắc"** khi quét: dùng `adminService.UNSURE_BELOW` → trả "chưa chắc" + cho người dùng chọn lại cảm xúc.
+2. **C15 vòng phản hồi**: lưu cảm xúc người dùng sửa (+ ảnh) để train lại → thêm chỉ số "tỉ lệ người dùng sửa cảm xúc" vào trang admin.
+3. (Nếu người dùng muốn) đổi quyền admin ngay trên trang `/admin`.
+4. C13 kNN, I2 "Vì sao NYX chọn bài này?"; sửa `AI_NOTES.md`; commit khi người dùng đồng ý; báo cáo theo khung C4.
 
 ---
 
-# 🧭 PHIÊN 09/10/2026 (laptop) — icon cảm xúc động, ảnh Deezer, trang ca sĩ, thanh phát queue-screen
+# 🧭 PHIÊN 16–17/10/2026 — model EmoNet, I3 + I4, đối chiếu tài liệu môn
 
 ## 1. Mục tiêu
-1. Làm mục 0 của phiên 08/10 trên laptop (pull, cài, migrate DB, ảnh).
-2. Đổi emoji + chữ mô tả cảm xúc thành **icon động, không chữ**: vui = mặt trời, buồn = mây mưa, giận = lửa, bình thường ("chill") = bông tuyết, bất ngờ = mặt đeo kính.
-3. Lấy ảnh ca sĩ / bìa còn thiếu bằng **Deezer API** (người dùng gọi là "dever"), không để khung trống.
-4. Sửa thiết kế Figma trang ca sĩ (icon thay emoji), rồi **code trang ca sĩ (H8)**.
-5. Làm lại **thanh phát nhạc giống Figma `queue-screen`** và sửa lỗi thanh phát.
+Nắm lại tình trạng sau khi tách HTTM/HIC → kiểm tra model **EmoNet** mới chép từ HIC → làm **I3** (lời chào cá nhân) + **I4** (hành trình cảm xúc) → đối chiếu đồ án với **tài liệu môn** xem đã "thông minh" theo định nghĩa chưa → bắt đầu bàn **trang admin** theo dõi hệ thống.
 
-## 2. Việc đã làm xong
-| Việc | File |
+## 2. Việc đã làm
+| Việc | Chi tiết / file |
 |---|---|
-| Mục 0: `git pull` (2123c39 → a4352df), `npm install` BE/FE, `db:migrate` `migrate_playlists.sql` + `migrate_images.sql`, `npm run fetch-images` | — (DB laptop) |
-| **H10 icon cảm xúc động** (SVG + CSS animation, tắt khi "giảm chuyển động"; tên cảm xúc chỉ ở `aria-label`/`title`) — dùng ở khung chọn cảm xúc (nút tròn chỉ icon), thẻ "Your mood", "Last scan", ô "Most common mood" `/stats`; bỏ trường `emoji` trong `EMOTIONS` | mới `emotune-frontend/src/components/MoodIcon.jsx/.scss`; sửa `EmotionScanner.jsx/.scss`, `pages/BrowsePage.jsx`, `pages/MoodPage.jsx`, `utils/moodStats.js` |
-| **Deezer** làm nguồn dự phòng trong `fetch-images` (iTunes không có → Deezer) → ảnh **Phạm Hoài Nam**, **Lệ Quyên** (Deezer chỉ có ảnh album của 2 người này). Bìa tự vẽ cho 2 bài không có ca sĩ | `emotune-backend/scripts/fetch-images.js`; ảnh mới `avatars/photos/pham-hoai-nam.jpg`, `le-quyen.jpg`, `covers/meditation.png`, `covers/reduce_stress.png` |
-| Figma trang ca sĩ `294:134`: chip/pill/thanh mood dùng icon thay emoji + chữ, "Chill" → "Neutral"; 5 component `Mood icon/*` (`303:2`), icon import thừa dời sang `304:222` | Figma `lycGTr71v02BpzYgjmZZS3` |
-| **H8 trang ca sĩ** `/artist/:id`: hero ảnh + tên, Play / Shuffle / Follow (= thêm vào gu qua `POST /profile`), Popular (xếp theo lượt nghe của mình), "Fits your mood now" (theo lần quét gần nhất; buồn/giận kéo dài → bài vui), Songs + chip lọc icon, Mixes (+ Radio), Fans also like (ưu tiên cùng thể loại), About + "You & ca sĩ" (% cảm xúc khi nghe). Bấm ca sĩ ở trang chủ / thanh bên / Fans also like đều mở trang này | mới `pages/ArtistPage.jsx/.scss`, `utils/artistPage.js` (hàm thuần), `components/BrowseCards.jsx` (SongCard, SongCover, ArtistCard, MixCard, PlayBadge tách từ BrowsePage), `utils/mixes.js`; sửa `App.jsx`, `SideBar.jsx`, `Shelf.jsx` (prop `toolbar`), `BrowsePage.jsx/.scss` (`.vibe-radio`) |
-| API **`GET /artists/:id/stats`** (cần đăng nhập): `{plays:{songId:{total,month}}, monthTotal, total, moods:[{emotion,count}]}` — lượt nghe từ `recently_played`, cảm xúc khi nghe từ `mood_history` action good/neutral/bad; 400 id sai, 404 không có ca sĩ | `emotune-backend/src/model/artistModel.js`, `services/artistService.js` (`summarizePlays` thuần), `controllers/artistController.js`, `routes/web.js`, test `test/artistStats.test.js` |
-| **H11 thanh phát theo Figma `queue-screen`** (`186:4`, thanh `186:214`): cao 96px, nền `#131218` + viền `#26242c`, 3 cột 320/560/320, ảnh 56px, tên DM Sans 15px, tim gạch chéo = "Not for me", nút Play vòng trắng 42px, thanh 4px tím `#c9a9f5`/`#5f5d64`; phải: lời bài hát, hàng đợi (menu cũ), thiết bị, loa + âm lượng 80px | `components/MusicPlayer.jsx/.scss`, 11 icon mới `assets/icons/bar_*.svg` (Play, Pause, hàng đợi tự vẽ) |
-| Sửa lỗi: icon Play thiếu tam giác (SVG Figma xuất thiếu) | `assets/icons/bar_play.svg` |
-| Sửa lỗi: **file mp3 không tải được → trước đây tự nhảy bài ngay** (thanh phát hiện rồi biến mất, về màn quét). Giờ dừng lại, báo đỏ "Can't play this song: the music file is missing…", khoá Play; Next = sang bài khác **không chấm điểm** | `components/MusicPlayer.jsx/.scss` (`loadError`) |
-| Bảng tiến độ: H8 ✅, H9 cập nhật, thêm H10, H11 | `TIEN_DO.md` |
+| Kiểm tra EmoNet | `emotion-scanner/my_emonet/{emonet.pt, emonet_full.pt, metrics.json}` + script mới (`emonet.py`, `3_backend_server.py`, `cv_common.py`, `experiment_emonet.py`…) **khớp md5** bản `Documents\HIC\emotune-box`. `emonet.pt` = `emonet_full.pt` (bản "full", macro-F1 người lạ 73,2%). Server tự nạp `emonet` (CPU, ~9 ms/ảnh); `/predict` 17/17 ảnh có mặt đúng (ảnh đã train → chỉ chứng minh chạy, không phải độ chính xác); gửi 5 tấm 1 lượt OK; `unittest` 33/34 (1 lỗi do venv thiếu `scikit-learn`) |
+| **I4 hành trình cảm xúc** (backend) | mới `emotune-backend/src/services/journeyService.js` (`JOURNEY_STEPS`, hàm thuần `buildJourney`, `createJourney`) + `test/journey.test.js` (10 test); sửa `src/services/suggestService.js` (`generateSuggestion`: buồn/giận kéo dài + lần quét MỚI → trả thêm `journey: {from, to, songs}`), `src/messages.js` (`getJourneyMessage`, lời dẫn tiếng Việt) |
+| **I4** (frontend) | mới `src/utils/journey.js` (`journeyName` → "Sad → Happy journey"); sửa `components/PlayerHost.jsx` (kết quả có `journey` → phát như hàng đợi, không trộn, Repeat all không lặp, `nowPlaying.journey = {from, to, step, total}`), `components/MusicPlayer.jsx` (biến `scored`: hành trình VẪN chấm `/listen-report`, có 👎, Shuffle khoá; dòng "✦ Sad → Happy journey · 1/5" + lời dẫn) |
+| **I3 lời chào** | mới `src/utils/greeting.js` (hàm thuần `buildGreeting`), `components/HomeGreeting.jsx/.scss`; sửa `pages/BrowsePage.jsx` (dải dưới hàng chip, truyền `cheerOn` từ `moodSummary.status.on`) |
+| Đối chiếu tài liệu môn | Đọc 10 PDF ở `Documents\HTTM\retiliuhcmnphttrinhthngthngminh\` (C0–C4, giáo trình Hulten "Building Intelligent Systems"). Kết luận ở mục 3 |
 
-Đã thử: `npm test` 15/15, `npx eslint src` sạch, `npm run build` OK; Playwright 1440/1000/390px cho trang chủ, `/stats`, khung chọn cảm xúc, trang ca sĩ (có/không dữ liệu, ca sĩ không có bài, id lạ, Follow), thanh phát (Play/Pause, tua, tắt tiếng, menu, mở /now-playing). **Chưa thử trên trình duyệt** bản sửa `loadError` (Playwright mất kết nối) — chỉ lint/build.
+Kiểm tra: backend `npm test` **131/131**; frontend `npx eslint src` sạch + `npm run build` OK; API thật: buồn → sad, sad, neutral, happy, happy; giận → angry(0.9), neutral, neutral, happy, happy; `auto: true` → 1 bài vui như cũ; Playwright 1440 + 390px: chọn Sad → 1/5 → Next → 2/5 + gửi `/listen-report`, Shuffle khoá, lời chào "(2/5)", ▶ mở `/now-playing`, không tràn ngang, không lỗi trang. Tài khoản tạm `tmpjourney*` đã xoá.
 
 ## 3. Quyết định và lý do
 | Quyết định | Lý do |
 |---|---|
-| Icon cảm xúc tự vẽ SVG + CSS (không thư viện, không Lottie) | Nhẹ, cùng 1 bộ hình cho code và Figma (`createNodeFromSvg` cùng SVG) |
-| Chú giải biểu đồ / tiêu đề bảng ở `/stats` **giữ chữ** | Đó là chú thích màu, không phải "icon kèm mô tả" |
-| Deezer chỉ là dự phòng sau iTunes; bài không có ca sĩ → **bìa tự vẽ**, không lấy đại kết quả tìm theo tên | Tránh gán nhầm bìa của người khác |
-| Trang ca sĩ **bỏ thời lượng bài và đoạn tiểu sử** có trong Figma | DB chưa có dữ liệu; không bịa thông tin người thật |
-| "Follow" = thêm ca sĩ vào khảo sát gu (`survey_artists`) | Tận dụng điểm thưởng gu có sẵn trong gợi ý, không thêm bảng |
-| `ArtistPage` bọc `key={id}` | Sang ca sĩ khác thì trạng thái (tải, chip lọc) về đầu, không cần setState trong effect (eslint) |
-| `@container` trong `ArtistPage.scss` giữ selector `.browse-page.artist-page …` | Selector ngắn hơn bị quy tắc gốc đè (lỗi tràn ngang 390px đã gặp) |
-| Thanh phát: bỏ nút mic (trợ lý giọng nói) | Frame `queue-screen` không có; đặt lại khi làm H6. Lời bài hát / thiết bị / shuffle / prev / repeat chỉ hiển thị (làm mờ, "coming soon") |
-| File nhạc lỗi → **không tự nhảy bài** | Tự nhảy làm thanh phát nhấp nháy, người dùng không biết lỗi gì; dễ lặp liên tục khi đang lướt |
-| Figma MCP: người dùng đăng nhập lại tài khoản khác giữa phiên (tài khoản cũ hết lượt Starter) | Gọi `get_metadata` theo id trang (`58:2`) để tìm id frame, rồi `get_design_context` 1 lần/frame |
+| I4 **tự động**, chỉ khi buồn/giận **kéo dài** (đúng điều kiện `decideTarget`), **thay** bài động viên cũ | Người dùng chọn. Theo **nguyên lý đồng điệu (iso principle)**: bắt đầu bằng nhạc khớp tâm trạng rồi chuyển dần |
+| Bước: buồn = sad, sad, neutral, happy, happy; giận = angry, neutral, neutral, happy, happy; mỗi bước chọn ngẫu nhiên trong top 3 bài hợp gu; trong cùng cảm xúc xếp energy tăng (giận: giảm) | Mượt + vẫn ưu tiên gu; thiếu bài 1 bước thì bỏ bước; < 3 bài hoặc không kết thúc bằng vui → quay về 1 bài động viên |
+| Web tự chọn bài (`auto: true`) **không** mở hành trình mới | Tránh hết hành trình lại mở hành trình mãi |
+| Hành trình **vẫn chấm điểm** nghe (khác playlist) | Bài do AI chọn theo cảm xúc → nghe hết / bỏ là phản hồi có ích |
+| I3 = mẫu **C "dải mỏng"** (người dùng chọn qua mockup), chữ **tiếng Anh** cho khớp giao diện; 4 tình huống: đang hành trình → bước x/5; quét > 30 phút / chưa quét → "Scan again"; buồn kéo dài → "NYX is mixing in brighter songs"; bình thường → câu theo cảm xúc | Người dùng duyệt từng phần trong chat |
+| I3 + I4 coi là thay đổi vừa → **không viết spec riêng** | Mô tả đã duyệt trong chat |
+| Trang admin theo dõi hệ thống: **nên làm** | Đáp ứng C3-2 "Monitoring success criteria / alert" — phần đồ án còn thiếu |
 
-## 4. Lệnh đã chạy / cách chạy lại
+**Đối chiếu tài liệu môn — tóm tắt:** ĐẠT: định nghĩa C1 (kết nối người dùng với ML, cải thiện nhờ quan sát người dùng; dữ liệu *ngữ cảnh + hành động + kết quả* khớp `listen-report`), 2 loại ứng dụng (nhận dạng + gợi ý), thu dữ liệu (web + tự chụp), k-fold theo người lạ, tổng quát hoá / loại lỗi / **phân bố lỗi theo người**, so sánh model ứng viên, trade-off, ghi đè tri thức (`assistantRules`), xử lý lỗi Gemini, đạo đức (ảnh không lên cloud). THIẾU: (a) **ngưỡng tin cậy** "chưa chắc" (C3 ví dụ TV chỉ giảm tiếng khi rất chắc); (b) **theo dõi tiêu chí thành công toàn hệ thống + cảnh báo drift**; (c) **người dùng sửa nhãn → huấn luyện lại** (model cảm xúc chưa học từ người dùng); (d) module gợi ý chưa dùng thuật toán ML chương 2 → C13 bằng **kNN** (C4 nêu "gợi ý theo người dùng tương tự"); (e) mục tiêu đo được chưa viết rõ trong báo cáo. Báo cáo nên theo khung C4: hiểu bài toán → mục tiêu → dữ liệu → chỉ số → thành phần → môi trường → kiến trúc → kiểm thử.
+
+## 4. Cách chạy
 ```bash
-# Backend (emotune-backend/): .env đã có trên laptop; PostgreSQL 17 service đang chạy
-npm install && npm run dev                          # :8080
-npm run db:migrate -- db/migrate_playlists.sql      # an toàn chạy lại
-npm run db:migrate -- db/migrate_images.sql
-npm run fetch-images                                # iTunes → Deezer; có file sẵn thì chỉ ghi DB
-npm test                                            # 15 test
-# Frontend (emotune-frontend/)
-npm install && npm run dev                          # :5173 — đăng nhập demo/demo1234
-npx eslint src && npm run build
-# Thử API mới
-TOKEN=$(curl -s -X POST localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"demo","password":"demo1234"}' | node -pe "JSON.parse(require('fs').readFileSync(0)).token")
-curl -s localhost:8080/artists/4/stats -H "Authorization: Bearer $TOKEN"
-# Chép mp3 (bắt buộc để phát nhạc)
-scp "vinh@raspberrypi.local:~/emotion-music-recommender/emotune-backend/music/*.mp3" emotune-backend/music/
-npm run rename-music -- --apply                     # nếu tên file không khớp DB
+# AI (emotion-scanner/): PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py      # :5000, tự dùng EmoNet
+#   test AI: PYTHONUTF8=1 venv/Scripts/python -m unittest discover -s tests -t .    (cần scikit-learn)
+# Backend (emotune-backend/): npm run dev   # :8080      npm test   # 131/131
+# Frontend (emotune-frontend/): npm run dev # :5173      npx eslint src && npm run build
 ```
-Figma: file `lycGTr71v02BpzYgjmZZS3`, trang `58:2` "homepage signup": trang chủ `58:112`, screen play nhạc `92:301`, **queue-screen `186:4`** (thanh `186:214`), lyrics `91:283`, Page playlist `118:6` / `135:143`, **trang ca sĩ `294:134`**, icon cảm xúc `303:2`, trợ lý giọng nói `284:120`.
+- Thử I4 nhanh: đăng nhập `demo30` (dữ liệu mẫu), chọn Sad/Angry — chỉ vào hành trình nếu 1–3 ngày gần nhất buồn+giận > 50% và ≥ 4 lần quét. Hoặc tài khoản mới: `/suggest` sad 4 lần rồi lần 5 ra hành trình.
+- Playwright: `playwright-core` cài trong scratchpad của phiên (mất khi phiên kết thúc) → `npm i playwright-core` vào thư mục tạm, `chromium.launch({ channel: 'chrome' })`; token ở `localStorage.emotune_token`, `sessionStorage.emotune_scanned = "1"`.
+- Kho nhạc giờ **101 bài**: sad 45 · neutral 23 · happy 19 · angry 9 · surprise 5.
 
-## 5. Lỗi / việc còn dở
-- **`emotune-backend/music/` trống** → nhạc không phát (giờ thanh phát báo lỗi đỏ). Cần chép 10 mp3. ⚠ Trong phiên Claude đã tạo rồi xoá mp3 im lặng cùng tên để thử; nếu người dùng có chép mp3 thật vào khoảng 08:20–09:30 sáng 09/10 thì có thể đã mất → chép lại.
-- Bản sửa `loadError` chưa thử trên trình duyệt (Playwright MCP mất kết nối cuối phiên → `/mcp` kết nối lại).
-- Figma `294:134`: còn icon thừa `298:210` trên chữ "Popular" (lệnh dời nó sang `304:222` bị chặn do hết lượt → kéo tay ra ngoài hoặc gọi lại `use_figma`); dòng "You mostly play… when you feel ☀" trong thẻ About chưa chụp kiểm tra; "Fans also like" Da LAB / RPT MCK vẫn là chữ viết tắt trong Figma (Plugin API không đưa ảnh ngoài vào được).
-- Ảnh ca sĩ *Phạm Hoài Nam* / *Lệ Quyên* là ảnh album (có chữ), không phải chân dung.
-- Thanh phát: lời bài hát, thiết bị, shuffle, prev, repeat chưa có chức năng.
-- Lời nhắn cảm xúc (`message` từ backend) vẫn tiếng Việt, giao diện tiếng Anh.
-- Tài khoản `demo` đã bấm **Skip khảo sát** khi Claude thử (survey_done_at có giá trị).
-- `.claude/settings.json` đổi (cá nhân) — không commit. Các file `docs/*.pptx`, `docs/script-*`, `docs/figma/`, `emotion-scanner/docs/` của người dùng vẫn chưa track (cố ý không commit).
+## 5. Còn dở / lưu ý
+- **Chưa commit**: phần tách HTTM (11/10) + toàn bộ file EmoNet (`emotion-scanner/*.py` mới, `my_emonet/`, `results/`, `tests/`) + I3/I4.
+- `TIEN_DO.md` dòng C4–C8 đã được cập nhật từ phiên khác (bên HIC) trong lúc phiên này chạy — giữ nguyên bản đó (C5 + C7 còn 🔄).
+- `AI_NOTES.md`: dòng đầu còn ghi "model đang chạy là seed may mắn 73,5%" — thực tế `emonet.pt` = bản full 73,2% (sửa lại); còn nhắc **Raspberry Pi / hộp nhạc** (mục 1, 6.3, bảng tốc độ) → gỡ cho HTTM.
+- `CLAUDE.md` phần kiến trúc vẫn ghi "model ViT" ở sơ đồ + chưa mô tả `journeyService`, `HomeGreeting`, `utils/greeting.js`, `utils/journey.js`.
+- venv `emotion-scanner` thiếu `scikit-learn`; không có `data_public/` (3,2 GB ở bản HIC); torch bản CPU.
+- `energy` trong kho gần như theo cảm xúc (sad đều 0.3) → xếp theo energy trong cùng cảm xúc của I4 ít tác dụng.
+- Thư mục `.superpowers/` (mockup brainstorm) được tạo ở gốc repo, **chưa có trong `.gitignore`**.
+- **Trang admin đang bàn dở**: câu hỏi chưa được trả lời — "khi bảo vệ, mở trang admin muốn thầy thấy gì đầu tiên?". Bảng `users` chưa có quyền admin.
+- Việc cũ còn đó: tự quét lại cả khi tab ẩn (giữ nguyên), ảnh Phạm Hoài Nam, 10 bài thiếu bìa, chưa thử micro thật, karaoke chấm điểm, hạn nộp môn **chưa biết**.
 
 ## 6. Bước tiếp theo
-1. Chép mp3 vào `emotune-backend/music/` → thử trọn vòng: chọn cảm xúc → nghe → hết bài → chấm điểm → trang ca sĩ hiện lượt nghe / % cảm xúc.
-2. Kết nối lại Playwright (`/mcp`) → thử thanh phát khi thiếu file (dòng báo lỗi + Next).
-3. **H6 trợ lý giọng nói** (Figma `284:120`) — đặt lại nút mic.
-4. Giai đoạn B phần cứng HIC (hạn 15/10): LD2410C, đồng bộ Pi qua git + migrate DB, vỏ hộp, systemd + kiosk, sửa slide ("đèn LED" → OLED + nút chạm + cảm biến).
-5. Hỏi yêu cầu nộp môn *Xây dựng hệ thống thông minh*.
+1. **Trang admin theo dõi hệ thống** (tiếp brainstorm): đề xuất chỉ số theo thời gian — tỉ lệ nghe hết bài, độ tin cậy AI trung bình, tỉ lệ "chưa chắc", tỉ lệ người dùng sửa cảm xúc, số lần quét/người; cảnh báo khi tụt; cần thêm quyền admin (cột `users.is_admin` qua `db/migrate_xxx.sql`).
+2. **Ngưỡng "chưa chắc"** (C7 còn thiếu).
+3. **Vòng phản hồi model**: người dùng sửa cảm xúc → lưu ảnh mặt + nhãn đúng → train lại.
+4. C13 gợi ý theo người tương tự bằng **kNN**; I2 "Vì sao NYX chọn bài này?".
+5. Sửa `AI_NOTES.md` + `CLAUDE.md` (mục 5), thêm `.superpowers/` vào `.gitignore`, commit khi người dùng đồng ý; viết báo cáo theo khung C4.
 
 ---
 
-# 🧭 TỔNG KẾT NGÀY 08/10/2026 — đọc phần này trước (mai làm tiếp trên LAPTOP)
-
-> Phiên này làm trên **PC**. Phiên sau dùng **laptop** → làm đúng mục **"0. Chuyển sang laptop"** trước khi code.
-> Bộ nhớ riêng của Claude (`~/.claude/...`) **không theo sang laptop** → mọi thứ cần biết nằm trong `CLAUDE.md`, file này và `TIEN_DO.md`.
-
-## 0. Chuyển sang laptop (làm theo thứ tự)
-1. ✅ **Đã commit `93c2b9e` + push** (tối 08/10) — laptop `git pull` là có code hôm nay (trang chủ mới H7, ảnh H9, notes).
-   - Ảnh bìa `emotune-backend/covers/*.jpg` và ảnh ca sĩ `emotune-backend/avatars/photos/*.jpg` (~2.5MB) **được commit cùng code** (không nằm trong `.gitignore`) → laptop kéo về là có, không cần tải lại.
-2. **Trên laptop:**
-   ```bash
-   git pull                                   # nhánh master, remote github.com/gayta626/emotion-music-recommender
-   git lfs pull                               # chỉ cần nếu chạy AI (model ViT trong Git LFS)
-   cd emotune-backend && npm install
-   cd ../emotune-frontend && npm install
-   ```
-3. **`.env` không có trong git** → chép `emotune-backend/.env` từ PC sang (USB/Zalo/Drive), hoặc tạo mới theo `emotune-backend/.evn.example`: `PORT=8080`, `DB_HOST`, `DB_PORT` (bắt buộc ghi, code mặc định 5433), `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `JWT_EXPIRES_IN=7d`. JWT_SECRET khác PC cũng được (chỉ phải đăng nhập lại).
-4. **Database trên laptop** (PostgreSQL phải đang chạy):
-   - Laptop **đã có DB** → chạy migrate (an toàn chạy lại, không mất dữ liệu):
-     ```bash
-     cd emotune-backend
-     npm run db:migrate -- db/migrate_playlists.sql   # nếu DB laptop chưa có bảng playlist
-     npm run db:migrate -- db/migrate_images.sql      # MỚI 08/10: cột songs.cover, artists.photo
-     npm run fetch-images                             # thấy file ảnh có sẵn → chỉ ghi tên vào DB, không lên mạng
-     ```
-   - Laptop **chưa có DB** → `npm run db:setup` (XOÁ & tạo lại) rồi `npm run fetch-images`.
-   - Kiểm tra: `curl localhost:8080/songs` → 8/10 bài có `"cover"`.
-5. **Mp3** nằm trong `emotune-backend/music/` (10 file). Laptop thiếu → chép từ PC.
-6. Chạy: backend `npm run dev` (:8080), frontend `npm run dev` (:5173). Đăng nhập `demo`/`demo1234` hoặc `gayta626`.
-7. Figma MCP trên laptop có thể phải đăng nhập lại (`/mcp` → figma → Authenticate) bằng **cùng tài khoản** đang mở file `lycGTr71v02BpzYgjmZZS3`.
-
-## 1. Mục tiêu của phiên
-1. Commit phần trang chủ H1–H5 (xong `32592f4`).
-2. **H7** — làm lại trang chủ cho sát thiết kế (Figma `58:112` + kiểu Spotify web).
-3. **H8** — thiết kế (trên Figma) trang ca sĩ kiểu Spotify khi bấm "Popular artists".
-4. **H9** — mọi chỗ đều có ảnh thật (ảnh bìa bài hát + ảnh ca sĩ cỡ lớn).
-
-## 2. Việc đã làm xong
-| Việc | Trạng thái | File |
-|---|---|---|
-| Commit H1–H5 | ✅ `32592f4` (chưa push) | 35 file |
-| **H7 trang chủ kiểu Spotify**: hàng cuộn ngang dùng chung (tiêu đề 24px, "Show all"/"Show less" xếp lưới, mũi tên ‹ › khi rê chuột); thẻ chia đều theo độ rộng (container query 2.4/4/5/6/7 cột); bìa tự vẽ theo vibe khi bài chưa có ảnh; các mục: chip thể loại → Getting started (banner + playlist + bài) → Made for you → Popular artists → New releases for you → Mixes for every mood → 2 thẻ lớn cuối (Your mood 7 ngày + "How do you feel right now?") | 🔄 code xong, lint/build OK, Playwright 1440px OK; **chưa thử 390px, chưa commit**, chờ người dùng góp ý từng mục | mới `emotune-frontend/src/components/Shelf.jsx/.scss`; viết lại `src/pages/BrowsePage.jsx/.scss`; `src/utils/moodSession.js` (thêm `timeAgo`), `src/components/MoodButton.jsx` (dùng `timeAgo`) |
-| **H8 thiết kế trang ca sĩ** trên Figma | 🔄 xong bản vẽ, **chờ người dùng duyệt rồi mới code** | Figma frame **`294:134`** (trang "homepage signup", x=0, y=7300); component mới `294:115` Song card (NYX cover), `294:121` Track row, `294:129` Artist circle |
-| **H9 ảnh thật** | ✅ 08/10 | xem dưới |
-
-**H9 chi tiết:**
-- DB: cột `songs.cover` (tên file trong `emotune-backend/covers/`) + `artists.photo` (dạng `photos/<ten>.jpg`, nằm trong `emotune-backend/avatars/`) — `emotune-backend/db/migrate_images.sql` (đã chạy trên PC) + `db/setup.sql`.
-- Script `emotune-backend/scripts/fetch-images.js` → `npm run fetch-images` (thêm vào `package.json`).
-- Backend: `src/server.js` phục vụ `/covers/<file>`; query trả thêm `s.cover`, ảnh ca sĩ `COALESCE(a.photo, a.avatar)` (`src/model/{songModel,suggestModel,playlistModel,requestSongModel,artistModel}.js`) → frontend không phải đổi chỗ dùng `artist_avatar`/`avatar`.
-- Frontend: mới `src/utils/images.js` (`coverUrl`, `songImageUrl`), `src/components/SongThumb.jsx`; sửa `pages/BrowsePage.jsx/.scss` (bìa thật `.cover-img`), `components/MusicPlayer.jsx`, `components/PlayerOverlays.jsx`, `components/HeaderSearch.jsx`, `pages/PlaylistPage.jsx`.
-- Kết quả: 8/10 bài có bìa 600px, 9/11 ca sĩ có ảnh 1000px (đã xem từng ảnh — đúng hết). Thiếu: bìa **Meditation**, **Reduce Stress** (không có ca sĩ → bìa tự vẽ); ảnh lớn **Phạm Hoài Nam**, **Lệ Quyên** (Apple chỉ có ảnh album → vẫn dùng avatar tròn 84px cũ).
-- Đã cập nhật `TIEN_DO.md` (H7 🔄, H8 🔄, H9 ✅, nhật ký 08/10) và `CLAUDE.md` (lệnh `npm run fetch-images`).
-
-## 3. Quyết định quan trọng và lý do
-| Quyết định | Lý do |
-|---|---|
-| Lấy ảnh bằng **iTunes Search API** (+ thẻ `og:image` trang ca sĩ Apple Music), **không dùng Deezer** | Mạng nhà chặn Deezer (DNS trả `127.0.0.1`); iTunes miễn phí, không cần key, ra đúng 8/8 bài có ca sĩ |
-| Script chỉ điền chỗ **còn thiếu**; có file trên máy thì **không lên mạng** | Chạy lại bao nhiêu lần cũng được; máy mới/Pi offline vẫn có ảnh sau `git pull` |
-| Không chắc đúng (chỉ thấy bản remix/live, hoặc bài không có ca sĩ) → **bỏ qua, in ra để người dùng tự bỏ ảnh** | Thà thiếu ảnh còn hơn ảnh sai |
-| Thêm cột `artists.photo` riêng, **giữ `avatar` cũ** | Không mất avatar tự cắt; ca sĩ không có ảnh lớn vẫn có ảnh nhỏ |
-| Ảnh lưu file trong repo, DB chỉ lưu tên file | Giống cách làm với mp3/avatar; web không cần Internet lúc chạy |
-| Thứ tự ảnh: bìa thật → ảnh ca sĩ → bìa tự vẽ / chữ viết tắt | Không chỗ nào bị trống |
-| Ảnh có bản quyền → chỉ dùng cho đồ án/demo | Đã nói với người dùng |
-| H7: bỏ hàng "Your playlists"; Popular artists chờ cả `/artists` + `/songs` mới vẽ | Tránh hàng ca sĩ nhảy thứ tự / lệch cuộn |
-| Shelf: danh sách thẻ đổi → `scrollLeft = 0` | Sửa lỗi scroll-snap làm hàng ca sĩ lệch 932px |
-| H8: vẽ Figma trước, người dùng duyệt rồi mới code | Người dùng yêu cầu "design ra figma thử xem" |
-
-## 4. Lệnh đã chạy / cách chạy lại
-```bash
-# Backend (emotune-backend/)
-npm run db:migrate -- db/migrate_images.sql   # đã chạy trên PC
-npm run fetch-images                          # cần mạng chỉ khi thiếu file ảnh
-npm test                                      # 13/13 pass
-npm run dev                                   # :8080
-# Frontend (emotune-frontend/)
-npx eslint src && npm run build               # sạch / OK
-npm run dev                                   # :5173 — Vite hay giữ bản cũ: tắt hẳn rồi chạy lại
-# Thử nhanh
-curl localhost:8080/songs                     # có "cover"
-# trình duyệt: http://localhost:8080/covers/gia_nhu.jpg
-```
-- Bổ sung ảnh thiếu: đặt file đúng tên (trong `emotune-backend/`) rồi `npm run fetch-images`:
-  `covers/meditation.jpg`, `covers/reduce_stress.jpg`, `avatars/photos/pham-hoai-nam.jpg`, `avatars/photos/le-quyen.jpg`.
-- Bài mới sau này: chép mp3 + thêm dòng DB → `npm run fetch-images` (bìa: `covers/<tên file mp3>.jpg`; ảnh ca sĩ: `avatars/photos/<tên không dấu nối gạch>.jpg`).
-- Xem trang chủ mà không quét: sessionStorage `emotune_scanned = "1"`. Máy không có camera → dùng 5 nút chọn cảm xúc.
-
-## 5. Lỗi / việc còn dở
-- Đã commit `93c2b9e` + push (H7 bản đầu, H9, NOTES/TIEN_DO/CLAUDE.md). Chỉnh H7 sau góp ý sẽ là commit mới.
-- H7: chưa thử 390px (điện thoại); người dùng sẽ "chỉ từng mục có tác dụng gì" rồi chỉnh tiếp.
-- H8: chờ duyệt Figma `294:134`. Số liệu trên bản vẽ là giả (HIEUTHUHAI chưa có bài trong DB). Kế hoạch code: route `/artist/:id`; bấm ca sĩ ở trang chủ/sidebar → mở trang ca sĩ (thay vì phát ngay); nút Follow = thêm vào `survey_artists`; hero dùng `artists.photo` mờ dần.
-- Tài khoản thử `tmp_h7`/`tmp12345` (user id 27) còn trong **DB của PC** → xoá khi xong H7.
-- Figma MCP: phiên này dùng 6 lượt (có giới hạn) — xin link frame cụ thể. Bẫy khi vẽ Figma: đặt `figma.skipInvisibleInstanceChildren = false` trước khi sửa lớp ẩn trong instance.
-- Console trình duyệt báo lỗi `localhost:5001` → bình thường (gpio-service chỉ chạy trên Pi).
-- Từ trước: H6 trợ lý giọng nói (Figma `284:120`), hộp nhạc Pi (Task 6–7, F11, `IS_BOX`), giai đoạn B phần cứng — **hạn HIC 15/10/2026**; F5 sửa Figma Sign in/up.
-
-## 6. Bước tiếp theo nên làm
-1. Laptop: làm mục **0** (pull, `.env`, migrate, `fetch-images`), mở web kiểm tra trang chủ có ảnh.
-2. Người dùng duyệt Figma **H8 `294:134`** → code trang ca sĩ (backend `GET /artists/:id` kèm bài; frontend `pages/ArtistPage.jsx`, route `/artist/:id`).
-3. Người dùng góp ý H7 từng mục → chỉnh; thử 390px; xoá `tmp_h7`; commit.
-4. (Tuỳ) cập nhật Figma trang chủ/trang ca sĩ bằng ảnh thật.
-5. H6 trợ lý giọng nói → giai đoạn B (Pi) trước 15/10.
-
----
-
-# 🧭 TỔNG KẾT NGÀY 07/10/2026 — đọc phần này trước
-
-> Chi tiết từng chặng ở các mục "Phiên 07/10/2026 (…)" ngay bên dưới. Bảng tiến độ: `TIEN_DO.md`.
-
-## 1. Mục tiêu của phiên
-1. Đọc NOTES/TIEN_DO, `git pull` code phiên sáng (máy khác).
-2. Chuyển sang **vibe coding** (Claude tự viết code — người dùng xác nhận trực tiếp trong chat).
-3. Hoàn thiện **phần mềm** trước (Pi/phần cứng để sau): trình phát theo Figma, playlist, khảo sát gu, thống kê, tìm kiếm, điện thoại.
-4. Đổi cấu trúc: **Home = trang chủ duyệt nhạc kiểu Spotify**, màn quét chỉ hiện khi mở web / bấm icon / rảnh 60s; logo AI = **trợ lý giọng nói** (chưa làm).
-
-## 2. Việc đã làm xong
-- **Đã commit** (`master`, chưa push): `89a0a7c` trình phát Figma + sóng âm + chọn cảm xúc tay + playlist UI · `c5d0ac3` khảo sát gu, trang playlist, Your mood, tìm kiếm, điện thoại · `40531a3` ghi chú.
-- **Đã commit `32592f4` (35 file, chưa push)** — trang chủ duyệt nhạc + luồng quét mới (mục H trong `TIEN_DO.md`):
-  - Backend: `GET /songs/for-you` (`src/model/songModel.js`, `services/songService.js` + `rankForYou`, `controllers/songController.js`, `routes/web.js`), `detectedEmotion` + `auto: true` (`services/suggestService.js`, `controllers/suggestController.js`), test `test/forYou.test.js`.
-  - Frontend: `components/PlayerHost.jsx` (thay `pages/HomePage.jsx` đã xoá), `pages/ScanPage.jsx`, `pages/HomeRoute.jsx`, `pages/BrowsePage.jsx/.scss`, `components/MoodButton.jsx/.scss`, `assets/icons/record_circle_icon.svg`, `assets/images/create_playlist_banner.png`, `utils/moodSession.js`, `utils/moodStats.js`, `hooks/useIdle.js`; sửa `App.jsx`, `layouts/MainLayout.jsx`, `contexts/playbackContext.js`, `contexts/PlaybackProvider.jsx`, `components/MusicPlayer.jsx/.scss`, `components/Header.jsx/.scss`, `pages/MoodPage.jsx`, `index.html` (font Jomolhari).
-  - Tài liệu: spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md`, plan `docs/superpowers/plans/2026-10-07-browse-home-and-scan-flow.md`, `CLAUDE.md`, `TIEN_DO.md`.
-- Kiểm chứng cuối: `npm test` 13/13, `npx eslint src` sạch, `npm run build` OK, Playwright đủ luồng (mở web → quét → `/now-playing`; Home → trang chủ, nhạc không tắt; lướt → bài theo cảm xúc gần nhất; rảnh 62s → `/scan`; 390px không tràn).
-
-## 3. Quyết định quan trọng (và lý do)
-| Quyết định | Lý do |
-|---|---|
-| Vibe coding; không commit/push khi chưa được bảo | Người dùng yêu cầu; gấp deadline 15/10 |
-| `PlayerHost` luôn sống trong `MainLayout`, khung lớn chỉ ở `/now-playing` | Đổi trang không tắt nhạc (kiểu Spotify) |
-| Màn quét: mỗi **phiên** (`sessionStorage`) quét 1 lần; sau đó icon **record-circle**; đang lướt không bật camera; **rảnh ≥ 60s** → tự quét lại khi hết bài | Người dùng chốt (đáp án A + yêu cầu rảnh) |
-| `/suggest` có `auto: true` → không ghi `mood_history` | Tránh thống kê/xu hướng bị 1 lần quét nhân lên |
-| Nền trình phát đổi màu theo **vibe của bài** (`songs.emotion`), không theo cảm xúc AI đoán | Người dùng yêu cầu |
-| UI tiếng Anh; câu gợi ý (backend) tiếng Việt | Đã chốt từ trước |
-| Xu hướng "động viên" đếm buồn **+ giận** (`decideTarget`, có unit test) | Sửa lỗi cũ C9 |
-| Playlist không chấm điểm `/listen-report` | Điểm gắn với cảm xúc, playlist không có cảm xúc |
-
-## 4. Lệnh đã chạy / cách chạy lại
-```bash
-# Backend (emotune-backend/): .env cần PORT=8080, DB_*, JWT_SECRET, JWT_EXPIRES_IN=7d
-npm run dev                                         # :8080
-npm run db:migrate -- db/migrate_playlists.sql      # DB cũ thiếu bảng playlist (đã chạy trên máy này)
-npm test                                            # 13 test
-# Frontend (emotune-frontend/)
-npm run dev                                         # :5173 — nếu thấy lỗi lạ "X is not defined" trỏ tới ?t=… cũ: tắt hẳn rồi chạy lại
-npx eslint src && npm run build
-# AI (emotion-scanner/) — máy này không có camera: dùng 5 nút chọn cảm xúc trên web
-venv\Scripts\activate && python 3_backend_server.py # :5000
-```
-Tài khoản: `demo`/`demo1234` (chưa làm khảo sát → sẽ vào `/survey`), `gayta626`. Tài khoản thử `tmp_*` đã xoá hết.
-Figma file `lycGTr71v02BpzYgjmZZS3`: trình phát `92:301`, khảo sát `255:5`, khung trang chủ `58:14`, nội dung trang chủ `58:112`, màn trợ lý giọng nói `284:120`. Figma MCP có giới hạn lượt → xin link frame cụ thể, mỗi frame gọi 1 lần.
-
-## 5. Lỗi đang gặp / việc còn dở
-- ⚠ **YÊU CẦU MỚI (cuối phiên, chưa làm): trang chủ chưa giống thiết kế** — người dùng: *"chưa làm sát với giao diện của mình design lắm, làm cho giống với web của mình đi, nhìn qua Spotify với những phần mình làm trùng lặp ở Figma để biết mình muốn gì"*. Người dùng gửi 3 ảnh Spotify web (open.spotify.com, trang chủ). Những điểm Spotify khác bản hiện tại:
-  - Chip **All / Music / Podcasts** ở trên cùng (nền xám, chip đang chọn nền trắng chữ đen).
-  - Hàng đầu: **"Getting started"** (thẻ màu ~360×170, chữ "1. Start playing", nút xanh "Search" + "Show more tips", có mũi tên ‹ › cạnh tiêu đề) **đứng cùng hàng** với **"Popular albums and singles"** ở bên phải.
-  - Tiêu đề mục **to, đậm (~24px)**, bên phải có link **"Show all"** nhỏ màu xám.
-  - Thẻ bài **nhỏ (~134px)**, **ảnh bìa thật**, bo 4–6px, ~7–8 thẻ/hàng ở màn 1440; tên 14px trắng (2 dòng), phụ đề 13px xám; rê chuột: nền thẻ sáng lên + nút ▶ **tròn xanh lá** ở góc dưới phải ảnh; có nút › cuộn hàng.
-  - **Popular artists**: ảnh tròn ~134px, tên + "Artist".
-  - **Popular radio**: thẻ vuông nền màu (tím/hồng/xanh/cam…), nhãn "RADIO", ghép ảnh ca sĩ, tên ca sĩ chữ to ở đáy, mô tả "With … and more".
-  - Hàng chủ đề có **câu mô tả 2 dòng** thay vì tên ca sĩ (vd "Một chút nhạc, một chút đêm — đủ để thả trôi", "Discover the world of Jazz"); **"New releases for you"** có dòng nhỏ phía trên tiêu đề "Brand new music from artists you love."
-  - Cuối trang: các **thẻ lớn nền màu** (~350px, 4 thẻ/hàng) "Videos you might like / Episodes to try" — tương ứng **thẻ podcast `#471824` + 3 khung xám** trong Figma `58:112`.
-  - Nền vùng nội dung `#121212`-ish, sidebar "Your Library" có nút "+ Create", chip "Playlists".
-  → Việc cần làm: **làm lại `BrowsePage` bám Figma `58:112` + bố cục/mật độ của Spotify** (ảnh trong Figma: banner tím, album "Until You", "It's Not Goodbye", "MOIEM", "FALLEN ANGEL", ca sĩ tròn, thẻ podcast "#12: Ngày ta thôi tò mò về nỗi buồn của nhau"). Trước khi code nên hỏi người dùng 1–2 điều: (a) ưu tiên **giống Figma của họ** hay **giống Spotify** khi hai cái khác nhau (vd cỡ thẻ 200px Figma vs ~134px Spotify, tiêu đề 12–16px Figma vs 24px Spotify); (b) có thêm "Show all" / mũi tên cuộn / hàng "radio" không; (c) kho chỉ có 10 bài, nhiều bài không có ảnh bìa → dùng ảnh ca sĩ hay cần thêm ảnh bìa bài hát (thêm cột `songs.cover` + file ảnh).
-- **Phần 2 — trợ lý giọng nói** (bấm logo AI, Figma `284:120`: nền `#261925`, logo AI, micro lớn, sóng âm): chưa thiết kế. Câu hỏi đầu: dùng Web Speech API của Chrome (miễn phí, cần mạng, không chạy trên Chromium của Pi) hay cách khác; hiểu lệnh bằng luật từ khoá hay gọi LLM.
-- Hộp nhạc Pi (Task 6–7, F11, `IS_BOX` chưa xử lý riêng trong luồng mới) + toàn bộ giai đoạn B (LD2410C, systemd/kiosk, slide) — hạn HIC **15/10/2026**.
-- F5: sửa Figma Sign in/up (không phải code).
-
-## 6. Bước tiếp theo nên làm
-1. ~~Commit mục H~~ — xong `32592f4` (chạy lại trước khi commit: test 13/13, lint sạch, build OK).
-2. **Làm lại trang chủ** theo yêu cầu mới ở mục 5 (brainstorming ngắn: hỏi (a)(b)(c) → chỉnh spec `2026-10-07-browse-home-and-scan-flow-design.md` mục 4 → code `pages/BrowsePage.jsx/.scss`). Nếu cần số đo Figma: `get_design_context` node `58:112` (đã gọi 1 lần, nội dung ở mục "Phiên 07/10 (khuya, phần 2)").
-3. Thiết kế + làm **trợ lý giọng nói** (H6).
-4. Giai đoạn B (Pi) trước 15/10.
-
----
-
-# Phiên 07/10/2026 (khuya, phần 2) — trang chủ duyệt nhạc + luồng quét mới
+# 🧭 PHIÊN 11/10/2026 — tách đồ án HTTM / HIC
 
 ## 1. Mục tiêu
-Người dùng chỉ ra hiểu nhầm: logo AI = **trợ lý giọng nói** (phần 2, chưa làm), trang thống kê là trang riêng; nút Home = **trang chủ kiểu Spotify** (Figma `58:112`). Màn quét: hiện khi **mở web (mỗi phiên)**, sau đó thu thành icon **record-circle**; đang lướt không bật camera; **không đụng chuột 60s** thì tự quét lại khi hết bài.
-Quy trình: brainstorming → spec `docs/superpowers/specs/2026-10-07-browse-home-and-scan-flow-design.md` (người dùng duyệt) → plan `docs/superpowers/plans/2026-10-07-browse-home-and-scan-flow.md` → làm inline (executing-plans), **không commit từng task** (quy tắc người dùng).
+Người dùng muốn đồ án HTTM **không còn dấu vết phần cứng** (khi bảo vệ bị hỏi về `gpio-service` thì khó trả lời), phần liên quan Raspberry Pi chuyển sang đồ án HIC. Chốt: HIC = bản đầy đủ (phần mềm + phần cứng); HTTM = thư mục hiện tại, gỡ phần cứng; 2 thư mục trên máy, chưa lên GitHub.
 
-## 2. Việc đã làm (chưa commit)
-| Việc | File |
+## 2. Việc đã làm
+| Việc | Chi tiết |
 |---|---|
-| `GET /songs/for-you` + `rankForYou` (4 test); `detectedEmotion` trong kết quả gợi ý; `/suggest` `auto: true` không ghi `mood_history` | `emotune-backend/src/{model/songModel,services/songService,controllers/songController,services/suggestService,controllers/suggestController,routes/web}.js`, `test/forYou.test.js` |
-| Phiên đã quét / cảm xúc gần nhất (`sessionStorage`), hook rảnh 60s, tính thống kê dùng chung | `src/utils/moodSession.js`, `src/hooks/useIdle.js`, `src/utils/moodStats.js` |
-| `PlayerHost` (thay `HomePage`, nhận lệnh qua `registerPlayer`), `ScanPage`, `HomeRoute`, routes `/scan`, `/now-playing`, `/stats` (`/mood` chuyển hướng) | `src/components/PlayerHost.jsx`, `src/pages/{ScanPage,HomeRoute}.jsx`, `src/contexts/{playbackContext.js,PlaybackProvider.jsx}`, `src/layouts/MainLayout.jsx`, `src/App.jsx`; xoá `pages/HomePage.jsx` |
-| Thanh phát: bấm ảnh/tên bài → `/now-playing` | `MusicPlayer.jsx/.scss` |
-| Header: `MoodButton` (record-circle), thứ tự icon, tên tài khoản → `/stats`, logo AI tạm không làm gì; điện thoại chỉ còn icon tài khoản | `components/MoodButton.jsx/.scss`, `assets/icons/record_circle_icon.svg`, `Header.jsx/.scss` |
-| Trang chủ duyệt nhạc | `pages/BrowsePage.jsx/.scss`, `assets/images/create_playlist_banner.png` (ảnh từ Figma), `index.html` (font Jomolhari) |
+| Commit toàn bộ việc 10–11/10 | `398cfcf` (216 file) — điểm xuất phát chung của 2 đồ án |
+| Chép bản HIC | robocopy cả thư mục (kể cả `.git`, nhạc, model, `.env`, lời bài) → `Documents\HIC_new\emotune-box`, gỡ remote `origin` ở bản đó |
+| Gỡ phần cứng khỏi HTTM | xoá `gpio-service/`, `emotune-frontend/src/hardware.js`; bỏ `GPIO_URL`, `DEVICE_ID`, `IS_BOX` (`config.js`, `.env.example`); `ScanPage` (nút cứng + đèn), `PlayerHost` (đèn), `MusicPlayer` (nút cứng + cảm biến có người); bảng `devices` trong `db/setup.sql` |
+| Tài liệu | xoá spec phần cứng + slide/kịch bản báo cáo 28/09; spec + plan nhiều tài khoản bỏ phần "hộp nhạc"; sửa vài câu nhắc Pi trong spec/plan khác; `CLAUDE.md`, `TIEN_DO.md`, `NOTES.md` viết lại cho HTTM |
 
-Đã thử: `npm test` 13/13, lint sạch, build OK; Playwright: mở web → màn chào → chọn cảm xúc → `/now-playing`; Home → trang chủ (nhạc vẫn chạy); bấm thanh phát → `/now-playing`; hết bài khi đang lướt → `/suggest` với cảm xúc gần nhất, không quét; **rảnh 62s → `/scan`**; F5 ở `/now-playing` → `/`; `/mood` → `/stats`; chip thể loại, bấm ca sĩ, bấm thẻ bài; 390px không tràn ở `/`, `/stats`, `/scan`. Tài khoản thử đã xoá.
-
-## 3. Quyết định trong lúc làm (rulings)
-| Quyết định | Lý do | Nếu sai thì tốn |
-|---|---|---|
-| Lệnh phát gọi thẳng qua `registerPlayer` (không qua state + effect) | Tránh `/now-playing` bị đẩy về `/` vì bài chưa kịp vào state | Chỉ là cách nối dây |
-| Giữ class `is-hidden` thay vì prop `showStage` | Dùng lại CSS có sẵn | Đổi tên class |
-| `/suggest` thêm `auto: true` | Tự chọn bài khi đang lướt từng ghi lịch sử như một lần quét → thống kê + xu hướng cảm xúc bị thổi phồng | 1 tham số API |
-| Điện thoại: ẩn tên tài khoản + chuông, giữ icon tài khoản | Header 390px tràn 13px sau khi thêm icon quét | Người dùng điện thoại không thấy tên mình |
-| Rà soát cuối do Claude tự làm, không gọi agent riêng | Chưa được yêu cầu dùng agent | Ít "mắt thứ hai" hơn |
-
-## 4. Lưu ý
-- Hộp nhạc Pi (`IS_BOX`) chưa xử lý riêng trong luồng mới — để giai đoạn B.
-- Trang chủ: 3 khung xám trong Figma bỏ qua; ảnh ca sĩ tròn (PNG nền trong) nằm giữa thẻ vuông màu vibe.
-- Vite vẫn hay giữ bản cũ (gặp lần 3) → tắt hẳn `npm run dev` rồi chạy lại.
-
----
-
-# Phiên 07/10/2026 (khuya) — hoàn thiện phần mềm
-
-## 1. Mục tiêu
-Người dùng: "làm xong phần mềm trước" (Pi để sau). Làm lần lượt: F13 → F12+C1 → trang playlist → F15 → F16 → C9/C10 → F17 → F14.
-
-## 2. Việc đã làm (commit `c5d0ac3`)
-| Việc | File |
-|---|---|
-| **F13** chữ viết tắt cho ca sĩ không có ảnh (style Figma: nền #2A2533, chữ tím) | `components/ArtistAvatar.jsx/.scss` (dùng chung), `SideBar` |
-| **F12** trang khảo sát gu `/survey` theo Figma `255:5` (tìm không dấu, Show more, Skip/Done). Người chưa làm bị `MainLayout` chuyển tới; `AuthProvider.markSurveyDone()` | `pages/SurveyPage.jsx/.scss`, `App.jsx`, `contexts/AuthProvider.jsx`, `authContext.js`, icon `check_icon.svg`, `chevron_down_icon.svg`; `index.html` thêm DM Sans 500/700 |
-| **C1** điểm thưởng khảo sát: `TASTE_BONUS` trong SQL (+0.5 ca sĩ, +0.5 thể loại), xếp theo `score + taste_bonus` | `emotune-backend/src/model/suggestModel.js` |
-| **Trang playlist** `/playlist/:id`: đổi tên (bấm tên), xoá playlist (⋯), xoá bài, tìm + thêm bài, **Recommended** (cùng ca sĩ +2, thể loại +1, vibe +0.5), dòng đang phát tô tím. Nút + sidebar tạo playlist ("My Playlist #N") | `pages/PlaylistPage.jsx/.scss`, `SideBar`; backend `POST/PATCH/DELETE /playlists`, `GET /songs` (`songModel/Service/Controller`), `playlistModel` (+genre, added_at) |
-| **Nhạc không tắt khi đổi trang**: `MainLayout` luôn vẽ `<HomePage visible>` (route `/` = null); trang khác chỉ ẩn khung lớn, giữ thanh phát. Nút Home trên header chạy | `layouts/MainLayout.jsx`, `App.jsx`, `pages/HomePage.jsx/.scss`, `components/Header.jsx` |
-| **F15** 👎 "Not for me" (`/feed-back` −1, chuyển bài) + ☰ "Request a song" (`/request-song` +1, phát luôn) | `MusicPlayer.jsx`, `PlayerOverlays.jsx`, icon `dislike_icon.svg` |
-| **F16** trang `/mood` (bấm biểu tượng AI giữa header): 3 ô tóm tắt + **Cheer-up mode On/Off kèm lý do**, biểu đồ cột chồng 7 ngày (màu đã kiểm tra mù màu), Show table | `pages/MoodPage.jsx/.scss` |
-| **C9** xu hướng đếm buồn + giận; tách `decideTarget` + 7 unit test (`npm test` 9/9) | `services/suggestService.js`, `test/moodTrend.test.js` |
-| **C10** quét mặt chờ AI trả lời mới gửi tiếp (hết ghi `mood_history` 2 lần); lint frontend **sạch** (tách `aiAssistantStore.js`) | `components/EmotionScanner.jsx`, `contexts/AIAssistantContext.jsx` |
-| **F17** ô tìm kiếm header: không dấu, ↑↓ Enter, bấm là phát (`PlaybackProvider.playSong`) | `components/HeaderSearch.jsx/.scss`, `contexts/playbackContext.js`, `PlaybackProvider.jsx` |
-| **F14** điện thoại 390px + màn 1100px: header 2 hàng, thư viện cuộn ngang, thanh phát 2 hàng | `Header.scss`, `MainLayout.scss`, `SideBar.scss`, `MusicPlayer.scss`, `HomePage.scss` |
-| Hàm tìm không dấu dùng chung | `src/utils/text.js` (`plain`) |
-
-Đã thử: lint sạch, build OK, `npm test` 9/9; curl các API playlist mới (409 trùng tên, 400 tên rỗng, 404 xoá lại); Playwright cho từng tính năng với tài khoản tạm `tmp_*` (đã xoá hết). Tài khoản `demo` **chưa làm khảo sát** → lần đầu đăng nhập sẽ vào `/survey`.
-
-## 3. Quyết định
-| Quyết định | Lý do |
-|---|---|
-| HomePage luôn được giữ trong MainLayout | Trước đó rời trang chủ là mất trình phát → nhạc tắt |
-| Recommended trong trang playlist tính ở frontend | 10 bài, không cần API riêng; lý do gợi ý hiện cạnh bài ("Same artist"...) |
-| Trang Your mood dùng **cùng quy tắc** với backend để giải thích Cheer-up mode | Thể hiện "thông minh" có giải thích được cho môn HTTM |
-| Chữ giao diện mới bằng tiếng Anh (Figma khảo sát là tiếng Việt) | Thống nhất với phần còn lại của web (đã chốt UI tiếng Anh) |
-| Phát từ ô tìm kiếm: chế độ cảm xúc, cảm xúc = vibe của bài | Vẫn chấm điểm khi nghe hết (gắn với vibe bài) |
-
-## 4. Lỗi / lưu ý
-- ⚠ **Vite hay giữ bản cũ** sau nhiều lần sửa liên tiếp (lỗi kiểu `X is not defined` trỏ tới `?t=...` cũ) → tắt hẳn `npm run dev` (kiểm tra cổng 5173 không còn tiến trình node) rồi chạy lại.
-- Sửa file bằng `node -e` trong Git Bash: dấu gạch ngược trong regex (`\s`) dễ bị mất, file CRLF không khớp chuỗi → viết script ra file riêng hoặc dùng Edit, rồi kiểm tra lại.
-- `requestSong` cộng điểm theo cảm xúc hiện tại kể cả khi bài khác vibe (logic cũ, giữ nguyên).
-- Phần mềm còn: F11 + Task 6–7 (hộp nhạc), F5 (sửa Figma Sign in/up).
-
----
-
-# Phiên 07/10/2026 (chiều–tối) — trình phát theo Figma (F10b)
-
-## 1. Mục tiêu
-1. `git pull` code phiên sáng 07/10 (commit `2123c39`: đăng nhập web, khảo sát gu, trang chủ + trình phát, playlist DB + API) rồi tóm tắt tình trạng.
-2. Làm lại trình phát theo Figma frame **`92:301` "screen play nhạc"** (người dùng gửi link sau khi đăng nhập lại Figma MCP).
-
-## 2. Việc đã làm (chưa commit)
-| Việc | File |
-|---|---|
-| Câu SQL gợi ý / xin bài trả thêm `a.avatar AS artist_avatar` (ảnh ca sĩ làm ảnh bìa) | `emotune-backend/src/model/suggestModel.js` (2 câu), `requestSongModel.js` |
-| 9 icon trình phát: 8 tải từ Figma (shuffle, prev, play, next = prev xoay 180°, repeat, mic, queue, loa) + `player_pause.svg` tự vẽ (Figma không có) | `emotune-frontend/src/assets/icons/player_*.svg` |
-| **F10b** viết lại `MusicPlayer`: khung lớn gradient (tên bài, huy hiệu cảm xúc, "bài động viên", lời nhắn, ảnh bìa ≤ 420px tự co) + **thanh phát cố định dưới cùng** (ảnh nhỏ, tên bài/ca sĩ, nút, thanh thời gian tua được, âm lượng + bấm loa để tắt tiếng). Logic chấm điểm `/listen-report`, nút chạm, PIR **giữ nguyên** | `src/components/MusicPlayer.jsx`, `MusicPlayer.scss` |
-| **Nền đổi màu theo vibe của bài** (`songs.emotion`, không phải cảm xúc AI đoán): neutral = hồng mận gốc Figma, happy = vàng cam, sad = xanh dương, angry = đỏ, surprise = tím | `MusicPlayer.scss` (`[data-vibe]` đặt `--g1..--g3`) |
-| Sidebar ngắn lại khi có thanh phát (`body:has(.player-bar)`) | `MusicPlayer.scss` |
-| `CLAUDE.md`: viết lại mục "Cách làm việc" (vibe coding), ghi cấu trúc trình phát mới | `CLAUDE.md` |
-| **Chọn cảm xúc bằng tay** khi không có camera: 5 nút cảm xúc → `POST /suggest` (thay cho quét); có camera thì có link "Pick my mood instead". Vòng quét không gửi ảnh khi camera chưa mở. `/suggest` thêm `surprise` vào `VALID_EMOTIONS` (trước đó chọn surprise → 400) | `src/components/EmotionScanner.jsx/.scss`, `emotune-backend/src/controllers/suggestController.js` |
-| **Sóng âm thay ảnh bìa giữa**: Web Audio đọc tần số bài đang phát, 64 cột đối xứng (bass ở giữa, âm cao ra hai bên), tự cân độ lớn theo bài, nhịp bass làm cả sóng phóng to + vòng sáng đập. `<audio crossOrigin="anonymous">` (backend đã có CORS `*` cho `/music`). Bỏ huy hiệu cảm xúc + "bài động viên", chỉ còn tên bài + lời gợi ý. Tên ca sĩ ở thanh dưới nhỏ (15px) + mờ (55%). Ảnh ca sĩ chỉ còn ở thanh dưới | `src/components/AudioVisualizer.jsx` (mới), `MusicPlayer.jsx/.scss` |
-| Tên bài (khung lớn + thanh dưới) đổi sang font **Be Vietnam Pro** 800/700 (vẽ riêng cho tiếng Việt), chữ thường thay vì in hoa, khung lớn 28–40px | `emotune-frontend/index.html` (thêm font Google), `MusicPlayer.scss` |
-| **Playlist trên giao diện (P3–P5)**: `PlaybackProvider` (bọc trong `MainLayout`) để SideBar bảo HomePage "phát playlist id"; SideBar tab **Playlists**; `HomePage` có `mode` emotion/playlist, `playKey` để mỗi bài tạo `MusicPlayer` mới; chế độ playlist **không gửi `/listen-report`**; hết playlist → về màn quét/chọn cảm xúc. Nút ☰ → menu (cảm xúc: "Add to playlist"; playlist: "View playlist" mở cột hàng đợi). **Thẻ Up next** kiểu YouTube: 15s cuối mờ dần hiện + vòng đếm ngược, bấm = phát luôn, ✕ = ẩn | `src/contexts/playbackContext.js`, `PlaybackProvider.jsx`, `src/layouts/MainLayout.jsx`, `src/components/SideBar.jsx/.scss`, `src/pages/HomePage.jsx`, `src/components/PlayerOverlays.jsx` (mới: Cover, UpNextCard, QueuePanel, QueueMenu), `MusicPlayer.jsx/.scss`, backend `playlistModel.js` (+`artist_avatar`) |
-| **DB máy này chưa có bảng playlist** → đã chạy `npm run db:migrate -- db/migrate_playlists.sql` (chỉ thêm bảng, giữ dữ liệu). Tài khoản `demo` giờ có "My Playlist" 2 bài (Có Chắc Yêu Là Đây, Khó Giữ Chân Thành) do Claude thêm khi thử | DB local |
-| Bỏ qua thư mục log Playwright | `.gitignore` (`.playwright-mcp/`) |
-
-Đã thử: lint (chỉ còn 2 lỗi cũ) + build OK; Playwright 1440×900 và 1280×680, đăng nhập `demo`, giả lập AI bằng cách chặn `/scan-and-suggest` → `/suggest` (máy không có camera): neutral → Next → sad → Next → happy, nền đổi màu đúng, `/listen-report` 200, nhạc phát thật.
-
-## 3. Quyết định
-| Quyết định | Lý do |
-|---|---|
-| Màu nền theo **vibe bài** (`songs.emotion`), huy hiệu vẫn là **cảm xúc người dùng** | Người dùng yêu cầu: bài vui/buồn thì nền đổi cho hợp. Bài động viên (vd người buồn → bài vui) sẽ có nền theo bài |
-| Giữ sidebar khi phát (Figma frame không có sidebar) | Sidebar sẽ chứa tab Playlists (P4) |
-| shuffle / prev / repeat / mic / queue: hiện nhưng `disabled` (mờ, "Coming soon") | Chế độ cảm xúc không có hàng đợi; queue sẽ dùng cho chế độ playlist (P4) |
-| Ảnh bìa = ảnh ca sĩ; không có ảnh / lỗi tải → ô gradient + ♪ | DB chưa có ảnh bìa bài hát; 5 ca sĩ chưa có ảnh |
-
-## 4. Lỗi / việc còn dở
-- Không có camera thì **mỗi bài** phải chọn cảm xúc lại (hết bài → quay về màn chọn). Có thể nhớ cảm xúc vừa chọn nếu cần.
-- 5 ca sĩ không có ảnh → sidebar vẫn hiện ảnh lỗi (F13).
-- Tên bài/ca sĩ dài bị cắt "..." ở thanh phát (cột trái ~290px ở màn 1440).
-- Màn 1280×680 cuộn thêm ~17px (khung lớn có `min-height: 420px`).
-- Đã dùng thêm 1 lượt Figma MCP (`get_design_context` 92:301).
-- ⚠ Sóng âm đi qua Web Audio: nếu `AudioContext` bị trình duyệt giữ "suspended" thì **mất tiếng** (đã `resume()` mỗi lần `play`; người dùng đã bấm Start/chọn cảm xúc nên được phép). Nếu `/music` mất CORS thì cũng mất tiếng.
-- Vite đôi khi giữ bản cũ sau nhiều lần sửa liên tiếp → Ctrl+Shift+R; tắt `npm run dev` bằng TaskStop có thể sót tiến trình node giữ cổng 5173 (đã gặp, phải tắt theo PID).
-- Backend + frontend đang chạy nền từ phiên này (`npm run dev`); tắt máy là mất, lần sau bật lại.
-
-## 5. Bước tiếp theo
-1. ~~P3–P5~~ xong. Còn: trang playlist riêng theo Figma "Page playlist khi đã có nhạc" (xin link frame), xoá bài khỏi playlist trên giao diện (API `DELETE` có sẵn), tạo nhiều playlist (nút + ở sidebar).
-2. Người dùng thử trọn vòng có camera (quét → phát → chấm điểm) trên máy có webcam.
-3. **Commit** F10b khi người dùng đồng ý.
-4. Còn lại như mục 6 phiên sáng 07/10 bên dưới (F12 form khảo sát, F14 điện thoại, phần cứng HIC).
-
----
-
-# Phiên 07/10/2026 (sáng) — vibe coding: đăng nhập web, khảo sát gu, trang chủ/trình phát, playlist
-
-## 1. Mục tiêu
-1. Đọc `NOTES.md` + `TIEN_DO.md` để nắm tình trạng; người dùng chuyển sang **vibe coding** (Claude tự code từng bước).
-2. Xong **F7** (trang Đăng nhập/Đăng ký), **F8** (tên người dùng + Log out), **Task 8** (khảo sát gu phía backend).
-3. Đổi tài khoản Figma MCP (hết lượt) và dựng **F9/F10** (trang chủ + trình phát).
-4. Chốt thiết kế **chế độ Playlist** và làm phần DB + backend của nó (P1, P2).
-
-## 2. Việc đã làm xong (tất cả **chưa commit**)
-| Việc | File |
-|---|---|
-| Quy tắc làm việc mới (vibe coding) | `CLAUDE.md` (mục "Cách làm việc"), memory `vibe-coding-mode.md` + `MEMORY.md` |
-| **F7** đăng nhập/đăng ký: form gọi `POST /auth/login`, `/auth/register`, lưu token rồi về `/`; ô nhập lại mật khẩu; `/` và `/settings` bọc `RequireAuth` | `emotune-frontend/src/pages/LoginPage.jsx`, `RegisterPage.jsx`, `AuthPage.scss`, `src/components/RequireAuth.jsx`, `src/App.jsx`, `src/api.js` (sửa `setToken` thiếu key) |
-| Chữ giao diện auth + thông báo lỗi backend đổi sang **tiếng Anh** | 2 trang trên + `emotune-backend/src/services/authService.js`, `authValidation.js`, `src/controllers/authController.js` |
-| **Sửa lỗi 500 khi đăng ký**: `.env` thiếu `JWT_SECRET`, `JWT_EXPIRES_IN=7d` → đã thêm | `emotune-backend/.env` (không vào git) |
-| **F8**: `GET /auth/me` khi vào web; Header hiện tên + nút **Log out** | `src/contexts/authContext.js` (`useAuth`), `src/contexts/AuthProvider.jsx`, `src/components/Header.jsx`, `Header.scss` |
-| **Task 8**: `GET /genres`, `GET /profile`, `POST /profile` (ghi đè trong 1 transaction, mảng rỗng = bỏ qua, id lạ → 400) | `src/model/genreModel.js`, `profileModel.js` (viết lại), `src/services/genreService.js`, `profileService.js`, `src/controllers/genreController.js`, `profileController.js`, `src/routes/web.js` |
-| **F9 + F10 (bản tự dựng, sẽ làm lại)**: màn chào + nút Start; khung camera tròn; trình phát có huy hiệu cảm xúc, lời nhắn, đĩa xoay, thanh thời gian, Play/Next, màu theo cảm xúc. Logic chấm điểm + nút chạm + PIR giữ nguyên | `src/pages/HomePage.jsx/.scss`, `src/components/EmotionScanner.jsx/.scss`, `MusicPlayer.jsx/.scss` |
-| **P1** bảng `playlists`, `playlist_songs`; lệnh migrate | `emotune-backend/db/migrate_playlists.sql` (đã chạy lên DB đang dùng), `db/setup.sql`, `scripts/db-migrate.js`, `package.json` (`npm run db:migrate`) |
-| **P2** `GET /playlists` (tự tạo "My Playlist"), `GET /playlists/:id`, `POST /playlists/:id/songs` (201 mới / 200 đã có), `DELETE /playlists/:id/songs/:songId`; người khác → 404 | `src/model/playlistModel.js`, `src/services/playlistService.js`, `src/controllers/playlistController.js`, `src/routes/web.js` |
-| Bảng tiến độ cập nhật: F7–F10 ✅, Task 8 ✅, thêm F10b, mục **P** (P1–P5), A-15 (mp3) | `TIEN_DO.md` |
-
-Đã thử: lint + build frontend OK; curl 2 tài khoản cho `/profile` và `/playlists` (đúng cả 15 trường hợp, tài khoản thử đã xoá). **Chưa thử trên trình duyệt**: F8, F9, F10 (người dùng đã thử F7: gặp lỗi 500 → đã sửa).
-
-## 3. Quyết định quan trọng và lý do
-| Quyết định | Lý do |
-|---|---|
-| **Vibe coding** từ 07/10 | Gấp deadline HIC 15/10; người dùng bỏ quy tắc tự code |
-| `AuthProvider` bọc trong `RequireAuth` (không bọc cả `App`) | Chỉ gọi `/auth/me` khi đã có token; mọi trang con dùng `useAuth()` |
-| Hook + context tách file `authContext.js` | Tránh cảnh báo react-refresh khi export không phải component |
-| UI và lỗi auth bằng **tiếng Anh** (người dùng yêu cầu) | `message` do `suggestService` trả vẫn là tiếng Việt — chưa đổi |
-| **Chế độ Playlist** (chốt cùng người dùng): chọn playlist + Play → **không quét camera**, phát lần lượt; **hết playlist → quét 1 lần → AI chọn bài → sang chế độ cảm xúc**; chế độ playlist **không gọi `/listen-report`** | Điểm sở thích gắn với cảm xúc, playlist không có cảm xúc → tránh làm bẩn dữ liệu; phần "thông minh" giữ nguyên |
-| Thêm bài bằng nút **⋯ (3 gạch)** trên trình phát → "Add to playlist" (ban đầu chỉ có "My Playlist" mặc định) | Người dùng yêu cầu; đơn giản cho kịp 15/10 |
-| `queue-screen` trong Figma = bài còn lại của playlist; **không có hàng đợi ở chế độ cảm xúc** (AI chọn bài kế tiếp) | Hệ thống chọn bài theo cảm xúc từng lần |
-| Migrate bằng file riêng (`migrate_playlists.sql`), **không chạy `db:setup`** | `setup.sql` xoá sạch dữ liệu (đã có 3 tài khoản + điểm) |
-| Playlist/bài không phải của mình → **404** (không phải 403) | Không lộ playlist người khác có tồn tại |
-| **Figma MCP**: người dùng đăng nhập bằng **tài khoản Figma mới** (email `nguyenducvinh0601@gmail.com`, gói Starter, ghế View); tài khoản đầu là email khác và đã hết lượt | MCP tính lượt theo tài khoản. Tài liệu Figma hôm nay ghi **20 lượt/tháng** (tìm kiếm ban đầu ghi 6) — chưa chắc con số nào đúng; đã dùng **3 lượt** (2×`get_metadata`, 1×`get_design_context`); `whoami`, `create_new_file`, `add_code_connect_map` được miễn |
-
-## 4. Lệnh đã chạy / cách chạy lại
-```bash
-# Backend (emotune-backend/) — ⚠ cuối phiên backend KHÔNG chạy, tự bật:
-npm run dev                                   # :8080 (nodemon không nạp lại .env → sau khi sửa .env phải restart, hoặc `touch src/server.js`)
-npm run db:migrate -- db/migrate_playlists.sql   # thêm bảng playlist lên DB đang có (an toàn chạy lại)
-npm run db:setup                              # XOÁ + tạo lại toàn bộ DB (có sẵn bảng playlist) — đừng chạy khi đã có dữ liệu
-# .env cần: PORT, DB_*, JWT_SECRET, JWT_EXPIRES_IN=7d  (phiên này đã bổ sung 2 biến JWT)
-
-# Frontend (emotune-frontend/)
-npm run dev        # :5173 ; đăng nhập demo/demo1234 hoặc tạo tài khoản ở /register
-npx eslint src && npm run build
-
-# Thử API bằng curl (Git Bash)
-TOKEN=$(curl -s -X POST localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"demo","password":"demo1234"}' | node -pe "JSON.parse(require('fs').readFileSync(0)).token")
-curl -s localhost:8080/playlists -H "Authorization: Bearer $TOKEN"
-
-# Đổi tài khoản Figma MCP: đăng xuất figma.com trên trình duyệt → /mcp → figma → xoá xác thực → Authenticate bằng tài khoản mới
-# Figma file key: lycGTr71v02BpzYgjmZZS3 (3 trang: "homepage ch signup", "signup, signin, admin", "homepage signup")
-```
-
-## 5. Lỗi đang gặp / việc còn dở
-- **`emotune-backend/music/` trống** (không có mp3 nào trên máy; DB có 10 bài: `co_chac_yeu_la_day.mp3`, `gia_nhu.mp3`, `meditation.mp3`, `cilu.mp3`...). `GET /music/<file>` → 404 → trình phát **bỏ qua bài ngay và quay lại quét** (vòng lặp liên tục). Cần chép lại mp3 (từ Pi: `scp "vinh@raspberrypi.local:~/emotion-music-recommender/emotune-backend/music/*.mp3" emotune-backend/music/`; hoặc tên khác thì `npm run rename-music -- --apply`). Việc này người dùng nói "fix sau". Có thể thêm: file thiếu thì báo lỗi thay vì quét lại liền.
-- **F10 phải làm lại (F10b)**: Figma trang **"homepage signup"** có sẵn thiết kế `screen play nhạc` (ảnh bìa lớn + thanh phát nhạc dưới cùng: tên bài/ca sĩ, shuffle/prev/play/next/repeat, thanh thời gian, âm lượng), `queue-screen` (sidebar có thẻ bài đang phát ở đáy), `lyrics`, `Page playlist`, `Page playlist khi đã có nhạc`. Mình từng kết luận sai "Figma không có thiết kế" vì `get_metadata` không có nodeId chỉ liệt kê **1 trang** → bản F9/F10 hiện tại là tự dựng, **không khớp Figma**. Chưa có node id; URL người dùng mở có `node-id=58-2` (có thể là id trang). Cần **link frame** (chuột phải frame → Copy link) hoặc `get_metadata` với `58:2`.
-- Form khảo sát gu `255:5` / `257:114` cũng nằm ở trang "homepage signup" (không thấy qua listing mặc định).
-- Backend `message` (lời nhắn cảm xúc) còn tiếng Việt, UI còn lẫn Anh/Việt.
-- Chưa thử trên trình duyệt: F8 (tên + Log out), F9, F10. Chưa có camera/mp3 để thử trọn vòng quét → phát → chấm điểm.
-- Console có nhiều lỗi `:5001/buttons` `/led` `ERR_CONNECTION_REFUSED` — **bình thường** khi không chạy `gpio-service` (đã `.catch`).
-- Lint có sẵn: 1 lỗi `AIAssistantContext.jsx`, 1 cảnh báo `EmotionScanner.jsx` (`onResult`).
-- Các việc cũ vẫn dở: Task 6–7 hộp nhạc; Pi chưa dùng được với backend mới (cần `db:setup`/migrate + token); LD2410C chưa lắp; Pi còn code bản `scp`; slide/kịch bản còn "đèn LED"; AI 72.5% (xem mục các phiên trước); VS Code từng ghi đè file Claude sửa → lưu hết (Ctrl+K S) trước khi nhờ sửa, tab có ● thì Revert File.
-- Còn tài khoản tạo khi thử: `demo`/`demo1234`, `gayta625` (người dùng tự tạo); tài khoản `probe_user1`, `t8_*`, `pl_*` đã xoá.
-
-## 6. Bước tiếp theo
-1. Người dùng gửi **link frame `screen play nhạc`** (và `queue-screen` nếu cần) → Claude gọi `get_design_context` (1 lượt/frame) → **F10b**: làm lại trình phát theo Figma, giữ huy hiệu cảm xúc + lời nhắn + "bài động viên"; bỏ/mờ shuffle, prev, repeat; ảnh bìa = ảnh ca sĩ hoặc gradient theo cảm xúc; ca sĩ `null` → "Unknown artist".
-2. **P3** nút ⋯ → "Add to playlist" · **P4** sidebar tab Playlists, bấm Play → chế độ playlist (+ `queue-screen`) · **P5** `HomePage` chuyển chế độ (playlist không quét, không `listen-report`; hết playlist → quét 1 lần → chế độ cảm xúc).
-3. Chép lại **mp3** vào `emotune-backend/music/` rồi thử trọn vòng (cần camera).
-4. **F12** form khảo sát gu (backend đã sẵn) · F14 co giãn điện thoại · C1 điểm thưởng khảo sát trong `suggestService`.
-5. **Commit** (nhiều việc chưa commit; `.env` và `.claude/settings.json` không đưa vào git).
-6. Phần cứng HIC (hạn 15/10): lắp LD2410C, đồng bộ Pi qua git + chạy `db:migrate`/`db:setup`, vỏ hộp, systemd + kiosk, sửa slide (chi tiết ở các phiên bên dưới + `TIEN_DO.md` mục B).
-7. Hỏi người dùng yêu cầu nộp của môn *Xây dựng hệ thống thông minh* (hạn chưa biết).
-
----
-
-# Phiên 04/10/2026 (chiều–tối) — nhiều tài khoản + đăng nhập
-
-## 1. Mục tiêu
-1. Viết plan triển khai cho spec nhiều tài khoản; chốt mua cảm biến LD2410C.
-2. Dựng DB mới (users, devices, `user_id`), rồi hướng dẫn người dùng code backend đăng ký / đăng nhập / middleware.
-3. Đưa `user_id` vào mọi API cá nhân; frontend gửi token.
-4. Tạo bảng tiến độ toàn dự án.
-
-## 2. Việc đã xong (đều đã commit)
-| Việc | File | Commit |
-|---|---|---|
-| Plan 15 task (nhãn [Claude]/[Người dùng], Review Focus, lệnh curl kiểm tra) | `docs/superpowers/plans/2026-10-04-multi-user-accounts.md` | `ae33d5f` |
-| DB **10 bảng**: thêm `users` (username regex `^[a-z0-9_]{3,30}$`, `password_hash` bcrypt, `role`, `survey_done_at`), `devices` (dòng `'box'`); `user_id NOT NULL` ở `preferences` (UNIQUE `user_id, emotion, song_id`), `mood_history`, `recently_played`, `survey_artists`, `survey_genres`; bỏ `user_profile`; tài khoản **`demo` / `demo1234`** | `emotune-backend/db/setup.sql` | `c2b5b9a` |
-| Cài `bcryptjs`, `jsonwebtoken`; `.env` thêm `JWT_SECRET`, `JWT_EXPIRES_IN=7d`; `npm test` = `node --test "test/**/*.test.js"` | `emotune-backend/package.json`, `.evn.example`, `.env` (không vào git) | `c2b5b9a` |
-| Kiểm tra username/mật khẩu (hàm thuần) + 2 test mẫu | `src/services/authValidation.js`, `test/authValidation.test.js` | `bfc3a42` |
-| `POST /auth/register` (201 / 400 / 409), `POST /auth/login` (200 / 401 cùng 1 câu) | `src/model/userModel.js`, `src/services/authService.js` (`signToken`, `toPublicUser`), `src/controllers/authController.js`, `src/routes/web.js` | `ec4383a` |
-| Middleware `requireAuth` (mọi lỗi token → 401) + `GET /auth/me` | `src/middleware/auth.js`, `authController.getUserByJWT`, `userModel.findUserById` | `ec4383a` |
-| **Task 5**: `userId` là tham số đầu ở mọi model/service; SQL lọc/ghi `user_id` (cả truy vấn con `recently_played` và câu fallback trong `getSongsByEmotion`); `ON CONFLICT (user_id, emotion, song_id)`; 6 route cần `requireAuth`: `/suggest`, `/scan-and-suggest`, `/listen-report`, `/feed-back`, `/request-song`, `/mood-history` | `src/model/{suggest,listenReport,feedBack,moodHistory}Model.js`, service/controller tương ứng, `requestSongService.js`, `web.js` | `da29bc3` |
-| **F6**: `src/api.js` (axios dùng chung, interceptor gắn `Authorization: Bearer`, 401 ngoài trang `/login` → xoá token + về `/login`); `config.js` đọc `VITE_API_URL`, `VITE_DEVICE_ID` (`IS_BOX`); `EmotionScanner`, `MusicPlayer`, `SideBar` dùng `api` (`API_URL` chỉ còn cho `<audio>` / `<img>`) | `emotune-frontend/src/api.js`, `src/config.js`, `.env.example`, 3 component | `0930d6e` |
-| Bảng tiến độ 5 giai đoạn: 0 nền tảng · A backend · **F giao diện** · B phần cứng HIC · C môn HTTM | `TIEN_DO.md` | |
-| `CLAUDE.md`: 10 bảng, quy tắc "cần đến đâu viết đến đó", quy tắc cập nhật `TIEN_DO.md`, có unit test backend | `CLAUDE.md` | |
-| Bỏ bản nháp `profileModel.js` (viết lại ở Task 8) | — | `ec4383a` |
-
-Đã kiểm chứng (curl + Playwright): 2 tài khoản A/B có `preferences`, `mood_history`, `recently_played`, xu hướng buồn **tách riêng**; API cá nhân không token → 401; trình duyệt có token → `/auth/me`, `/suggest` chạy; token hỏng → tự về `/login`.
+Kiểm tra: backend `npm test` 117/117; frontend `npx eslint src` sạch + `npm run build` OK.
 
 ## 3. Quyết định và lý do
 | Quyết định | Lý do |
 |---|---|
-| Mua radar **LD2410C** (không làm "cách 3") | PIR báo nhầm / bỏ sót người ngồi yên |
-| **Bỏ viết unit test** (chỉ giữ 2 test mẫu); kiểm tra bằng curl/Postman ở mỗi task | Gấp deadline, người dùng học test sau |
-| **Cần đến đâu viết đến đó** (`findUserById` để tới `/auth/me`, `setToken` để tới trang Login, `AuthContext` để tới F8) | Người dùng muốn hiểu lý do tồn tại của từng hàm |
-| `userId` luôn là **tham số đầu** mọi hàm | Truyền nhầm thứ tự (vd `days`) không báo lỗi mà lọc sai người |
-| `p.user_id = $1` đặt trong **`ON` của LEFT JOIN**, không ở `WHERE` | Ở `WHERE` thì bài chưa có điểm bị loại → người mới không được gợi ý bài nào |
-| Trùng username: bắt mã Postgres `23505` → 409 (không SELECT trước) | 2 người đăng ký cùng lúc vẫn đúng |
-| Sai tên và sai mật khẩu → **cùng 1 câu 401**; mọi lỗi token → 401 (không 400) | Không lộ tên nào tồn tại; frontend dựa vào 401 để đưa về trang đăng nhập |
-| Lỗi 500 chỉ trả "Lỗi server"; `req.body || {}` | Không lộ câu lỗi Postgres / đường dẫn máy |
-| Model 1 câu SQL dùng `db.query` (không `pool.connect`, không `try/catch` chỉ để `throw`) | `pool.connect` không `release` → treo server sau ~10 request (đã gặp thật) |
-| Token để ở `localStorage` (không cookie `HttpOnly`) | Đơn giản cho đồ án; nêu được khi bị hỏi bảo mật |
-| **Task 6–7 (hộp nhạc) để sau**; dự phòng: Pi tự đăng nhập tài khoản `demo` | Ưu tiên web chạy lại + trang đăng nhập; môn HTTM không cần hộp |
-| Giao diện tách giai đoạn **F** riêng (F1–F17), thêm F9 trang chủ + F10 trình phát theo Figma | Trước đó frontend nằm rải rác, thiếu 2 màn chính |
+| Chép trước, gỡ sau | Bản HIC giữ nguyên đúng bản đang chạy, hạn HIC 15/10 không bị ảnh hưởng |
+| Giữ lịch sử git ở cả 2 | Không mất quá trình làm; commit cũ có phần cứng chỉ thấy khi lục lịch sử |
+| Hai thư mục dùng chung DB PostgreSQL `emotune` trên máy này | Bảng `devices` còn trong DB không ảnh hưởng HTTM (code không đụng tới). ⚠ `npm run db:setup` ở bên nào cũng xoá dữ liệu cả hai |
+| Từ nay việc phần mềm mới làm ở HTTM | HIC chỉ làm phần cứng; lỗi phần mềm dùng chung phát hiện trước 15/10 thì sửa cả 2 nơi |
 
-## 4. Lệnh đã chạy / cách chạy lại
+## 4. Cách chạy
 ```bash
-# Backend (emotune-backend/)
-npm install                       # có bcryptjs, jsonwebtoken
-npm run db:setup                  # XOÁ + tạo lại 10 bảng, tài khoản demo/demo1234 (DB máy này đã chạy 04/10)
-npm run dev                       # :8080
-npm test                          # 2 test authValidation
-# .env cần: PORT, DB_*, JWT_SECRET, JWT_EXPIRES_IN=7d
-#   tạo JWT_SECRET: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-
-# Frontend (emotune-frontend/)
-npm run dev                       # :5173 ; .env.local (tuỳ chọn) theo .env.example
-# Chưa có trang đăng nhập -> lấy token bằng Postman: POST localhost:8080/auth/login {"username":"demo","password":"demo1234"}
-# rồi DevTools -> Application -> Local storage -> http://localhost:5173 -> key emotune_token = <token>
-
-# AI (emotion-scanner/)
-venv\Scripts\activate && python 3_backend_server.py   # :5000
-
-# Thử nhanh API bằng Git Bash (thêm lệnh trong plan Task 3–5)
-TOKEN=$(curl -s -X POST localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"demo","password":"demo1234"}' | node -pe "JSON.parse(require('fs').readFileSync(0)).token")
-curl -s localhost:8080/auth/me -H "Authorization: Bearer $TOKEN"
+# AI (emotion-scanner/): venv\Scripts\python 3_backend_server.py        # :5000
+# Backend (emotune-backend/): npm run dev                               # :8080 (.env: DB_*, JWT_SECRET, GEMINI_API_KEY, YOUTUBE_API_KEY)
+# Frontend (emotune-frontend/): npm run dev                              # :5173
+npm test                     # backend, 117/117
+npx eslint src && npm run build   # frontend
 ```
-Cài máy mới từ đầu (PostgreSQL 17, Git LFS model, venv, đổi tên mp3): xem "Lệnh thường dùng" trong `CLAUDE.md`.
-⚠ Git Bash gửi chữ có dấu trong curl bị sai mã hoá (vd "Giá Như" → 404) — thử chữ có dấu bằng Postman / trình duyệt.
+- Sau khi đổi tên thư mục `Documents\HIC` → `Documents\HTTM`: `venv` của `emotion-scanner` vẫn chạy bằng `venv\Scripts\python`, nhưng các lệnh `pip.exe` / `*.exe` trong venv giữ đường dẫn cũ → dùng `venv\Scripts\python -m pip ...` (hoặc tạo lại venv).
+- Playwright: script `playwright-core` + `chromium.launch({ channel: 'chrome' })`; trang chủ chỉ hiện khi `sessionStorage.emotune_scanned = "1"`.
 
-## 5. Lỗi / việc còn dở
-- ⚠ **VS Code ghi đè file Claude vừa sửa** (đã xảy ra 3 lần: mất `authValidation.js`, `signToken`, `authController.js`). Trước khi nhờ Claude sửa: Ctrl+K S lưu hết; sau khi Claude sửa: tab có ● thì **Revert File**, không Ctrl+S. File đã commit thì cứu bằng `git checkout -- <file>`.
-- **Web chưa có trang đăng nhập** → `/login` đang trống; vào trang chủ phải dán token tay.
-- **Task 6–7 hộp nhạc chưa làm** → Pi chưa dùng được với backend mới (mọi API quét/chấm điểm cần token).
-- **Figma MCP hết lượt gọi (gói Starter)** → chưa sửa được Sign in/Sign up (F5), chưa đối chiếu Figma để bổ sung màn hình vào `TIEN_DO.md`.
-- Câu thông báo trong `authService.js` còn tiếng Anh ("Username have been used", "Wrong username or password...") → đổi tiếng Việt trước khi làm trang Login.
-- `requestSong` cộng điểm với cảm xúc hiện tại kể cả khi bài thuộc cảm xúc khác (logic cũ, chưa sửa).
-- Chưa có camera trên máy mới → chưa thử trọn vòng quét → phát → chấm điểm qua web.
-- DB trên Pi vẫn bản cũ → khi lên Pi phải `npm run db:setup` (mất điểm thử cũ — đã chấp nhận).
-- Lint có sẵn: `AIAssistantContext.jsx` (1 lỗi), `EmotionScanner.jsx` (cảnh báo `onResult`).
-- `.claude/settings.json` có `"effortLevel": "high"` chưa commit (cài đặt cá nhân, cố ý để ngoài).
+## 5. Việc còn dở
+- Hết bài + rảnh ≥ 60s → tự quét lại, **kể cả khi tab đang ẩn** (camera bật sau lưng người dùng, quét ở tab nền có thể chậm). Người dùng chọn **tạm giữ nguyên** (11/10); cách sửa đã bàn: `document.hidden` lúc hết bài → `/suggest` theo cảm xúc cũ thay vì quét.
+- Ảnh **Phạm Hoài Nam** 84px bị vỡ ở chỗ ảnh lớn (chờ chọn cách); 10 bài chưa có bìa thật.
+- Kho lệch vibe: angry 6 bài, surprise/Explore 4 bài.
+- Chưa thử micro thật (trợ lý, quả cầu sóng); chưa nghe karaoke bằng tai; karaoke chấm điểm hát chưa làm.
+- Gemini gói free: giới hạn lượt/ngày; dữ liệu gói free có thể được Google dùng (nói rõ khi bảo vệ).
+- Tài khoản `gayta626` có độ tự tin AI giả; dữ liệu `demo30` / `mau_*` là mẫu do `seed-demo` sinh (nói rõ khi demo).
 
 ## 6. Bước tiếp theo
-1. **F7 — trang Đăng nhập / Đăng ký** (chờ người dùng quyết: tự viết JSX hay Claude làm logic): thêm `setToken` vào `api.js` → `pages/LoginPage.jsx`, `RegisterPage.jsx` (ô nhập lại mật khẩu) → `components/RequireAuth.jsx` (không token → `<Navigate to="/login">`, có → `<Outlet/>`) → `App.jsx`: `/login`, `/register` **ngoài** `MainLayout`, `/` + `/settings` bọc `RequireAuth` → Claude viết `AuthPage.scss` theo màu/font NYX (bỏ ô ngày sinh + Apple/Facebook, "Email" → "Tên đăng nhập").
-2. F8 header tên + đăng xuất (lúc này mới tạo `AuthContext`, gọi `GET /auth/me`).
-3. F9 trang chủ + F10 trình phát nhạc theo Figma (hiện chỉ là nút/chữ trần).
-4. Task 8 (`GET /genres`, `GET/POST /profile`) + F12 form khảo sát gu.
-5. Task 6–7 + F11 hộp nhạc + Task 14 lên Pi (hoặc dự phòng: Pi tự đăng nhập `demo`); song song giai đoạn B: lắp LD2410C khi hàng về, vỏ hộp, systemd + kiosk, sửa slide.
-6. Hỏi người dùng yêu cầu nộp của môn HTTM (báo cáo / slide / demo, hạn) → thêm vào `TIEN_DO.md`.
-
----
-
-# Nhật ký các phiên trước
-
-## Phiên 03 – 04/10/2026 (sáng) — giao diện NYX, DB một file, spec nhiều tài khoản
-
-
-### 1. Mục tiêu của phiên này
-1. Dựng giao diện NYX theo Figma (node `58:14`): header, sidebar "Your Library", layout.
-2. Sidebar lấy danh sách nghệ sĩ từ backend (bảng `artists` mới).
-3. Tạo `CLAUDE.md`; ghi lại bối cảnh 2 môn học + cách làm việc (người dùng tự code).
-4. Cài lại toàn bộ trên máy mới: PostgreSQL, DB, nhạc, model AI, môi trường Python.
-5. Gộp DB thành một lệnh chạy; chuẩn bị DB cho **khảo sát gu lần đầu** (cold start).
-6. Vẽ form khảo sát trong Figma (kèm tìm kiếm ca sĩ / thể loại).
-7. Bắt đầu hướng dẫn người dùng tự viết `GET /profile`.
-8. Chốt chuyển sang **nhiều tài khoản + đăng nhập** (web trên laptop/điện thoại và hộp nhạc), viết spec thiết kế.
-
-### 2. Những việc đã làm xong
-| Việc | File |
-|---|---|
-| Giao diện NYX: font (DM Sans, Inter, Playfair), màu ở `:root`, layout grid Header / SideBar / `<main>`, header 3 cột, sidebar 240px artist tròn. Bỏ `<Footer />` placeholder khỏi layout (file vẫn còn) | `emotune-frontend/index.html`, `src/index.css`, `src/layouts/MainLayout.jsx` + `MainLayout.scss` (mới), `src/components/Header.jsx/.scss`, `src/components/SideBar.jsx/.scss`, `src/assets/icons/bars_icon.svg` (mới) |
-| `GET /artists` + phục vụ ảnh `/avatars/<file>`; SideBar gọi API | `emotune-backend/src/model/artistModel.js`, `src/services/artistService.js`, `src/controllers/artistController.js`, `src/routes/web.js`, `src/server.js`, `emotune-backend/avatars/*.png` (6 ảnh, tải từ Figma) |
-| **DB một file**: gộp `schema.sql` + `seed.sql` (đã xoá) → `db/setup.sql`, 9 bảng: `artists` (11), `genres` (pop, ballad, rap, thư giãn), `songs` (khoá ngoại `artist_id`, `genre_id`; bỏ cột chữ `artist`), `preferences`, `mood_history`, `recently_played`, `user_profile` (1 dòng id=1), `survey_artists`, `survey_genres`. Lệnh `npm run db:setup` chạy cả file trong 1 transaction | `emotune-backend/db/setup.sql`, `emotune-backend/scripts/db-setup.js`, `emotune-backend/package.json` |
-| 3 query đọc ca sĩ đổi sang `LEFT JOIN artists a ... a.name AS artist` (frontend không phải sửa) | `src/model/suggestModel.js`, `src/model/requestSongModel.js` |
-| Ca sĩ của 10 bài lấy từ thẻ ID3 trong mp3; thể loại do Claude đoán, người dùng đã duyệt | `db/setup.sql` |
-| Máy mới: PostgreSQL 17 (winget), `.env` (không vào git), đổi tên 10 mp3, lấy model qua Git LFS, venv AI | `emotune-backend/.env`, `emotune-backend/music/` (bị `.gitignore`), `emotion-scanner/my_emotion_model/model.safetensors` |
-| Sửa git hỏng khi chép sang máy mới (2.051 file "D" ảo + `index.lock` sót) bằng `git reset` (không đụng file) | — |
-| `CLAUDE.md` (kiến trúc, lệnh, 2 môn, kế hoạch AI, quy tắc làm việc) + memory Claude | `CLAUDE.md`, `~/.claude/projects/.../memory/` |
-| Figma (trang **"homepage signup"**): màn khảo sát `255:5`, màn trạng thái tìm ca sĩ `257:114`, component `Genre chip` `254:11`, `Artist card` `254:30`, `Search field` `257:98` | Figma file `lycGTr71v02BpzYgjmZZS3` |
-| Người dùng đã học cách viết test (`node:test`, ví dụ `slugify`) và đọc tóm tắt cách tính điểm hiện tại | — |
-| Spec **nhiều tài khoản + đăng nhập** (dữ liệu, 9 API mới, middleware `requireAuth`/`resolveUser`, hộp nhạc "Dùng hộp nhạc", frontend, lỗi, test, ai làm gì) | `docs/superpowers/specs/2026-10-04-multi-user-accounts-design.md` |
-
-### 3. Các quyết định quan trọng và lý do
-| Quyết định | Lý do |
-|---|---|
-| **Người dùng tự code FE/BE**, Claude hướng dẫn + viết CSS/tài liệu | Người dùng cần hiểu hệ thống để bảo vệ 2 môn |
-| Một codebase cho **2 môn**: HIC (có phần cứng, thử Edge Impulse) và Hệ thống thông minh (> 2 module, không cần phần cứng, cải thiện AI) | Lõi phần mềm phải chạy được khi không có `gpio-service` |
-| DB **một file `setup.sql`** + `npm run db:setup`; khi đã có dữ liệu thật thì viết `migrate_xxx.sql`, không chạy lại setup | Máy mới chỉ cần 1 lệnh; setup xoá sạch điểm |
-| `songs.artist_id` / `genre_id` là **khoá ngoại** (không so tên dạng chữ) | Khảo sát "ca sĩ yêu thích" phải khớp chính xác với bài hát |
-| Khảo sát gu = **cold start**: điểm thưởng **+0.5** cùng ca sĩ, **+0.5** cùng thể loại (< 1) | Một lần nghe thật (±1) lấn át được khảo sát → hệ gợi ý lai: tri thức khai báo + học từ hành vi |
-| Tìm kiếm trong form **lọc ở frontend**, không phân biệt dấu; "Xem thêm" bằng `.slice` | Danh sách nhỏ, không cần API mới |
-| Ca sĩ không có ảnh → hiện **chữ viết tắt** (NP, GU…) | 5 ca sĩ chưa có ảnh (Noo Phước Thịnh, GUrbane, Taylor Swift, Da LAB, RPT MCK) |
-| **(04/10) Nhiều tài khoản + bắt buộc đăng nhập** trước khi dùng | Mỗi người một gu/điểm riêng → gợi ý chính xác, cần cho môn Hệ thống thông minh. `user_id` lấy từ **token đăng nhập (JWT)**, không truyền qua URL (dễ giả mạo) |
-| Tài khoản chỉ **username + mật khẩu** (băm bằng `bcryptjs`); không email, ngày sinh, Apple/Facebook | Người dùng chốt: đơn giản nhất. Figma Sign in/Sign up sẽ đổi "Email" → "Tên đăng nhập" |
-| 2 cách dùng: **web thường** (đăng nhập + camera + nhạc ngay trên laptop) và **hộp nhạc** (đăng nhập trên laptop **hoặc** điện thoại cùng Wi-Fi, bấm "Dùng hộp nhạc") | Môn Hệ thống thông minh không cần phần cứng; hộp Pi không có bàn phím |
-| Nối người dùng với hộp: **cách A** (bấm "Dùng hộp nhạc", bảng `devices`), tự nhả sau 30 phút không hoạt động; cách B (mã ghép đôi 4 số trên OLED) để sau | Kịp 15/10; B an toàn hơn, nâng cấp sau chỉ thêm 1 bước |
-| `opencv-python` giữ bản **4.x** (đã khoá trong `requirements.txt`) | OpenCV 5 bỏ `cv2.CascadeClassifier` dùng để cắt mặt |
-
-
-> Phiên 30/09 – 02/10/2026 (laptop cũ, hostname `vinh`): OLED + 2 nút chạm TTP223 chạy trọn vòng với web; PIR code xong nhưng cảm biến không đáng tin. Các mục "Chạy demo trên Pi", "Checklist linh kiện", "Sơ đồ nối dây" bên dưới **vẫn còn đúng** (riêng lệnh DB cũ `schema.sql`/`seed.sql` nay thay bằng `npm run db:setup`).
-
----
-
-## 1. Mục tiêu của phiên này (30/09 – 02/10)
-1. Đọc `NOTES.md` + `graphify-out/GRAPH_REPORT.md`, tóm tắt việc đã làm / cần làm.
-2. Lắp và chạy **2 module chạm TTP223** thay nút bấm cơ.
-3. Thêm **cảm biến chuyển động PIR HC-SR501**: có người lại gần → OLED chào; vắng người 30s → tạm dừng nhạc, quay lại → phát tiếp.
-4. Khi PIR không ổn: tìm cảm biến thay thế.
-
-(Mục tiêu các phiên trước 27–28/09: mạng demo qua hotspot, GPIO/OLED, slide + kịch bản báo cáo 28/09, train lại AI chia theo người, thiết kế "gợi ý theo gu".)
-
-## 2. Những việc đã làm xong
-
-| Việc | File / kết quả |
-|---|---|
-| **Mạng demo** | Hotspot laptop `gayta626` (mật khẩu: xem Settings → Mobile hotspot, 2.4 GHz, **Share over = Wi-Fi**, **Power saving = Off**). Pi có connection NetworkManager `demo-hotspot` (priority 10) → tự vào hotspot. Gọi Pi bằng `raspberrypi.local` (IP hotspot `192.168.137.x`). Đã tập demo trọn vòng qua hotspot, OK. |
-| **GPIO service** (commit `bc9eb8b`) | `gpio-service/gpio_service.py` (Flask :5001 + gpiozero: `POST /led {state}`, `GET /buttons` → bộ đếm `{next, pause}`); `emotune-frontend/src/hardware.js` (`setLed`, `useHardwareButtons` hỏi mỗi 300ms); sửa `config.js` (`GPIO_URL`), `pages/HomePage.jsx` (màu đèn theo trạng thái, nút 1 = Bắt đầu), `components/MusicPlayer.jsx` (nút 1 = bài tiếp, nút 2 = tạm dừng). Test bằng mock pin, **chưa test mạch thật**. Spec: `docs/superpowers/specs/2026-09-27-gpio-led-buttons-design.md`. |
-| **Slide báo cáo** (commit `2d482ad`) | `docs/EmoTune_bao_cao_28-09.pptx` — 12 slide, có speaker notes, tạo bằng plugin **PPT Master**. Nội dung gốc `docs/slide-bao-cao-28-09.md` (⚠ slide 5 trong file .md đã cũ, .pptx mới đúng). Project PPT Master: `~/.claude/plugins/cache/ppt-master/ppt-master/projects/emotune_bao_cao_ppt169_20260927/`. |
-| **Kịch bản thuyết trình** | `docs/script-thuyet-trinh-28-09.md` — checklist trước giờ, lời nói từng slide + thời gian, kịch bản demo 7 bước, 10 câu hỏi dự phòng. **Chưa commit.** |
-| **Đo model cũ** (14/09, nền FER2013, 977 ảnh / 5 người) | Chia theo ảnh (cùng người): **92.5%** — ảo. Trên 4 người mới (mom, nhat, phuc, trung): **71.5%** (neutral 49%, sad 60%). |
-| **Chia train/val theo người** (commit `585044a`) | `emotion-scanner/2_finetune_model.py` + `analyze_confusion.py`: `GroupShuffleSplit`, `VAL_PEOPLE = 2`, seed 42 → val = **ducvinh, vanquynh**. Tên người lấy từ tên file `<ten>_<camxuc>_<timestamp>.jpg`. |
-| **Dữ liệu** (commit `c457776`) | **1.934 ảnh, 10 người** (thêm `dat`, 161 ảnh, **không có surprise**). vui 402 · buồn 405 · giận 403 · ngạc nhiên 322 · bình thường 402. |
-| **Train lại** (~4h CPU) | Tốt nhất epoch 19 (`train_checkpoints/checkpoint-3629`): **72.5%** trên 2 người lạ — angry **26%** (→ neutral), happy 94, neutral 63, sad 84, surprise 95. Train loss 0.004 → overfit. |
-| **Model** | `emotion-scanner/my_emotion_model/` = **model cũ** (khớp Git LFS, sha256 `3aae7340bd…`). Backup cũ: `Documents/HIC/model_backup_2026-09-14/`. Model mới: `Documents/HIC/model_new_2026-09-27_best/` (sha256 `8912cdaac7…`, **không** trong git). |
-| **Thiết kế "gợi ý theo gu"** (commit `6cf8fc1`, `189a92e`) | Spec `docs/superpowers/specs/2026-09-27-taste-based-recommendation-design.md`, plan `docs/superpowers/plans/2026-09-27-taste-based-recommendation.md` (7 task). **Chưa code.** |
-| Ghi chép AI | `AI_NOTES.md` (người dùng viết; số liệu 977 ảnh / 85% trong đó đã cũ). |
-| Cài trên laptop | Plugin PPT Master (`/plugin install ppt-master@ppt-master`) + `pip install -r requirements.txt` của nó (cần `PYTHONUTF8=1`). |
-
-### Phiên 28/09 (sáng)
-| Việc | File / kết quả |
-|---|---|
-| **Slide tiếng Việt** | `docs/EmoTune_bao_cao_28-09.pptx`: điền tên (Nhóm 6 · Nguyễn Đức Vinh, Hoàng Tuấn Phát, Phạm Thế Vỹ · GV Nguyễn Trọng Kiên); slide "Gợi ý nhạc" đổi **65/35** (ghi rõ "bản nâng cấp, đang code"); thêm slide **"Gợi ý theo gu"** (3 nguồn: âm thanh / thẻ ID3 / nhãn tay + công thức điểm + ví dụ ballad). Sau đó **người dùng tự bỏ 3 slide** (AI nhận diện, Xử lý ảnh, Khó khăn) trong PowerPoint → còn **10 slide**; ⚠ số trang góc dưới vẫn ghi "/ 13", sửa tay nếu dùng. |
-| **Slide tiếng Anh** | `docs/EmoTune_report_28-09_EN.pptx` — 10 slide đúng bản người dùng giữ lại, số trang "/ 10", speaker notes tiếng Anh, tiêu đề bìa "The Mood Music Box". Project PPT Master: `~/.claude/plugins/cache/ppt-master/ppt-master/projects/emotune_report_en_ppt169_20260928/` (bản VN: `.../emotune_bao_cao_ppt169_20260927/`, hiện 13 slide). |
-| **Kịch bản thuyết trình** | `docs/script-thuyet-trinh-28-09.md` cập nhật theo bản 13 slide (thêm slide 8 "Gợi ý theo gu", 65/35, câu hỏi về librosa/kho nhạc). **Chưa khớp bản 10 slide**, chưa có bản tiếng Anh. |
-| **Đã mua linh kiện** | Breadboard, dây đực–đực, dây đực–cái, **màn hình OLED**, **cảm biến chuyển động (PIR)** — xem "Checklist linh kiện" ở mục 4. |
-| **Hỏi đáp (chưa làm gì)** | Micro: thử **micro có sẵn trong webcam C270** trước (`arecord -l`), cần thì mua mic USB mini. Loa: thay Bluetooth bằng **loa vi tính USB (tiếng qua USB)**. Edge Impulse: làm được (MobileNetV2, upload ảnh đã cắt mặt, để 2 người ở "Testing") — nên làm như **thí nghiệm so sánh** với ViT 72.5%, chưa thay model chính; lưu ý xin phép trước khi upload ảnh mặt lên cloud. |
-
-### Phiên 28/09 (chiều) — lắp phần cứng
-| Việc | File / kết quả |
-|---|---|
-| **Đèn LED RGB → bỏ** | LED là loại **anot chung** (chân chung phải nối 3.3V). Cắm trên breadboard bị lệch cột nhiều lần: chỉ lên được xanh dương, đỏ + xanh lá hở. Người dùng quyết định **bỏ đèn, dùng OLED**. |
-| **OLED 0.96" I2C — chạy ✅** | `gpio-service/oled.py` (mới): tự điều khiển SSD1306 qua I2C bằng `smbus2` + vẽ chữ bằng Pillow (không cần thư viện OLED). `python3 oled.py` = hiện thử 4 cảnh. OLED mua về **chưa hàn chân** → đã nhờ tiệm hàn. Nối bằng **dây cái–cái thẳng vào Pi** (qua breadboard thì `i2cdetect` không thấy). `i2cdetect -y 1` thấy **`3c`**. |
-| **`gpio_service.py` sửa** | Bỏ RGBLED; `POST /led {state}` giờ **vẽ chữ lên OLED** (giữ tên `/led` để **web không phải sửa**): off → "San sang", scanning → "Dang quet...", happy/sad/angry/surprise/neutral → VUI/BUON/GIAN/NGAC NHIEN/BINH THUONG (không dấu, chữ dài tự thu nhỏ). OLED lỗi/chưa cắm thì service vẫn chạy. Đã test mock trên laptop + chạy thật trên Pi với web: **đúng**. |
-| **Nút bấm → chưa chạy ❌** | Đổi chân nút sang **GPIO17 (11) / GPIO27 (13)**, GND chung (dễ đếm hơn 29/31). `test_hardware.py` giờ chỉ thử nút + in trạng thái lúc đầu. Nối thẳng dây GPIO17 ↔ GND thì Pi **nhận được** → Pi + code tốt. Nhưng qua **breadboard** (nút 4 chân) và qua **nút xám 6 chân** (bấm không đổi mạch, `pinctrl get 17` không đổi) đều **không ăn**. Chưa rõ breadboard hỏng hay nút. → **Thay bằng module chạm TTP223** (3 chân VCC/GND/SIG, dây cái–cái, chạm xuyên vách gỗ mỏng). |
-| **Thiết kế vỏ hộp** | Artifact "Hộp nhạc EmoTune": https://claude.ai/artifact/4gG9bMeum3LbByggG66QK1 — hộp gỗ nắp bản lề 22×15×12 cm; mặt trước: lưới loa trái, camera Ø15 / OLED 26×15 / 2 nút Ø12 bên phải (có bảng toạ độ tâm lỗ); Pi góc sau phải, quạt dưới khe nắp, cổng USB-C ra sau. Làm thử bằng carton trước. (Nếu dùng TTP223 thì không cần khoét lỗ nút.) Chưa biết kích thước loa Bluetooth — đang chừa ~6 cm. |
-| Cách chép code sang Pi | Code OLED được **`scp` từ laptop** (`scp gpio-service/*.py vinh@raspberrypi.local:~/emotion-music-recommender/gpio-service/`), chưa qua git → xem mục 5 trước khi `git pull` trên Pi. |
-
-### Phiên 30/09 – 02/10 — nút chạm TTP223 + cảm biến PIR
-| Việc | File / kết quả |
-|---|---|
-| **2 module TTP223 — chạy ✅** | Nhãn chân (trái→phải): **GND · I/O · VCC**. Dây cái–cái thẳng vào Pi. Module 1: VCC 3.3V (17) / GND (25) / I/O GPIO17 (11). Module 2: VCC **GPIO22 (15)** (code bật sẵn mức cao, vì chân 3.3V còn lại đã dành cho OLED) / GND (39) / I/O GPIO27 (13). |
-| Code TTP223 | `gpio-service/gpio_service.py`, `gpio-service/test_hardware.py`: `Button(pin, pull_up=None, active_state=True)` + `DigitalOutputDevice(22, initial_value=True)`. `test_hardware.py` OK; **toàn luồng với web + Chromium cờ autoplay OK** (chạm 1 = bắt đầu / bài tiếp, chạm 2 = tạm dừng / phát tiếp). |
-| **PIR — code xong** (thiết kế bounded, chốt trong chat, không có file spec) | `gpio-service/gpio_service.py`: `DigitalInputDevice(23, pull_up=False)` (không `bounce_time`), `PRESENCE_TIMEOUT = 30`; "có người" = PIR đang mức cao **hoặc** báo trong 30s gần nhất (bắt cả lúc báo qua `when_activated` lẫn lúc giữ cao qua `is_active`); **chưa báo lần nào từ lúc bật → coi như có người** (PIR rút ra thì nhạc không tự dừng). `GET /buttons` trả thêm `"present"`. OLED tự chọn màn: chờ + có người → `GREETING` "Xin chao! / Cham de quet"; đang phát + vắng → `PAUSED` "Khong thay ai / Tam dung"; đang quét luôn "Dang quet..."; chỉ vẽ lại khi đổi (luồng `watch_presence` 0.5s). |
-| PIR — web | `emotune-frontend/src/hardware.js`: `useHardwareButtons` gọi thêm `onAway` (present true→false) / `onBack` (false→true). `emotune-frontend/src/components/MusicPlayer.jsx`: `pausedByAwayRef` — vắng thì dừng, quay lại **chỉ phát tiếp nếu chính PIR đã dừng** (tự chạm nút 2 dừng thì không tự phát). Tạm dừng vì vắng **không** gửi listen-report. eslint + `npm run build` OK. |
-| PIR — file thử | `gpio-service/test_hardware.py`: thử 2 nút + PIR, in `CO NGUOI` tối đa 2s/lần, in "30 giay khong thay ai" khi vắng 30s (cùng cách tính với service). Bỏ `from signal import pause` (dùng vòng lặp). |
-| Test tự động (mock pin) | `gpio-service/test_presence.py` (chạy trên laptop, cần `gpiozero flask flask-cors`): chào / 29s vẫn có người / 31s vắng → Tam dung / quay lại / đang quét / không vẽ lại / xung PIR ngắn / PIR giữ cao > 30s / nút vẫn đếm → **ALL OK**. |
-| **PIR trên mạch thật — chưa ổn ❌** | Nối đúng (úp cốc thì `pinctrl get 23` đứng yên `lo`). Núm **trái = thời gian giữ** (đang ở min, ngược chiều kim đồng hồ hết), núm **phải = độ nhạy**; jumper để nguyên. Kết quả: ngồi nghe nhạc ở độ nhạy nửa vòng có lúc báo đều 6–7s/lần (tốt), nhưng (1) **phòng trống vẫn báo nhầm** mỗi 10–40s (cả khi độ nhạy max lẫn nửa vòng), (2) có lúc **bỏ sót người ngồi yên** > 30s. **Úp cốc làm lệch nắp vòm** → PIR "mù", phải lắc mới báo. **Chưa thử toàn luồng PIR với web/nhạc.** |
-| Chọn cảm biến thay thế | Khuyên mua **Hlk-ld2410c** (radar 24GHz, bắt cả người ngồi im/nhịp thở, không bị nhiệt/gió; chân 2.54mm cắm dây cái–cái; VCC 5V, OUT 3.3V → **cắm đúng 3 chỗ của PIR, code gần như không đổi**). Đừng mua LD2410/LD2410B (chân 1.27mm), LD1010/1020/2411/2420 (loại khác), không cần "Dòng 2,54MM 5P". Shop Shopee đã xem: giao **4–14/10** → sát deadline, nên tìm shop cùng thành phố / hỏa tốc / tiệm linh kiện. Rẻ hơn: HC-SR04 (siêu âm, ~15–25k, bắt người ngồi im nhưng chùm hẹp, ECHO 5V cần 2 điện trở hạ áp, sửa code nhiều) · RCWL-0516 (~10–20k, vẫn bắt chuyển động, hay báo nhầm — **không khuyên**). **Người dùng chưa chốt mua loại nào.** |
-| Sự cố scp | Lệnh `scp hardware.js MusicPlayer.jsx` bị cắt dòng (thiếu đích Pi) → **ghi đè `MusicPlayer.jsx` trên laptop** bằng nội dung `hardware.js`. Đã khôi phục bằng `git checkout` + sửa lại phần PIR. |
-| Ghi nhớ | Memory `pin-counting.md`: chỉ chân theo "hàng trên/dưới, chân thứ N". |
-
-## 3. Các quyết định quan trọng và lý do
-
-| Quyết định | Lý do |
-|---|---|
-| Demo ở trường qua **hotspot laptop**, gọi Pi bằng `raspberrypi.local` | Không phụ thuộc wifi trường; IP đổi theo mạng. |
-| Hướng đồ án **"hộp nhạc cảm xúc"**: thiết bị tự chạy, tương tác bằng đèn + nút, ảnh xử lý tại chỗ | Để Pi có ý nghĩa hơn một máy tính nhỏ (trả lời "tại sao dùng Pi"). |
-| GPIO = **service Python riêng**, **trang web gọi thẳng** `localhost:5001` (backend Node không đổi) | Trình duyệt chạy trên Pi; service chết thì nhạc vẫn chạy. |
-| Nút bấm dùng **bộ đếm + web hỏi mỗi 300ms** | Server không tự gọi được trình duyệt; bộ đếm không mất / không xử lý 2 lần lần bấm. |
-| Bảng nối chân slide 10 để **SVG thường** (`pin-table=no`) | Tránh rủi ro xuất bảng native. |
-| **Chia train/val theo người** | Chia theo ảnh gây identity leakage → số ảo (92.5% vs 71.5% thật). |
-| Mai **demo bằng model cũ** | Model cũ đã học mặt ducvinh (người demo); model mới giữ ducvinh làm tập kiểm tra. |
-| **Bỏ đèn LED, dùng OLED** (28/09 chiều) | LED cắm breadboard lệch cột mãi không lên đủ màu; OLED chỉ 4 dây, hiện được chữ → demo dễ hiểu hơn. |
-| OLED giữ API **`POST /led`** | Web không phải sửa; chỉ `gpio_service.py` đổi từ đổi màu sang vẽ chữ. |
-| Tự viết driver SSD1306 (`oled.py`) thay vì `luma.oled` | Chỉ cần gói apt (`python3-smbus2`, `python3-pil`), không phải `pip --break-system-packages` trên Pi. |
-| Nối OLED bằng **dây cái–cái thẳng vào Pi** | Ít điểm tiếp xúc hơn qua breadboard; qua breadboard `i2cdetect` không thấy. |
-| Nút: **thay bằng module chạm TTP223** | Nút cơ trên breadboard / nút 6 chân đều không ăn, trong khi Pi + code đã được chứng minh tốt; TTP223 cắm thẳng 3 dây cái–cái, chạm xuyên vách hộp. |
-| Demo 28/09: **OLED + nút trên màn hình** | Không phí thêm giờ gỡ nút trước báo cáo. |
-| TTP223 #2 lấy điện từ **GPIO22 bật cao** | Pi chỉ có 2 chân 3.3V; chân 1 cho OLED, chân 17 cho TTP223 #1. Module chỉ tốn vài mA. |
-| PIR: có người lại gần → **chỉ chào** trên OLED, vẫn phải chạm nút 1 mới quét | Không tự bật camera khi người chỉ đi ngang; demo chủ động thời điểm quét. |
-| PIR: vắng **30s** → tạm dừng, quay lại → **tự phát tiếp** (chỉ khi PIR dừng, không khi tự bấm dừng) | Người dùng chọn 30s (1 phút quá lâu so với bài vài phút). |
-| Đếm 30s + chọn màn OLED nằm **trong `gpio-service`**, web chỉ đọc `present` | Web không phải sửa phần OLED; giống cách bộ đếm nút. |
-| PIR chưa báo lần nào → coi như **có người** | Chân GPIO đọc `lo` khi rút PIR → nếu không thì nhạc tự dừng sau 30s. |
-| PIR OUT ở **GPIO23 (hàng trên thứ 8)** thay vì GPIO4 (hàng dưới thứ 4) | Hàng dưới chật, người dùng không cắm được. |
-| **Không dùng `bounce_time`** cho PIR | PIR báo thành nhiều nhịp < 0.1s → chống rung lọc mất hết; báo 1 hay 10 nhịp đều chỉ làm mới mốc thời gian. |
-| Thay PIR bằng **radar LD2410C** (đề xuất, chờ người dùng mua) | PIR (cảm biến nhiệt) không thể vừa bắt người ngồi im vừa không báo nhầm; chỉnh núm chỉ đổi lỗi này lấy lỗi kia. LD2410C cắm thay thẳng, code giữ nguyên. |
-| Trong lúc chờ: đề xuất **PIR chỉ dùng để chào, tắt tự dừng nhạc** ("cách 3") | Báo nhầm chỉ làm OLED chào nhầm, không ảnh hưởng nhạc. **Chưa được người dùng duyệt, chưa code.** |
-| "Gợi ý theo gu": cảm xúc vẫn là tiêu chí chính; gu chỉ xếp hạng **trong** cùng cảm xúc; hiểu bài từ âm thanh (librosa) + thẻ ID3 + nhãn tay (tùy chọn); 65/35 | Giữ đúng đề tài + tính năng chăm sóc cảm xúc; chạy được cả khi không ai điền nhãn. |
-
-## 4. Các lệnh đã chạy và cách chạy lại dự án
-
-### Đã chạy trong phiên
-```bash
-# Pi: thêm wifi hotspot (chạy từng lệnh ngắn — lệnh dài dán vào Git Bash hay bị cắt)
-sudo nmcli connection add type wifi con-name demo-hotspot ifname wlan0 ssid gayta626
-sudo nmcli connection modify demo-hotspot wifi-sec.key-mgmt wpa-psk wifi-sec.psk <MAT_KHAU_HOTSPOT>
-sudo nmcli connection modify demo-hotspot connection.autoconnect-priority 10
-# Laptop: train lại (trong emotion-scanner/, ~4h CPU)
-PYTHONUTF8=1 venv/Scripts/python 2_finetune_model.py
-PYTHONUTF8=1 venv/Scripts/python analyze_confusion.py
-# Laptop: xuất lại slide (PPT Master) — S = thư mục skill, P = thư mục project PPT Master
-python $S/scripts/svg_quality_checker.py $P --canonical-authoring --stage final --json
-python $S/scripts/total_md_split.py $P && python $S/scripts/finalize_svg.py $P && python $S/scripts/svg_to_pptx.py $P
-
-# --- Phiên 30/09 – 02/10 ---
-# Laptop (Git Bash, thư mục dự án): chép code sang Pi — MỖI LỆNH 1 DÒNG, đích Pi phải nằm cùng dòng
-scp gpio-service/*.py vinh@raspberrypi.local:~/emotion-music-recommender/gpio-service/
-cd ~/Documents/HIC/emotion-music-recommender/emotune-frontend/src
-scp hardware.js vinh@raspberrypi.local:~/emotion-music-recommender/emotune-frontend/src/
-scp components/MusicPlayer.jsx vinh@raspberrypi.local:~/emotion-music-recommender/emotune-frontend/src/components/
-# Pi: thử nút chạm + PIR (Ctrl+C thoát)
-cd ~/emotion-music-recommender/gpio-service && python3 test_hardware.py
-# Pi: xem tín hiệu thô PIR (lo / hi)
-watch -n 0.2 pinctrl get 23
-# Laptop: test mock service (cần venv có gpiozero + flask + flask-cors; in "ALL OK")
-cd gpio-service && PYTHONUTF8=1 python test_presence.py
-# Laptop: kiểm tra web
-cd emotune-frontend && npx eslint src/hardware.js src/components/MusicPlayer.jsx && npm run build
-```
-
-### Chạy demo trên Pi
-1. Laptop bật hotspot `gayta626` (Power saving Off). Bật Pi, loa Bluetooth, cắm webcam C270, đợi ~1 phút.
-2. Laptop mở 3 Git Bash → `ssh vinh@raspberrypi.local` (không vào được → `ipconfig /flushdns`):
-```bash
-cd ~/emotion-music-recommender/emotion-scanner && source venv/bin/activate && python 3_backend_server.py
-cd ~/emotion-music-recommender/emotune-backend && npm start
-cd ~/emotion-music-recommender/emotune-frontend && npm run dev
-cd ~/emotion-music-recommender/gpio-service && python3 gpio_service.py   # OLED + nút chạm + PIR (cửa sổ thứ 4)
-#   cài 1 lần: sudo raspi-config nonint do_i2c 0
-#              sudo apt install -y i2c-tools python3-smbus2 python3-pil python3-flask python3-flask-cors
-#   thử riêng: i2cdetect -y 1 (thấy 3c) · python3 oled.py · curl -X POST localhost:5001/led -H "Content-Type: application/json" -d '{"state":"happy"}'
-```
-3. RealVNC Viewer → `raspberrypi.local` → Chromium `localhost:5173` → ▶ Bắt đầu → Allow camera.
-   (Khi dùng nút chạm: **đóng hẳn Chromium**, mở Terminal trong VNC chạy `chromium-browser --autoplay-policy=no-user-gesture-required http://localhost:5173` — không có lệnh thì dùng `chromium`.)
-   PIR mới cấp điện cần ~30–60s ổn định → bật Pi sớm.
-4. Xem DB: `sudo -u postgres psql -d emotune -c "select id, emotion, action, created_at from mood_history order by id desc limit 5"`
-
-### Chạy trên PC / laptop
-```bash
-# DB: DBeaver Alt+X db/schema.sql rồi db/seed.sql  (.env: DB_NAME=postgres)
-cd emotion-scanner && venv\Scripts\activate && python 3_backend_server.py   # :5000
-cd emotune-backend && npm run dev                                           # :8080
-cd emotune-frontend && npm run dev                                          # :5173
-```
-
-### Checklist linh kiện (mua / chưa mua)
-
-| Món | Trạng thái | Ghi chú |
-|---|---|---|
-| Raspberry Pi 5 + nguồn, webcam Logitech C270, loa Bluetooth | ✅ có | C270 có micro sẵn |
-| LED RGB 4 chân (trong suốt), điện trở 220Ω | ✅ có · **không dùng nữa** | LED là loại **anot chung** |
-| Nút 4 chân núm đen, nút 6 chân xám (nhấn nhả) | ✅ có · **không dùng** | đã thay bằng TTP223 |
-| Breadboard 830 lỗ, dây đực–cái, dây đực–đực | ✅ mua 28/09 | nghi breadboard có chỗ không thông |
-| **Dây cái–cái** | ✅ có | nối thẳng module → Pi; mua thêm loại **dài 20 cm** khi lắp hộp |
-| **Màn hình OLED 0.96" I2C** (thứ tự chân: **VCC GND SCL SDA**) | ✅ **chạy** | đã nhờ tiệm hàn chân; SSD1306, địa chỉ `0x3C` |
-| **Cảm biến chuyển động PIR HC-SR501** | ✅ có · code xong · **không đáng tin** | chân VCC · OUT · GND; báo nhầm khi phòng trống; đừng úp cốc (lệch nắp vòm) |
-| **Radar LD2410C** (chọn ô **Hlk-ld2410c**) | ⬜ **nên mua** | thay PIR, cắm đúng 3 chỗ của PIR; tìm shop giao nhanh (deadline 15/10) |
-| **2 module chạm TTP223** | ✅ **chạy** (30/09) | chân GND · I/O · VCC |
-| Hộp gỗ nắp bản lề ~22×15×12 cm | ⬜ chưa mua | xem artifact "Hộp nhạc EmoTune" (mục 2) |
-| Loa vi tính USB (tiếng qua USB) | ⬜ chưa mua · tùy chọn | thay loa Bluetooth cho ổn định |
-| Micro USB mini | ⬜ chưa mua · tùy chọn | chỉ khi làm giọng nói và mic C270 không đủ rõ |
-| Module MAX98357A + loa 3W 4Ω | ⬜ chưa mua · để sau | loa gắn liền mạch, **phải hàn** |
-
-### Sơ đồ nối dây
-Chân 1 = đầu hàng 40 chân **gần lỗ ốc**, cổng nguồn ở dưới bên trái. **Hàng dưới** (sát tản nhiệt) = chân lẻ 1, 3, 5…; **hàng trên** (sát mép hộp) = chân chẵn. ⚠ Hàng trên chân thứ 1–2 (chân 2, 4) là **5V**.
-
-| Linh kiện | Chân Pi (số vật lý) · vị trí đếm từ trái | Trạng thái |
-|---|---|---|
-| OLED VCC / SDA / SCL / GND | 3.3V (1) / GPIO2 (3) / GPIO3 (5) / GND (9) · hàng dưới thứ 1 / 2 / 3 / 5 | ✅ chạy |
-| TTP223 #1 VCC / GND / I/O | 3.3V (17) / GND (25) / GPIO17 (11) · hàng dưới thứ 9 / 13 / 6 | ✅ chạy |
-| TTP223 #2 VCC / GND / I/O | GPIO22 (15) / GND (39) / GPIO27 (13) · hàng dưới thứ 8 / 20 (cuối) / 7 | ✅ chạy |
-| PIR (sau này LD2410C) VCC / GND / OUT | 5V (2) / GND (6) / GPIO23 (16) · **hàng trên** thứ 1 / 3 / 8 | nối đúng; cảm biến không đáng tin |
-
-⚠ Dây **OUT** không bao giờ cắm vào hàng trên thứ 1–2 (5V). Dây GND OLED ở hàng dưới **thứ 5** (thứ 4 để trống).
-
-⚠ Tắt Pi (`sudo shutdown now`) và rút điện trước khi cắm/rút dây.
-
-## 5. Lỗi đang gặp hoặc việc còn dở
-- **Đã commit + push (02/10)**: `gpio-service/gpio_service.py`, `test_hardware.py`, `test_presence.py`, `emotune-frontend/src/hardware.js`, `components/MusicPlayer.jsx`, `NOTES.md`, `.gitignore` (+ bỏ `__pycache__` khỏi git). Vẫn chưa track: `docs/EmoTune_Group6_Report_EN.pptx`, `docs/EmoTune_report_EN_v2.pptx`, `docs/EmoTune_report_EN_v3.pptx`, `docs/script-presentation-EN.md`, `docs/script-thuyet-trinh-VI.md` (người dùng tự làm, chưa rõ bản nào là cuối). Cũng chưa track: `emotion-scanner/docs/`.
-- **Trên Pi, code được chép bằng `scp`** (gpio-service + 2 file web) → lần `git pull` sau sẽ báo trùng file. **Commit + push trên laptop trước**, rồi trên Pi (trong `~/emotion-music-recommender`): `git checkout -- gpio-service emotune-frontend/src` · xoá file chưa track bị báo trùng · `git pull`.
-- **PIR không đáng tin** (mục 2): báo nhầm khi phòng trống, có lúc bỏ sót người ngồi yên. **Toàn luồng PIR với web + nhạc chưa thử** (OLED chào / Tam dung / tự phát tiếp). Không chắc 2 file web (`hardware.js`, `MusicPlayer.jsx`) đã được scp sang Pi thành công — chép lại cho chắc.
-- Đang chờ người dùng: (1) chốt mua cảm biến nào (LD2410C khuyên dùng), (2) có làm "cách 3" (PIR chỉ chào, tắt tự dừng nhạc) trong lúc chờ không.
-- Trang web còn comment/tên hàm cũ nói "đèn LED" (`hardware.js` `setLed`, `HomePage.jsx`) — chạy đúng, chỉ là tên cũ.
-- **Laptop chưa chạy dự phòng được**: DB laptop còn bản cũ 15 bài, `emotune-backend/music/` trống.
-- **AI**: 72.5% với người lạ; lớp **giận yếu** (26%, bị đoán thành bình thường); overfit mạnh; `load_best_model_at_end` **không nạp** bản tốt nhất (phải lấy tay từ checkpoint); `dat` thiếu ảnh surprise; `AI_NOTES.md` đã cũ, `check_data_quality.py` được nhắc nhưng không có trong repo.
-- Kịch bản thuyết trình chưa khớp bản 10 slide; slide VN còn số trang "/ 13". Slide/kịch bản vẫn nói "đèn LED + nút" → nên sửa thành **OLED + nút chạm TTP223 + cảm biến có người**.
-- Cũ, chưa sửa: `EmotionScanner` gửi ảnh khi camera chưa mở; `mood_history` có thể ghi `suggested` 2 lần; camera CSI không nhận; mỗi lần bật Pi phải mở tay các server qua SSH.
-- Global Python laptop có sẵn xung đột cũ (tensorflow-intel 2.17, facenet-pytorch) — không liên quan dự án, đừng "sửa".
-
-## 6. Bước tiếp theo nên làm
-1. **Cảm biến có người:** chốt mua **Hlk-ld2410c** (shop giao nhanh). Trong lúc chờ, nếu người dùng đồng ý → làm "cách 3": PIR chỉ chào, tắt `onAway/onBack` (hoặc 1 cờ trong `gpio_service.py`). Khi LD2410C tới: tắt Pi → cắm VCC/GND/OUT vào hàng trên thứ 1/3/8 (thay PIR) → `test_hardware.py` → bật lại tự dừng → **thử toàn luồng** (bảng 6 tình huống: chào / quét / ngồi 1 phút không dừng / đi ra 40s → Tam dung / quay lại → phát tiếp / tự chạm dừng thì không tự phát). Hướng dẫn **1 bước mỗi tin nhắn**.
-2. **Đồng bộ Pi qua git** (code đã push): làm theo mục 5 để bỏ bản scp rồi `git pull`.
-3. **AI:** xem lại ảnh "giận" của ducvinh/vanquynh; thử giảm overfit (augmentation mạnh hơn, ít epoch, mở 1 lớp); sửa lấy best checkpoint; sau đó **train bản cuối trên đủ 10 người** → commit model (Git LFS) → trên Pi `git pull && git lfs pull` → restart `3_backend_server.py`. Cập nhật `AI_NOTES.md`.
-4. **Gợi ý theo gu:** người dùng đọc plan rồi chọn cách thực hiện (Native / Subagent / tự code). Cần thêm bài hát (≥ 8–10 bài mỗi cảm xúc) thì tính năng mới có ý nghĩa.
-5. **Vỏ hộp:** theo artifact "Hộp nhạc EmoTune"; làm thử bằng carton; gửi Claude kích thước loa Bluetooth để chỉnh bản vẽ. Thêm lỗ cho cảm biến có người ở mặt trước (LD2410C nhìn xuyên được vách gỗ/nhựa mỏng → có thể không cần khoét).
-5b. Sửa slide/kịch bản: "đèn LED + nút" → "OLED + nút chạm + cảm biến có người".
-6. **Giai đoạn 2 phần cứng:** cắm điện là chạy (systemd cho các service + Chromium kiosk), không cần VNC.
-7. (Tùy chọn) Thí nghiệm Edge Impulse so với ViT trên cùng 2 người kiểm tra.
-8. Laptop dự phòng: `scp` mp3 từ Pi về, chạy lại `schema.sql` + `seed.sql`.
+1. Người dùng đóng Claude Code / `npm run dev` / VS Code rồi đổi tên thư mục (lệnh ở cuối phiên 11/10), mở lại Claude Code ở `Documents\HTTM\emotion-music-recommender`.
+2. **I2 "Vì sao NYX chọn bài này?"** (dùng `score`, `taste_bonus`, `like_bonus`, `isEncourage` có sẵn trong `suggestModel` / `suggestService`).
+3. Cải thiện model AI (C4–C8 trong `TIEN_DO.md`): đo macro-F1 + confusion matrix theo người lạ → thêm dữ liệu → huấn luyện lại → suy luận gộp nhiều khung hình + ngưỡng "chưa chắc".

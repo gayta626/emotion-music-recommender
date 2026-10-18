@@ -6,7 +6,7 @@
 -- user_profile: bang cu (truoc khi co tai khoan), van xoa de DB cu khong con sot lai
 DROP TABLE IF EXISTS
     liked_songs, playlist_songs, playlists,
-    devices, survey_genres, survey_artists, user_profile,
+    survey_genres, survey_artists, user_profile,
     recently_played, mood_history, preferences,
     songs, genres, artists, users
 CASCADE;
@@ -14,24 +14,18 @@ CASCADE;
 -- ============================ BANG ============================
 
 -- Tai khoan nguoi dung. username: chu thuong, so, gach duoi (backend da trim + chuyen chu thuong truoc khi luu)
--- role: chuan bi cho trang admin, chua dung. survey_done_at NULL = chua lam / chua bo qua khao sat gu
+-- role: 'admin' moi mo duoc trang /admin (theo doi he thong + quan ly); doi tren trang /admin hoac `npm run set-admin -- <username>`. survey_done_at NULL = chua lam / chua bo qua khao sat gu
+-- locked_at NULL = binh thuong; co gia tri = admin da khoa (khong dang nhap duoc, token cu bi tu choi) - giong db/migrate_admin.sql
+-- face_consent_at: luc dong y luu anh mat khi sua cam xuc de train lai model (C15); NULL = khong dong y - giong db/migrate_feedback.sql
 CREATE TABLE users (
     id              SERIAL PRIMARY KEY,
     username        TEXT NOT NULL UNIQUE CHECK (username ~ '^[a-z0-9_]{3,30}$'),
     password_hash   TEXT NOT NULL,
     role            TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    locked_at       TIMESTAMP,
+    face_consent_at TIMESTAMP,
     survey_done_at  TIMESTAMP,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Hop nhac: moi hop 1 dong (hien chi co 'box'). current_user_id NULL = hop trong.
--- last_active_at cu hon 30 phut -> backend coi nhu hop trong (tu nha)
-CREATE TABLE devices (
-    id              TEXT PRIMARY KEY,
-    name            TEXT NOT NULL,
-    current_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    claimed_at      TIMESTAMP,
-    last_active_at  TIMESTAMP
 );
 
 -- Nghe si. avatar la ten file trong emotune-backend/avatars/ (NULL = chua co anh)
@@ -82,11 +76,13 @@ CREATE TABLE preferences (
 -- Nhat ky moi lan goi y / phan hoi.
 -- suggested: he thong goi y | declined: nguoi dung tu choi
 -- good/neutral/bad: ket qua sau khi nghe (theo finishPercent)
+-- ai_emotion: cam xuc AI doan khi nguoi dung da sua / xac nhan (emotion = cam xuc nguoi dung chon); NULL = khong sua (C15)
 CREATE TABLE mood_history (
     id          SERIAL PRIMARY KEY,
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     emotion     TEXT NOT NULL,
     confidence  REAL,
+    ai_emotion  TEXT CHECK (ai_emotion IN ('neutral', 'happy', 'sad', 'angry', 'surprise')),
     song_id     INTEGER REFERENCES songs(id) ON DELETE SET NULL,
     action      TEXT NOT NULL CHECK (action IN ('suggested', 'declined', 'good', 'neutral', 'bad')),
     created_at  TIMESTAMP NOT NULL DEFAULT NOW()
@@ -187,8 +183,6 @@ LEFT JOIN genres  g ON g.name = v.genre_name
 ORDER BY v.ord;
 
 -- Tai khoan demo de thu khi chua co trang dang ky: demo / demo1234 (hash bcrypt, cost 10)
-INSERT INTO users (username, password_hash)
-VALUES ('demo', '$2b$10$IQUuTw9A3.qaN5E1qQ024uOSK9kx.ULm7PDx2NMjRJDtPuVPdGk/.');
-
--- Hop nhac duy nhat, chua ai dung
-INSERT INTO devices (id, name) VALUES ('box', 'Hộp nhạc EmoTune');
+-- demo la admin san de mo trang /admin khi demo
+INSERT INTO users (username, password_hash, role)
+VALUES ('demo', '$2b$10$IQUuTw9A3.qaN5E1qQ024uOSK9kx.ULm7PDx2NMjRJDtPuVPdGk/.', 'admin');

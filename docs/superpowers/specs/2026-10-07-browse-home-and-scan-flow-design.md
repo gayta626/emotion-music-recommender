@@ -10,7 +10,6 @@
 - Sau đó màn quét **thu thành icon `bi:record-circle`** trên header (bên trái "Explore Premium"). Bấm icon = quét lại.
 - **Khi người dùng đang lướt** (trang chủ, playlist, thống kê…) camera **không tự bật**; hết bài thì NYX chọn bài tiếp theo theo **cảm xúc quét gần nhất**.
 - Trang thống kê cảm xúc (đang ở `/mood`) là **trang riêng** `/stats`, không gắn với logo AI. Logo AI để dành cho phần 2 (trợ lý giọng nói).
-- Hộp nhạc Pi: **để sau**, không nằm trong phần này.
 
 ## 2. Màn hình và đường dẫn
 
@@ -84,4 +83,4 @@ Bấm thẻ bài = phát bài đó (như ô tìm kiếm). Rê chuột thẻ → 
 
 ## 8. Ngoài phạm vi
 
-Trợ lý giọng nói (phần 2), hộp nhạc Pi / Task 6–7, trang ca sĩ riêng, album/podcast thật, 3 khung xám trống trong Figma.
+Trợ lý giọng nói (phần 2), trang ca sĩ riêng, album/podcast thật, 3 khung xám trống trong Figma.

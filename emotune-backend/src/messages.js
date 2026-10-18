@@ -30,6 +30,23 @@ const MESSAGES = {
     ],
 };
 
+// I4 hanh trinh cam xuc: bai dau KHOP tam trang, cac bai sau vui dan len
+const JOURNEY_MESSAGES = {
+    sad: [
+        "Mấy hôm nay bạn hơi trầm. Mình bắt đầu bằng bài hợp tâm trạng, rồi vui dần lên nhé.",
+        "Dạo này có vẻ không vui lắm, cứ nghe bài này trước đã, mấy bài sau sẽ tươi dần lên.",
+    ],
+    angry: [
+        "Dạo này bạn hay bực, nghe bài này cho xả trước, rồi mình đưa bạn dịu lại dần nhé.",
+        "Có vẻ hơi căng mấy hôm nay. Xả hết với bài này đã, rồi nhẹ nhàng dần nhé.",
+    ],
+};
+
+let getJourneyMessage = (from) => {
+    const pool = JOURNEY_MESSAGES[from] || MESSAGES.encouragement;
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
 const REQUEST_SONG_CONFIRM = [
     "Có phải bạn đang tìm bài này không: {title}?",
     "Ý bạn là bài {title} phải không nhỉ?",
@@ -49,4 +66,4 @@ let getRandomMessage = (emotion, isEncouragement) => {
     return pool[Math.floor(Math.random() * pool.length)];
 }
 
-module.exports = { getRandomMessage, getRequestSongMessage };
+module.exports = { getRandomMessage, getRequestSongMessage, getJourneyMessage };

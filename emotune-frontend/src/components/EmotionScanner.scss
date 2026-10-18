@@ -59,6 +59,42 @@
     color: var(--search-text);
   }
 
+  // C11: micro ẩn đang nghe song song với camera -> luôn cho người dùng thấy là đang bị nghe
+  .scanner-mic {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    border-radius: 999px;
+    background: var(--chip);
+    font-size: 13px;
+    color: var(--muted);
+
+    b {
+      color: #fff;
+    }
+
+    &.heard {
+      color: var(--search-text);
+    }
+  }
+
+  .scanner-mic-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    animation: scanner-mic-breathe 1.6s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
   // chọn cảm xúc bằng tay (không có camera)
   .mood-picker {
     display: flex;
@@ -131,5 +167,14 @@
   }
   50% {
     box-shadow: 0 0 0 18px rgba(201, 169, 245, 0);
+  }
+}
+
+@keyframes scanner-mic-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(201, 169, 245, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(201, 169, 245, 0);
   }
 }

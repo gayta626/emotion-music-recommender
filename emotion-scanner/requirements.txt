@@ -1,9 +1,14 @@
+# Torch: PC có GPU NVIDIA cài bản CUDA trước:
+#   pip install torch==2.14.1+cu130 torchvision==0.29.1+cu130 --index-url https://download.pytorch.org/whl/cu130
+# Máy không GPU: pip install torch torchvision (bản CPU)
 flask
 flask-cors
 opencv-python==4.13.0.92
 pillow
 torch
-transformers
 torchvision
+transformers
 scikit-learn
 accelerate
+pyarrow
+huggingface_hub

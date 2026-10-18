@@ -11,11 +11,13 @@
 //   Chep mp3 vao music/ (ten khong dau), anh bia co san trong file -> covers/, loi -> lyrics/,
 //   them ca si moi + bai moi vao DB (chi THEM, khong xoa / sua bai cu; bai da co thi bo qua),
 //   roi tu chay fetch-images (anh ca si moi, bia con thieu), fetch-song-info (album con thieu)
-//   va fetch-mv (MV YouTube cho bai moi — chi khi .env co YOUTUBE_API_KEY; ~100 bai/ngay theo han muc free).
+//   va fetch-mv (MV YouTube cho bai moi — chi khi .env co YOUTUBE_API_KEY; ~100 bai/ngay theo han muc free),
+//   make-karaoke (AI tach giong cho karaoke — chi khi da cai venv .venv-karaoke).
 // Chay lai bao nhieu lan cung duoc: bai trung (cung ten bai + ca si, khong dau) voi DB hoac trong thu muc thi bo qua.
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { karaokeReady } = require('./lib/karaoke');
 const db = require('../src/config/db');
 const { readTags } = require('./lib/id3');
 const { mp3Duration } = require('./lib/mp3Duration');
@@ -217,6 +219,9 @@ const apply = async () => {
     const scripts = ["fetch-images.js", "fetch-song-info.js"];
     if (process.env.YOUTUBE_API_KEY) scripts.push("fetch-mv.js");
     else console.log("\n(Chua co YOUTUBE_API_KEY trong .env -> bo qua tim MV; co key roi thi chay: npm run fetch-mv)");
+    // AI tach giong cho karaoke (chi khi da cai venv .venv-karaoke, xem scripts/make-karaoke.js)
+    if (karaokeReady()) scripts.push("make-karaoke.js");
+    else console.log("(Chua cai .venv-karaoke -> bo qua tach giong karaoke; cai xong thi chay: npm run make-karaoke)");
     for (const script of scripts) {
         console.log(`\n== ${script} ==`);
         spawnSync(process.execPath, [path.join(__dirname, script)], { stdio: "inherit", cwd: ROOT });

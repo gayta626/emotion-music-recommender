@@ -7,6 +7,8 @@ import { API_URL } from "./config";
 
 // ten "ngan keo" trong localStorage (xem: DevTools -> Application -> Local storage)
 const TOKEN_KEY = "emotune_token";
+// sessionStorage: "1" = vua bi day ra vi tai khoan bi khoa (LoginPage doc roi xoa)
+export const LOCKED_KEY = "emotune_locked";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
@@ -32,6 +34,10 @@ api.interceptors.response.use(
         // dang o /login ma sai mat khau (cung la 401) thi khong chuyen trang, de trang login tu bao loi
         if (error.response?.status === 401 && window.location.pathname !== "/login") {
             clearToken();
+            // admin vua khoa tai khoan -> trang dang nhap bao ly do (thay vi chi bi day ra)
+            if (error.response.data?.error === "locked") {
+                try { sessionStorage.setItem(LOCKED_KEY, "1"); } catch { /* bo qua: chi la loi nhan */ }
+            }
             window.location.href = "/login";
         }
         return Promise.reject(error); // van bao loi cho component (.catch van chay)

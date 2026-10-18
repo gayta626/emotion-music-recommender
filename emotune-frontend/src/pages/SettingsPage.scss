@@ -143,6 +143,80 @@
     }
   }
 
+  // ---- đồng ý lưu ảnh mặt (C15) ----
+  .privacy-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .privacy-text {
+    flex: 1;
+
+    h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+    }
+
+    p {
+      margin: 0;
+      max-width: 720px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+  }
+
+  .privacy-status {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+
+    b {
+      color: #fff;
+    }
+  }
+
+  // công tắc bật / tắt
+  .switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 52px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+
+    i {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+
+    &.on {
+      border-color: var(--accent);
+      background: var(--accent);
+
+      i {
+        transform: translateX(22px);
+        background: var(--on-premium);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+  }
+
   // ---- nút ----
   .btn-ghost,
   .btn-primary {
