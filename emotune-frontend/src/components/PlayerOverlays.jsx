@@ -70,12 +70,13 @@ export const UpNextCard = ({ remaining, duration, nextSong, onPlayNow }) => {
 }
 
 // Cot hang doi (mo tu menu ☰ -> "View playlist"): bai dang phat + cac bai con lai
-export const QueuePanel = ({ playlist, onJump, onClose }) => {
+// floating: dang o trang khac /now-playing (khung lon bi an) -> cot noi ben phai, tren thanh phat
+export const QueuePanel = ({ playlist, onJump, onClose, floating = false }) => {
     const current = playlist.songs[playlist.index];
     const upcoming = playlist.songs.slice(playlist.index + 1);
 
     return (
-        <aside className="queue-panel" aria-label="Queue">
+        <aside className={`queue-panel ${floating ? "queue-float" : ""}`} aria-label="Queue">
             <div className="queue-head">
                 <h3>Queue</h3>
                 <button className="queue-close" onClick={onClose} aria-label="Close queue">✕</button>

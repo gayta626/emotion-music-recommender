@@ -1,0 +1,56 @@
+{
+  "reproduced": [
+    {
+      "bug": "invalid-listen-progress",
+      "input": "(missing)",
+      "status": 200,
+      "delta": 0.3
+    },
+    {
+      "bug": "invalid-listen-progress",
+      "input": null,
+      "status": 200,
+      "delta": -1
+    },
+    {
+      "bug": "invalid-listen-progress",
+      "input": "abc",
+      "status": 200,
+      "delta": 0.3
+    },
+    {
+      "bug": "invalid-listen-progress",
+      "input": {},
+      "status": 200,
+      "delta": 0.3
+    },
+    {
+      "bug": "expired-scan-accepted",
+      "ageMs": 1800001
+    },
+    {
+      "bug": "failed-correction-consumes-scan-and-deletes-history",
+      "firstStatus": 404,
+      "retryStatus": 410,
+      "deletedHistory": 123
+    },
+    {
+      "bug": "split-mp3-mv-listen-undercounted",
+      "scenario": "First half MP3, second half MV, equal durations",
+      "expected": 1,
+      "actual": 0.5
+    },
+    {
+      "bug": "search-cannot-retry-after-network-failure",
+      "focusAttempts": 2,
+      "requests": 1
+    },
+    {
+      "bug": "mood-session-survives-account-switch",
+      "secondAccount": {
+        "scanned": true,
+        "emotion": "sad"
+      }
+    }
+  ]
+}

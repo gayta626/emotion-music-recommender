@@ -3,7 +3,7 @@ import { API_URL } from '../config'
 import { songImageUrl } from '../utils/images'
 import api from '../api'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ShuffleIcon from '../assets/icons/bar_shuffle.svg?react'
 import PrevIcon from '../assets/icons/bar_prev.svg?react'
 import PlayIcon from '../assets/icons/bar_play.svg?react'
@@ -32,6 +32,7 @@ import KaraokeScoreCard from './KaraokeScoreCard'
 import { Cover, QueueMenu, QueuePanel, UpNextCard } from './PlayerOverlays'
 import { MoodFix } from './MoodCheck'
 import { moodLabel } from '../utils/moodFix'
+import { addSpan, coveredFraction, spansFromPlayed } from '../utils/listenSpans'
 import './MusicPlayer.scss'
 
 // moi vibe co 1 bo mau nen rieng trong MusicPlayer.scss ([data-vibe])
@@ -130,8 +131,8 @@ const MusicPlayer = (props) => {
     // doi nguon cua CUNG the <audio> giua mp3 goc va nhac dem AI, nhac noi tiep dung giay dang toi
     // (2 file dai bang nhau, Demucs giu nguyen do dai). Khong tao the <audio> moi: do thi Web Audio (song am) gan voi the nay.
     const swappingRef = useRef(false);
-    // so giay da nghe o nguon truoc (doi nguon thi audio.played bi xoa) -> cham diem nghe van dung
-    const playedBeforeRef = useRef(0);
+    // cac doan da nghe o nguon truoc (doi nguon thi audio.played bi xoa) -> cham diem nghe van dung (utils/listenSpans)
+    const playedBeforeRef = useRef([]);
     // nguoi dung muon dang phat: mp3 moi chua kip tu phat (autoPlay) thi audio.paused van la true.
     // Bai mo dau o che do MV thi mp3 khong tu phat
     const wantPlayRef = useRef(!(mvWanted && data.song.youtube_id && !showLyrics));
@@ -142,7 +143,7 @@ const MusicPlayer = (props) => {
         if (audio.src === url) return;
         const t = audio.currentTime;
         const resume = wantPlayRef.current;
-        for (let i = 0; i < audio.played.length; i++) playedBeforeRef.current += audio.played.end(i) - audio.played.start(i);
+        playedBeforeRef.current = [...playedBeforeRef.current, ...spansFromPlayed(audio.played, audio.duration)];
         swappingRef.current = true;
         audio.autoplay = false;
         audio.src = url;
@@ -176,9 +177,12 @@ const MusicPlayer = (props) => {
     const [mvFailed, setMvFailed] = useState(false); // bai nay MV loi (cam nhung / mat mang) -> khong thu lai
     // dang o che do MV: trinh phat YouTube ton tai va dang phat tieng (mp3 dung) — ke ca luc bi an (cot phai thu gon)
     const mvOpen = !!mvWanted && !!youtubeId && !showLyrics && !mvFailed;
-    const mvInPanel = mvOpen && !onStage && !!panelSlot && !panelCollapsed;
-    // cot phai thu gon (kieu Spotify): chi con dai mong co nut mo lai
-    const mvStrip = mvOpen && !onStage && !!panelSlot && panelCollapsed;
+    // cot phai "Now playing" LUON co o trang khac /now-playing, /lyrics (chon bai o trang chu / trang ca si van thay);
+    // chua xem MV -> anh + nut ▶ xem MV. Thu gon (kieu Spotify): chi con dai mong co nut mo lai
+    const panelShown = !onStage && !showLyrics && !!panelSlot;
+    const panelOpen = panelShown && !panelCollapsed;
+    const panelStrip = panelShown && panelCollapsed;
+    const mvInPanel = mvOpen && panelOpen;
     // MV dang hien o dau: khung lon / cot phai / an (thu gon: van chay, chi khong hien)
     const mvPlace = onStage ? "stage" : mvInPanel ? "panel" : "off";
     const mvPlaceRef = useRef(mvPlace);
@@ -200,8 +204,8 @@ const MusicPlayer = (props) => {
     const [mvState, setMvState] = useState(-1);
     const mvRef = useRef(null);                     // trinh phat YouTube (co sau onReady)
     const captionsOffRef = useRef(false);           // da tat phu de cua trinh phat hien tai chua
-    // so giay MV da THAT SU xem (de cham diem nghe nhu mp3): cong don khi thoi gian tang deu luc dang phat
-    const mvWatchRef = useRef({ seconds: 0, last: null, duration: 0 });
+    // cac doan MV da THAT SU xem (giay cua MV, de cham diem nghe nhu mp3): ghi khi thoi gian tang deu luc dang phat
+    const mvWatchRef = useRef({ spans: [], last: null, duration: 0 });
     // trinh phat dang dieu khien: MV khi dang xem, nguoc lai the <audio>
     const mv = () => (mvOpen ? mvRef.current : null);
 
@@ -273,8 +277,12 @@ const MusicPlayer = (props) => {
             const d = player.getDuration();
             const playing = player.getPlayerState() === YT_PLAYING;
             const watch = mvWatchRef.current;
-            // chi cong khi phat lien mach (tua toi / lui thi khong tinh)
-            if (playing && watch.last !== null && t > watch.last && t - watch.last < 1.5) watch.seconds += t - watch.last;
+            // chi ghi khi phat lien mach (tua toi / lui thi khong tinh); noi tiep doan truoc thi keo dai doan do
+            if (playing && watch.last !== null && t > watch.last && t - watch.last < 1.5) {
+                const prev = watch.spans[watch.spans.length - 1];
+                if (prev && prev[1] === watch.last) prev[1] = t;
+                else watch.spans.push([watch.last, t]);
+            }
             watch.last = t;
             if (d) watch.duration = d;
             setMvTime(t);
@@ -339,19 +347,16 @@ const MusicPlayer = (props) => {
             : "Can't load the MV (no internet?). Playing the song instead.");
     }
 
-    // ti le da nghe (0..1): mp3 da phat + MV da xem, lay cai lon hon
+    // ti le da nghe (0..1): GOP cac doan mp3 / nhac dem / MV tren cung truc tien do bai
+    // (truoc day lay max(mp3, MV) -> nghe nua dau mp3 + nua sau MV chi duoc 50%)
     const listenedFraction = () => {
         const audio = audioRef.current;
-        let listened = 0;
-        for (let i = 0; i < audio.played.length; i++) {
-            listened += audio.played.end(i) - audio.played.start(i);
-        }
-        listened += playedBeforeRef.current;
-        const fromMp3 = audio.duration ? listened / audio.duration : 0;
         const watch = mvWatchRef.current;
-        const fromMv = watch.duration ? watch.seconds / watch.duration : 0;
-        console.log("Da nghe duoc :", listened, "giay mp3,", Math.round(watch.seconds), "giay MV")
-        return Math.min(Math.max(fromMp3, fromMv), 1);
+        let spans = [...playedBeforeRef.current, ...spansFromPlayed(audio.played, audio.duration)];
+        for (const [a, b] of watch.spans) spans = addSpan(spans, a, b, watch.duration);
+        const fraction = coveredFraction(spans);
+        console.log("Da nghe duoc :", Math.round(fraction * 100), "% bai (mp3 + MV)")
+        return fraction;
     }
 
     const finishAndSend = () => {
@@ -695,10 +700,15 @@ const MusicPlayer = (props) => {
                         onPlayNow={finishAndSend}
                     />
                 )}
-                {playlist && queueOpen && (
+                {playlist && queueOpen && onStage && (
                     <QueuePanel playlist={playlist} onJump={onJump} onClose={() => setQueueOpen(false)} />
                 )}
             </section>
+
+            {/* trang khac: khung lon bi an (display: none) -> hang doi noi ngoai khung, khong thi bam "View playlist" khong thay gi */}
+            {playlist && queueOpen && !onStage && (
+                <QueuePanel playlist={playlist} onJump={onJump} onClose={() => setQueueOpen(false)} floating />
+            )}
 
             {showLyrics && (
                 <LyricsView
@@ -730,16 +740,20 @@ const MusicPlayer = (props) => {
                 />
             )}
 
-            {/* luot sang trang khac luc dang xem MV -> MV o cot phai kieu Spotify (ve vao o trong cua MainLayout) */}
-            {mvInPanel && createPortal(
+            {/* trang khac /now-playing -> cot phai "Now playing" kieu Spotify (ve vao o trong cua MainLayout):
+                dang xem MV thi MV o day, khong thi anh MV / anh bia + nut xem MV */}
+            {panelOpen && createPortal(
                 <NowPlayingPanel
                     song={data.song}
                     artist={artist}
                     coverSrc={coverSrc}
-                    context={playlist ? playlist.name : "Music video"}
+                    context={playlist ? playlist.name : mvOpen ? "Music video" : "Now playing"}
                     lyrics={lyrics}
                     videoRef={panelMvRef}
-                    poster={mvPoster}
+                    // dang xem MV: thumbnail MV (lo ra khi video dung); chua xem: anh bia vuong (thumbnail YouTube co san vien den)
+                    poster={mvOpen ? mvPoster : coverSrc || (youtubeId ? mvPoster : null)}
+                    mvOn={mvOpen}
+                    onPlayMv={youtubeId && !mvFailed ? openMv : null}
                     onCollapse={() => onPanelCollapse(true)}
                     onClose={closeMv}
                     onOpenLyrics={() => navigate("/lyrics")}
@@ -755,19 +769,27 @@ const MusicPlayer = (props) => {
                 panelSlot?.parentElement || document.body
             )}
             {/* cot phai thu gon: chi con dai mong + nut mo lai (kieu Spotify) */}
-            {mvStrip && createPortal(<NowPlayingStrip onExpand={() => onPanelCollapse(false)} />, panelSlot)}
+            {panelStrip && createPortal(<NowPlayingStrip mvOn={mvOpen} onExpand={() => onPanelCollapse(false)} />, panelSlot)}
 
             {/* thanh phat nhac co dinh duoi cung man hinh */}
             <footer className="player-bar">
                 <div className="bar-song">
                     {/* bam anh / ten bai -> mo khung phat lon */}
-                    <button className="bar-open" onClick={() => navigate('/now-playing')} aria-label="Open now playing" title="Open now playing">
-                        <Cover className="bar-cover" src={coverSrc} />
-                        <span className="bar-text">
-                            <span className="bar-title">{data.song.title}</span>
-                            <span className="bar-artist">{artist}</span>
-                        </span>
-                    </button>
+                    <div className="bar-track">
+                        <button className="bar-open" onClick={() => navigate('/now-playing')} aria-label="Open now playing" title="Open now playing">
+                            <Cover className="bar-cover" src={coverSrc} />
+                        </button>
+                        <div className="bar-text">
+                            <button className="bar-open bar-title" onClick={() => navigate('/now-playing')} title="Open now playing">
+                                {data.song.title}
+                            </button>
+                            {data.song.artist_id
+                                ? <Link className="bar-artist bar-artist-link" to={`/artist/${data.song.artist_id}`} title={`View ${artist}`}>
+                                    {artist}
+                                </Link>
+                                : <span className="bar-artist">{artist}</span>}
+                        </div>
+                    </div>
                     {likeButton("icon-btn")}
                     {/* che do playlist khong cham diem -> khong co nut nay */}
                     {scored && (

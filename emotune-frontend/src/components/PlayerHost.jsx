@@ -41,9 +41,9 @@ const PlayerHost = () => {
     // sang bai moi thi tat lai (play() ben duoi) -> bai sau khong tu bo giong ca si
     const [karaoke, setKaraoke] = useState(false);
     const [scoreOn, setScoreOn] = useState(false);
-    // che do xem MV (H16): bat roi thi bai sau co MV cung chieu MV, nhu Spotify
+    // che do xem MV (H16): bat roi thi bai sau co MV cung chieu MV, nhu Spotify; tu chon bai -> tu bat (autoMv)
     const [mvWanted, setMvWanted] = useState(false);
-    // cot phai xem MV khi luot trang khac: thu gon (chi con video) hay mo rong (them loi bai, ca si)
+    // cot phai "Now playing" o trang khac /now-playing (MV / anh bai, loi bai, ca si): thu gon thanh dai mong hay mo rong
     const [panelCollapsed, setPanelCollapsed] = useState(false);
     // Shuffle (chi tac dung voi hang doi) + Repeat: off -> all (lap hang doi) -> one (lap 1 bai); giu khi sang bai
     const [shuffle, setShuffle] = useState(false);
@@ -102,8 +102,15 @@ const PlayerHost = () => {
         playFromQueue(plain, first);
     }
 
+    // nguoi dung TU CHON bai (trang chu, trang ca si, playlist, o tim kiem, tro ly) -> bai co MV thi MV tu chay o cot phai
+    // (F24). Man <= 1100px khong tu bat: cot phai la ngan keo noi, tu mo se che noi dung trang
+    const autoMv = () => {
+        if (window.matchMedia("(min-width: 1101px)").matches) setMvWanted(true);
+    }
+
     // nhan lenh tu cac trang (quet xong, playlist, ca si, o tim kiem)
     const handleCommand = (cmd) => {
+        if (cmd.kind === "song" || cmd.kind === "queue" || cmd.kind === "playlist") autoMv();
         // I4: buon/gian keo dai -> backend tra ve hanh trinh ~5 bai (buon -> trung tinh -> vui): phat nhu 1 hang doi
         // nhung VAN cham diem nghe (bai do AI chon theo cam xuc, khac playlist)
         const journey = cmd.kind === "scan" ? cmd.result.journey : null;

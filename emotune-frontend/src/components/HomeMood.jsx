@@ -1,125 +1,232 @@
-import { useState } from 'react';
-import Donut from './stats/Donut';
+import { useEffect, useRef, useState } from 'react';
+import MoodIcon from './MoodIcon';
 import { EMOTIONS } from '../utils/moodStats';
 import './HomeMood.scss';
 
-// 2 bieu do cua 2 the cuoi trang chu, ve theo anh mau "Infographic Chart" (cung bang mau neon voi /stats).
-// Du lieu: days = buildDays(/mood-history) -> 7 ngay, moi ngay { label, sub, counts: { happy: 2, ... }, total }
+// 2 bieu do cua 2 the cuoi trang chu (22/10 nguoi dung chon tu trang xem truoc: D cho the tuan, C cho the quet).
+// Mau lay tu bien cua khoi cha (.browse-page .features -> @include neon-mood): --mood-*, --c, --grid, --tip-bg.
 
-const nice = (n) => (n <= 4 ? 4 : Math.ceil(n / 2) * 2);   // dinh truc y chan, it nhat 4 -> 2 vach chia deu
 const weekCounts = (days) => EMOTIONS.map((e) => ({ ...e, n: days.reduce((s, d) => s + (d.counts[e.key] || 0), 0) }));
 
-// ---------- 7 cot mong + vong so lan quet + donut ca tuan ----------
+// do be rong that cua khung ve -> SVG ve theo pixel that (chu khong bi co nho khi the hep)
+const useWidth = () => {
+    const ref = useRef(null);
+    const [width, setWidth] = useState(0);
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return undefined;
+        const ro = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)));
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+    return [ref, width];
+};
+
+// duong cong muot qua cac diem (Catmull-Rom -> Bezier), khong vong xuong duoi day bieu do
+const smoothPath = (pts, floor) => pts.reduce((d, [x, y], i) => {
+    if (i === 0) return `M${x} ${y}`;
+    const p0 = pts[i - 2] || pts[i - 1];
+    const p1 = pts[i - 1];
+    const p3 = pts[i + 1] || [x, y];
+    const c1 = [p1[0] + (x - p0[0]) / 6, Math.min(floor, p1[1] + (y - p0[1]) / 6)];
+    const c2 = [x - (p3[0] - p1[0]) / 6, Math.min(floor, y - (p3[1] - p1[1]) / 6)];
+    return `${d} C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} ${x} ${y}`;
+}, '');
+
+const niceTop = (n) => (n <= 4 ? 4 : Math.ceil(n / 2) * 2);   // dinh truc y chan, it nhat 4
+
+// vong % nho cua 1 cam xuc (cung mau --c)
+const PctRing = ({ value, size = 54, th = 6 }) => {
+    const r = (size - th) / 2;
+    const C = 2 * Math.PI * r;
+    return (
+        <svg className="hm-pct-ring" width={size} height={size} aria-hidden="true">
+            <circle className="track" cx={size / 2} cy={size / 2} r={r} strokeWidth={th} />
+            <circle className="arc" cx={size / 2} cy={size / 2} r={r} strokeWidth={th}
+                strokeDasharray={`${value * C} ${C}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+        </svg>
+    );
+};
+
+// ---------- the tuan (D): duong sang tong so lan quet moi ngay + cot mo theo cam xuc phia sau + vong % tung cam xuc ----------
+const PAD = { l: 30, r: 12, t: 34, b: 26 };
+const H = 230;
+
 export const MoodWeekChart = ({ days }) => {
+    const [boxRef, width] = useWidth();
+    const [hover, setHover] = useState(null);
     const total = days.reduce((s, d) => s + d.total, 0);
-    const top = nice(Math.max(...days.map((d) => d.total)));
-    const peak = days.reduce((best, d) => (d.total > best.total ? d : best), days[0]);
-    const week = weekCounts(days);
-    const present = week.filter((e) => e.n > 0);
+    const week = weekCounts(days).filter((e) => e.n > 0);
+    const top = niceTop(Math.max(...days.map((d) => d.total)));
+    const peak = days.reduce((best, d, i) => (d.total > days[best].total ? i : best), 0);
+
+    const pw = Math.max(0, width - PAD.l - PAD.r);
+    const ph = H - PAD.t - PAD.b;
+    const floor = PAD.t + ph;
+    const colW = pw / days.length;
+    const xs = days.map((_, i) => PAD.l + (i + 0.5) * colW);
+    const ys = days.map((d) => floor - (d.total / top) * ph);
+    const pts = xs.map((x, i) => [x, ys[i]]);
+    const line = width ? smoothPath(pts, floor) : '';
+    const barW = Math.min(18, colW * 0.4);
 
     return (
         <div className="hm-week">
-            <div className="hm-chart-wrap">
-                {/* chu thich: o vuong nho cho cam xuc co mat trong tuan (mau khong bao gio dung 1 minh) */}
-                {present.length > 0 && (
-                    <ul className="hm-legend">
-                        {present.map((e) => (
-                            <li key={e.key} className={e.key}><span className="hm-swatch" aria-hidden="true" />{e.label}</li>
-                        ))}
-                    </ul>
-                )}
-                <div className="hm-plot" role="img" aria-label={`Scans per day this week: ${days.map((d) => `${d.label} ${d.total}`).join(', ')}`}>
-                    {/* luoi cham ngang + so truc y (0, giua, dinh) */}
-                    <div className="hm-grid" aria-hidden="true">
-                        {[top, top / 2, 0].map((v) => <div key={v} className="hm-gridline"><span>{v}</span></div>)}
-                    </div>
-                    <div className="hm-cols">
-                        {days.map((d) => {
-                            const pct = (d.total / top) * 100;
-                            const segs = EMOTIONS.filter((e) => d.counts[e.key]);
-                            const topMood = segs.reduce((best, e) => (d.counts[e.key] > (d.counts[best?.key] || 0) ? e : best), null);
+            <div className="hm-line" ref={boxRef}>
+                {width > 0 && (
+                    <svg width={width} height={H} role="img"
+                        aria-label={`Scans per day this week: ${days.map((d) => `${d.label} ${d.total}`).join(', ')}`}>
+                        <defs>
+                            <linearGradient id="hm-line-grad" x1="0" x2="1">
+                                <stop offset="0" stopColor="#f08a3c" />
+                                <stop offset="0.55" stopColor="#e8456e" />
+                                <stop offset="1" stopColor="#a35cf0" />
+                            </linearGradient>
+                            <linearGradient id="hm-area-grad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0" stopColor="#e8456e" stopOpacity="0.35" />
+                                <stop offset="1" stopColor="#e8456e" stopOpacity="0" />
+                            </linearGradient>
+                            <radialGradient id="hm-glow">
+                                <stop offset="0" stopColor="#ffb347" stopOpacity="0.45" />
+                                <stop offset="1" stopColor="#ffb347" stopOpacity="0" />
+                            </radialGradient>
+                        </defs>
+                        {/* luoi ngang + so truc y (0, giua, dinh) */}
+                        {[0, top / 2, top].map((v) => {
+                            const y = floor - (v / top) * ph;
                             return (
-                                <div key={d.sub} className={`hm-col ${d.total ? '' : 'is-empty'}`} tabIndex={d.total ? 0 : -1}>
-                                    {/* vong so lan quet o hang tren, vach trang noi xuong dau cot (nhu vong "46%" trong anh mau) */}
-                                    {d.total > 0 && <span className="hm-badge">{d.total}</span>}
-                                    {/* vung ve (trung voi luoi): cot + vach noi + quang sang ngay dong nhat */}
-                                    <div className="hm-track">
-                                        {d.total > 0 && <span className="hm-stem" style={{ bottom: `calc(${pct}% + 6px)` }} aria-hidden="true" />}
-                                        {d === peak && d.total > 0 && <span className={`hm-halo ${topMood.key}`} style={{ bottom: `${pct / 2}%` }} aria-hidden="true" />}
-                                        <div className="hm-bar" style={{ height: `${pct}%` }}>
-                                            {segs.map((e) => (
-                                                <span key={e.key} className={`hm-seg ${e.key}`} style={{ flexGrow: d.counts[e.key] }} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    {/* bang so khi re chuot / focus */}
-                                    {d.total > 0 && (
-                                        <div className="hm-tip" role="tooltip">
-                                            <b>{d.label} · {d.sub}</b>
-                                            {segs.map((e) => (
-                                                <span key={e.key} className={e.key}><i className="hm-swatch" />{e.label}<em>{d.counts[e.key]}</em></span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                <g key={v}>
+                                    <line className="hm-gridline" x1={PAD.l} x2={width - PAD.r} y1={y} y2={y} />
+                                    <text className="hm-axis" x={PAD.l - 8} y={y + 4} textAnchor="end">{v}</text>
+                                </g>
                             );
                         })}
-                    </div>
-                    <div className="hm-days" aria-hidden="true">
-                        {days.map((d) => <span key={d.sub}>{d.label === 'Today' ? 'Today' : d.label.slice(0, 3)}</span>)}
-                    </div>
+                        {/* cot mo phia sau: chong theo cam xuc */}
+                        {days.map((d, i) => {
+                            let y = floor;
+                            return EMOTIONS.filter((e) => d.counts[e.key]).map((e) => {
+                                const h = (d.counts[e.key] / top) * ph;
+                                y -= h;
+                                return <rect key={`${d.sub}-${e.key}`} className={`hm-ghost ${e.key}`} x={xs[i] - barW / 2} y={y + 1} width={barW} height={Math.max(2, h - 2)} rx="3" />;
+                            });
+                        })}
+                        {/* quang sang am o moi ngay co quet (to theo so lan) */}
+                        {days.map((d, i) => d.total > 0 && <circle key={d.sub} cx={xs[i]} cy={ys[i]} r={16 + Math.min(d.total, 10) * 3} fill="url(#hm-glow)" />)}
+                        <path d={`${line} L${xs[xs.length - 1]} ${floor} L${xs[0]} ${floor} Z`} fill="url(#hm-area-grad)" />
+                        <path className="hm-line-path" d={line} stroke="url(#hm-line-grad)" />
+                        {days.map((d, i) => d.total > 0 && (
+                            <circle key={d.sub} className={`hm-point ${i === peak ? 'peak' : ''}`} cx={xs[i]} cy={ys[i]} r={i === peak ? 6 : 4} />
+                        ))}
+                        {total > 0 && <text className="hm-peak" x={xs[peak]} y={ys[peak] - 16} textAnchor="middle">{days[peak].total}</text>}
+                        {days.map((d, i) => (
+                            <text key={d.sub} className={`hm-axis ${d.label === 'Today' ? 'today' : ''}`} x={xs[i]} y={H - 6} textAnchor="middle">
+                                {d.label === 'Today' ? 'Today' : d.label.slice(0, 3)}
+                            </text>
+                        ))}
+                        {hover !== null && <line className="hm-cross" x1={xs[hover]} x2={xs[hover]} y1={PAD.t - 10} y2={floor} />}
+                    </svg>
+                )}
+                {/* vung re chuot / Tab moi ngay -> bang so */}
+                <div className="hm-hits" style={{ left: PAD.l, right: PAD.r }}>
+                    {days.map((d, i) => (
+                        <div key={d.sub} className="hm-hit" tabIndex={d.total ? 0 : -1}
+                            onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
+                            onFocus={() => setHover(i)} onBlur={() => setHover(null)}>
+                            {hover === i && d.total > 0 && (
+                                <div className={`hm-tip ${i < days.length / 2 ? 'to-right' : 'to-left'}`} role="tooltip">
+                                    <b>{d.label} · {d.sub}</b>
+                                    {EMOTIONS.filter((e) => d.counts[e.key]).map((e) => (
+                                        <span key={e.key} className={e.key}><i className="hm-swatch" />{e.label}<em>{d.counts[e.key]}</em></span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
-            {/* donut ti le cam xuc ca tuan, giua la tong so lan quet (nhu so "358" trong anh mau) */}
-            <Donut
-                className="hm-donut"
-                size={150}
-                thickness={14}
-                label={`${total} scans this week: ${present.map((e) => `${e.label} ${e.n}`).join(', ') || 'none'}`}
-                parts={week.map((e) => ({ key: e.key, value: e.n, className: e.key }))}
-            >
-                <span className="hm-total"><b>{total}</b><small>{total === 1 ? 'scan' : 'scans'}</small></span>
-            </Donut>
+            {/* vong % tung cam xuc co mat trong tuan (nhu 3 vong nho duoi duong cong cua anh mau) */}
+            {total > 0 && (
+                <ul className="hm-rings" aria-label="Share of scans by mood this week">
+                    {week.map((e) => (
+                        <li key={e.key} className={e.key}>
+                            <span className="hm-ring-box">
+                                <PctRing value={e.n / total} />
+                                <MoodIcon emotion={e.key} size={22} />
+                            </span>
+                            <span><b>{Math.round((e.n / total) * 100)}%</b><small>{e.label} · {e.n}</small></span>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 };
 
-// ---------- luoi cham: moi cham = 1 lan quet trong tuan, mau theo cam xuc, cu -> moi ----------
-const MAX_DOTS = 70;
+// ---------- the quet (C): vong sang, moi cung = 1 lan quet (moi nhat o dinh, sang nhat), icon cam xuc gan nhat o giua ----------
+const RING = 230;
+const R = 96;
 
-export const ScanDots = ({ days }) => {
-    const [hover, setHover] = useState(null);
-    const all = days.flatMap((d) => EMOTIONS.flatMap((e) =>
-        Array.from({ length: d.counts[e.key] || 0 }, () => ({ emotion: e, day: d }))));
-    // qua nhieu lan quet -> moi cham dai dien cho "per" lan (lay deu theo thu tu thoi gian)
-    const per = Math.max(1, Math.ceil(all.length / MAX_DOTS));
-    const dots = all.filter((_, i) => i % per === 0);
-    const week = weekCounts(days).filter((e) => e.n > 0);
-
-    if (!all.length) return <p className="hm-empty">No scans this week yet — your scans will show up here as colored dots.</p>;
+export const ScanRing = ({ scans, latest, ago }) => {
+    if (!scans.length && !latest) return <p className="hm-empty">No scans yet — scan your face and each scan shows up here as a glowing arc.</p>;
+    const n = scans.length;
+    const step = (2 * Math.PI) / Math.max(n, 1);
+    const gap = n > 1 ? Math.min(0.07, step * 0.25) : 0;
+    const c = RING / 2;
+    const pt = (a, r) => [c + r * Math.sin(a), c - r * Math.cos(a)];
+    const counts = EMOTIONS.map((e) => ({ ...e, n: scans.filter((s) => s.emotion === e.key).length })).filter((e) => e.n > 0);
+    const center = latest || scans[0];
 
     return (
-        <div className="hm-dots-wrap">
-            <div
-                className="hm-dots"
-                role="img"
-                aria-label={`${all.length} scans this week: ${week.map((e) => `${e.label} ${e.n}`).join(', ')}`}
-                onMouseLeave={() => setHover(null)}
-            >
-                {dots.map((dot, i) => (
-                    <span key={i} className={`hm-dot ${dot.emotion.key}`} onMouseEnter={() => setHover(dot)} />
-                ))}
+        <div className="hm-scan">
+            <div className="hm-ring">
+                {/* class cam xuc tren <svg> -> cac <stop> ben trong nhan --c (mau quang sang giua vong) */}
+                <svg className={center.emotion} width={RING} height={RING} role="img" aria-label={`Last ${n} scans, newest first: ${scans.map((s) => s.emotion).join(', ')}`}>
+                    <defs>
+                        <radialGradient id="hm-ring-glow">
+                            <stop offset="0" className="hm-glow-in" />
+                            <stop offset="1" className="hm-glow-out" />
+                        </radialGradient>
+                    </defs>
+                    <circle cx={c} cy={c} r="72" fill="url(#hm-ring-glow)" />
+                    {/* vong hat mo ben trong, xoay rat cham */}
+                    <g className="hm-ring-dots">
+                        {Array.from({ length: 60 }, (_, i) => {
+                            const [x, y] = pt((i / 60) * 2 * Math.PI, 76);
+                            return <circle key={i} cx={x} cy={y} r={i % 5 ? 1 : 1.8} className={i % 5 ? 'dot' : 'dot big'} />;
+                        })}
+                    </g>
+                    {n === 1 ? (
+                        <circle className={`hm-arc newest ${scans[0].emotion}`} cx={c} cy={c} r={R} />
+                    ) : scans.map((s, i) => {
+                        const a0 = i * step - step / 2 + gap / 2;
+                        const a1 = a0 + step - gap;
+                        const r = i === 0 ? R + 2 : R;
+                        const [x0, y0] = pt(a0, r);
+                        const [x1, y1] = pt(a1, r);
+                        return (
+                            <path key={i} className={`hm-arc ${i === 0 ? 'newest' : ''} ${s.emotion}`}
+                                d={`M${x0} ${y0} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`}
+                                style={{ opacity: i === 0 ? 1 : 1 - (i / n) * 0.45 }}>
+                                <title>{EMOTIONS.find((e) => e.key === s.emotion)?.label}{s.at ? ` · ${new Date(s.at).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}</title>
+                            </path>
+                        );
+                    })}
+                </svg>
+                <div className="hm-ring-center">
+                    <MoodIcon emotion={center.emotion} size={70} />
+                    <b>{EMOTIONS.find((e) => e.key === center.emotion)?.label}</b>
+                    {ago && <small>{ago}</small>}
+                </div>
             </div>
-            <p className="hm-dots-caption" aria-hidden="true">
-                {hover
-                    ? <><i className={`hm-swatch ${hover.emotion.key}`} />{hover.emotion.label} · {hover.day.label} {hover.day.sub}</>
-                    : per > 1 ? `Every scan this week · 1 dot ≈ ${per} scans` : 'Every scan this week · 1 dot = 1 scan'}
-            </p>
-            <ul className="hm-legend">
-                {week.map((e) => (
-                    <li key={e.key} className={e.key}><span className="hm-swatch" aria-hidden="true" />{e.label} <b>{e.n}</b></li>
-                ))}
-            </ul>
+            <div className="hm-scan-side">
+                <h4>{n ? `Your last ${n} ${n === 1 ? 'scan' : 'scans'}` : 'Your last scan'}</h4>
+                <p>Each arc is one scan, newest at the top. The bright one is the latest.</p>
+                <ul className="hm-scan-legend">
+                    {counts.map((e) => (
+                        <li key={e.key}><MoodIcon emotion={e.key} size={20} /><span>{e.label}</span><b>{e.n}</b></li>
+                    ))}
+                </ul>
+            </div>
         </div>
     );
 };

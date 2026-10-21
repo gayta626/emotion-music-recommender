@@ -471,6 +471,14 @@
     font-size: 56px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 
+    // icon cảm xúc đặt trên ô màu: vẽ nét trắng (icon cùng màu với ô thì chìm mất)
+    .mood-icon {
+      stroke: #fff;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3)) !important;   // thắng style phát sáng màu cảm xúc đặt inline
+      stop { stop-color: #fff; }
+      .mi-twinkle { fill: #fff; }
+    }
+
     &.vibe-happy { background: var(--vibe-happy); }
     &.vibe-surprise { background: var(--vibe-surprise); }
     &.vibe-neutral { background: var(--vibe-neutral); }

@@ -23,8 +23,22 @@ let getMoodHistoryData = async (userId) => {
 }
 
 
+// N lan quet / chon cam xuc gan nhat (moi nhat truoc) -> vong sang "How do you feel right now?" tren trang chu
+let getRecentScans = async (userId, limit) => {
+    const result = await db.query(
+        `SELECT emotion, created_at
+         FROM mood_history
+         WHERE user_id = $1 AND action = 'suggested'
+         ORDER BY created_at DESC
+         LIMIT $2`,
+        [userId, limit]
+    );
+    return result.rows;
+}
+
 module.exports = {
     getMoodHistoryData: getMoodHistoryData,
+    getRecentScans: getRecentScans,
 }
 
 

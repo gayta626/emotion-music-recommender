@@ -9,6 +9,9 @@ import './HeaderSearch.scss'
 // O tim kiem tren header: go ten bai / ca si (khong dau cung duoc) -> chon 1 bai la phat ngay
 const HeaderSearch = () => {
     const [songs, setSongs] = useState(null)
+    // tai /songs loi (mat mang, backend tat) -> bao loi + lan bam / go sau tai lai (truoc day gan [] -> bao "khong co bai" mai)
+    const [loadFailed, setLoadFailed] = useState(false)
+    const loadingRef = useRef(false)
     const [query, setQuery] = useState('')
     const [open, setOpen] = useState(false)
     const [active, setActive] = useState(0)
@@ -17,8 +20,13 @@ const HeaderSearch = () => {
 
     // chi tai danh sach bai khi nguoi dung bam vao o tim (khong tai thua khi chua can)
     const loadSongs = () => {
-        if (songs) return
-        api.get('/songs').then((res) => setSongs(res.data)).catch(() => setSongs([]))
+        if (songs || loadingRef.current) return
+        loadingRef.current = true
+        setLoadFailed(false)
+        api.get('/songs')
+            .then((res) => setSongs(res.data))
+            .catch(() => setLoadFailed(true))
+            .finally(() => { loadingRef.current = false })
     }
 
     useEffect(() => {
@@ -62,7 +70,7 @@ const HeaderSearch = () => {
                 value={query}
                 autoComplete="off"
                 onFocus={() => { loadSongs(); setOpen(true) }}
-                onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true) }}
+                onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true); if (loadFailed) loadSongs() }}
                 onKeyDown={onKeyDown}
                 role="combobox"
                 aria-expanded={!!showList}
@@ -70,7 +78,13 @@ const HeaderSearch = () => {
             />
             {showList && (
                 <ul className="search-results" id="header-search-results" role="listbox">
-                    {!songs && <li className="search-empty">Loading…</li>}
+                    {!songs && !loadFailed && <li className="search-empty">Loading…</li>}
+                    {!songs && loadFailed && (
+                        <li className="search-empty search-error">
+                            Couldn't load the music library.{' '}
+                            <button className="search-retry" onClick={loadSongs}>Try again</button>
+                        </li>
+                    )}
                     {songs && results.length === 0 && <li className="search-empty">No song or artist matches "{query}".</li>}
                     {results.map((s, i) => (
                         <li key={s.id} role="option" aria-selected={i === active}>

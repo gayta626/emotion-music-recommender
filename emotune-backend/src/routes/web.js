@@ -46,6 +46,7 @@ let initWebRoutes = (app) => {
     router.post('/likes/:songId', requireAuth, likeController.likeSong);
     router.delete('/likes/:songId', requireAuth, likeController.unlikeSong);
     router.get('/mood-history', requireAuth, moodHistoryController.getMoodHistory);
+    router.get('/mood-history/recent', requireAuth, moodHistoryController.getRecentScans);
     router.get('/stats', requireAuth, statsController.getStats);
     router.get('/insights', requireAuth, insightController.getInsights);
     router.get('/admin/health', requireAuth, requireAdmin, adminController.getHealth);

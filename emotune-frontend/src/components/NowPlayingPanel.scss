@@ -74,6 +74,43 @@
 
 }
 
+// chưa xem MV: chỉ là ảnh (thumbnail MV hoặc ảnh bìa), không có trình phát YouTube -> vẽ nút ▶ lên trên được
+.np-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  &.cover-fallback {
+    display: grid;
+    place-items: center;
+    font-size: 56px;
+    background: linear-gradient(160deg, #4b2f7a, #1b1430);
+  }
+}
+
+.np-play-mv {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover { background: rgba(0, 0, 0, 0.8); }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+}
+
 .np-titles { min-width: 0; }
 
 .np-title {
@@ -211,6 +248,9 @@
     width: min(340px, calc(100vw - 16px));
     background-color: rgb(20 18 28 / 0.94);
   }
+
+  // không đủ chỗ cột thứ 3 -> chỉ hiện ngăn kéo khi đang xem MV, nghe nhạc thường thì không che nội dung
+  .right-panel-slot:has(> .np-idle) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,9 +1,10 @@
 const listenReportService = require("../services/listenReportService")
 
 let submitListenReport = async (req, res) => {
-    const { emotion, songId, finishPercent, action } = req.body;
-    if (finishPercent < 0 || finishPercent > 1) {
-        return res.status(400).json({ error: "tien do nghe phai nam trong khoang tu 0 -> 1.00" })
+    const { emotion, songId, finishPercent } = req.body || {};
+    const invalid = listenReportService.checkListenReport({ emotion, songId, finishPercent });
+    if (invalid) {
+        return res.status(400).json({ error: invalid })
     }
     try {
         const result = await listenReportService.processListenReport(req.userId, emotion, songId, finishPercent);

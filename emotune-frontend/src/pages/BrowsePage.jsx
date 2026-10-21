@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import MoodIcon from '../components/MoodIcon';
-import { MoodWeekChart, ScanDots } from '../components/HomeMood';
+import { MoodWeekChart, ScanRing } from '../components/HomeMood';
 import HomeGreeting from '../components/HomeGreeting';
 import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
 import { buildMix, mixPath } from '../utils/mixes';
@@ -74,6 +74,8 @@ const BrowsePage = () => {
     const artists = useLoad('/artists');
     const playlists = useLoad('/playlists', [playlistsVersion]);
     const mood = useLoad('/mood-history');
+    // cac lan quet gan nhat theo thu tu (vong sang the "How do you feel right now?")
+    const recentScans = useLoad('/mood-history/recent');
 
     const byGenre = (list) => (genre ? list.filter((s) => s.genre_id === genre) : list);
     const madeForYou = forYou.data ? byGenre(forYou.data) : [];
@@ -113,6 +115,16 @@ const BrowsePage = () => {
             .sort((a, b) => b.n - a.n)[0];
         return { days, total, top, status: cheerUpStatus(days) };
     }, [mood.data]);
+
+    // vong sang: moi cung 1 lan quet, moi nhat truoc. Backend cu chua co /mood-history/recent -> dung tam so lan theo ngay
+    // (dung cam xuc, chi khong dung thu tu trong 1 ngay). null = dang tai
+    const scanList = useMemo(() => {
+        if (recentScans.data) return recentScans.data.map((r) => ({ emotion: r.emotion, at: Date.parse(r.created_at) }));
+        if (!recentScans.error || !moodSummary) return null;
+        return [...moodSummary.days].reverse()
+            .flatMap((d) => EMOTIONS.flatMap((e) => Array.from({ length: d.counts[e.key] || 0 }, () => ({ emotion: e.key }))))
+            .slice(0, 24);
+    }, [recentScans.data, recentScans.error, moodSummary]);
 
     // banner: tao playlist moi roi mo trang cua no
     const createPlaylist = () => {
@@ -222,16 +234,14 @@ const BrowsePage = () => {
                         </div>
                     </div>
                     <div className="feature-panel">
-                        {/* luoi cham: moi cham = 1 lan quet trong tuan, mau theo cam xuc */}
-                        {moodSummary && <ScanDots days={moodSummary.days} />}
-                        <p className="feature-line big">
-                            {lastMoodInfo
-                                ? <>Last scan: <MoodIcon emotion={lastMoodInfo.key} size={28} /> · {timeAgo(now - lastMood.at)}</>
-                                : 'No scan in this session yet'}
-                        </p>
-                        <p className="feature-line">
-                            NYX looks at your face and picks a song that fits your mood — or a happier one when you have been down for a while.
-                        </p>
+                        {/* vong sang: moi cung = 1 lan quet, giua la cam xuc gan nhat (phien nay, khong thi lan quet cuoi trong DB) */}
+                        {scanList && (
+                            <ScanRing
+                                scans={scanList}
+                                latest={lastMoodInfo ? { emotion: lastMoodInfo.key, at: lastMood.at } : null}
+                                ago={lastMoodInfo ? timeAgo(now - lastMood.at) : scanList[0]?.at ? timeAgo(now - scanList[0].at) : null}
+                            />
+                        )}
                     </div>
                     <button className="feature-btn" onClick={() => navigate('/scan')}>Scan my mood</button>
                 </article>

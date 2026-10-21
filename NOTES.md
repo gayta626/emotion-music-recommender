@@ -1,5 +1,114 @@
 # NOTES.md — EmoTune (đồ án Xây dựng hệ thống thông minh) — nhật ký phiên làm việc
 
+## Phiên 22/10/2026 (tối) — F24: cột phải "Now playing" luôn hiện
+
+- Người dùng: "chọn bài từ trang chủ hay từ profile artist thì nhạc phát nhưng cột MV không hiện ra".
+- **Tìm nguyên nhân** (Playwright, server của người dùng, chặn `/listen-report`): dữ liệu đủ (`/songs` có `youtube_id`, 86/102 bài có MV). Đã bật MV trước đó → chọn bài ở trang chủ / trang ca sĩ **vẫn hiện cột**. Chưa bật / đã ✕ → không có cột, vì `NowPlayingPanel` chỉ vẽ khi `mvOpen` (`mvWanted` mặc định `false`). Là thiết kế cũ, không phải lỗi dữ liệu.
+- Người dùng chọn **"Luôn hiện cột Now playing"** (kiểu Spotify; bỏ 2 lựa chọn "tự bật MV luôn" và "giữ như cũ").
+- Code: `MusicPlayer.jsx` tách `panelShown` (trang khác `/now-playing`, `/lyrics`) / `panelOpen` / `panelStrip` khỏi `mvOpen`; `mvInPanel = mvOpen && panelOpen`. `NowPlayingPanel`: prop `mvOn`, `onPlayMv`; chưa xem MV → `.np-poster` = ảnh bìa vuông (thumbnail YouTube có viền đen sẵn nên chỉ dùng khi bài không có bìa) + nút **▶ Watch MV** (vẽ đè được vì không có trình phát YouTube), nút ✕ chỉ khi đang xem MV (✕ = tắt MV, cột vẫn còn), tiêu đề "Now playing" / "Music video". Màn ≤ 1100px: `.right-panel-slot:has(> .np-idle)` ẩn → ngăn kéo nổi chỉ hiện khi xem MV.
+- **Sửa lại theo góp ý** ("chọn bài là MV tự phát luôn, không phải bấm play"): `PlayerHost.autoMv()` bật `mvWanted` khi lệnh `song` / `queue` / `playlist` (người dùng tự chọn), chỉ màn > 1100px (màn hẹp cột là ngăn kéo nổi, tự mở sẽ che trang). Kết quả quét không tự bật; nhưng `mvWanted` giữ qua các bài như H16 nên sau khi đã tự chọn 1 bài, bài quét sau cũng chiếu MV ở `/now-playing` (✕ / Close MV để tắt). Nút ▶ Watch MV còn dùng khi đã ✕ hoặc bài lỗi MV.
+- Kiểm tra (bản đầu, có nút Watch MV): lint + build sạch, frontend `npm test` 14/14. Playwright 1440: chọn bài có MV → cột + Watch MV, mp3 chạy; bài không MV → cột không có nút; Watch MV → MV ở cột (`mv-float` `panel`, mp3 dừng); ✕ → về mp3, cột còn; thu gọn → dải mỏng → mở lại; `/now-playing` không có cột; trang ca sĩ → cột hiện. 1000 + 390px: cột ẩn, không tràn ngang. **Bản sửa lại:** 1440 chọn bài có MV ở trang chủ / trang ca sĩ → `mv-float` `panel`, YouTube đang phát, mp3 dừng; bài không MV → ảnh bìa, mp3 chạy; ✕ → mp3 + nút Watch MV; 1000px không tự bật. Chưa commit.
+
+## Phiên 22/10/2026 (chiều) — H17b: vẽ lại 2 thẻ cuối trang chủ + icon nổi hơn
+
+- Người dùng: "làm icon cảm xúc nổi hơn chút nữa, biểu đồ cột với cái bên cạnh hơi xấu, design lại" + gửi ảnh lưới mẫu iStock (đường cong cam–hồng, cột kính, thanh ngang, vòng hạt…).
+- Làm theo ghi nhớ "cho duyệt trước": trang xem trước tạm `emotune-frontend/public/home-preview.html` (mở qua :5173, đã xoá). Lượt 1 (cột bo tròn / mỗi ngày 1 vòng; gần nhất + chọn nhanh / dòng thời gian) bị chê. Lượt 2: người dùng chọn **D** (thẻ tuần) + **C** (thẻ quét); icon "nổi hơn" được duyệt ngay lượt 1.
+- **Icon** (`MoodIcon.jsx`): nét 3.5 → 4.4, nền trong vòng = `radialGradient` (id riêng bằng `useId`), `drop-shadow` cùng màu to theo `size`. Trên ô màu (`.feature-thumb` trong `BrowsePage.scss`) ép nét trắng bằng CSS (thắng thuộc tính SVG; `filter` cần `!important` vì đặt inline).
+- **Thẻ tuần** `MoodWeekChart`: SVG vẽ theo bề rộng đo bằng `ResizeObserver` (chữ không co khi thẻ hẹp); đường Catmull-Rom (không vòng xuống dưới đáy), vùng tô hồng, cột mờ chồng theo cảm xúc (`.hm-ghost` opacity 0.42), quầng sáng mỗi ngày có quét, số đỉnh `#ff6b9a`; rê chuột / Tab mỗi ngày → bảng số **bên cạnh** cột (không che số đỉnh); 4 vòng % (`PctRing`) + icon. Bỏ donut + vòng số + vạch dài cũ.
+- **Thẻ quét** `ScanRing` (thay `ScanDots` + 2 đoạn chữ): 24 lần quét gần nhất, mỗi lần 1 cung (mới nhất ở đỉnh dày + sáng, cũ mờ dần), vòng hạt mờ xoay 40s (tắt khi giảm chuyển động), giữa = cảm xúc gần nhất (phiên này `lastMood`, không thì lần quét mới nhất) + "x min ago"; bên cạnh "Your last N scans" + đếm từng cảm xúc; thẻ hẹp (container query trên `.feature-panel:has(> .hm-scan)`) xếp dọc.
+- **API mới** `GET /mood-history/recent` → `moodHistoryModel.getRecentScans(userId, 24)` (`action = 'suggested'`, mới nhất trước). Backend người dùng đang chạy bản cũ (`node src/server.js`) → 404 → web dựng tạm từ `/mood-history` (đúng cảm xúc, chưa đúng thứ tự trong ngày). **Cần chạy lại backend.**
+- Kiểm tra: lint + build sạch, backend `npm test` 184/184, frontend 14/14; Playwright `demo` 1440 (rê Sun → bảng bên phải cột) + 390px không tràn ngang, 13 cung.
+
+## Phiên 22/10/2026 — H10b: icon cảm xúc kiểu nét mảnh
+
+- Người dùng: "đổi những icon biểu thị cảm xúc cho phù hợp hơn, mấy icon tôi chọn nhìn kì quá" (bộ thời tiết H10: mặt trời / mây mưa / lửa / bông tuyết / mặt trời sau mây).
+- Làm theo ghi nhớ "cho duyệt trước": vẽ 3 kiểu (A mặt tròn emoji, B nét mảnh, C mỗi cảm xúc 1 hình khối) trong 1 trang xem trước, tạm đặt ở `emotune-frontend/public/icon-preview.html` để mở qua :5173 (đã xoá sau khi chọn). Người dùng chọn **B**.
+- Code: chỉ `components/MoodIcon.jsx/.scss` (props `emotion`, `size`, `className` giữ nguyên → 11 file dùng `MoodIcon` tự đổi). Màu nét `#F2A53A / #6F93FF / #F0587E / #2FC2B2 / #B57BF5` (gần bảng màu cảm xúc, sáng hơn chút cho nét mảnh rõ trên nền tối). `assets/icons/emojione_sun.svg`, `emojione_sun-behind-cloud.svg` không còn dùng (để lại, xoá nếu muốn).
+- Kiểm tra: lint + build sạch; Playwright `/scan` (5 nút chọn cảm xúc), `/stats` (ô Most common mood, cột cảm xúc). Chưa commit.
+
+## Phiên 21/10/2026 (khuya) — C12c: biểu đồ tươi hơn theo 4 ảnh mẫu "Infographic Chart" — ❌ ĐÃ BỎ 22/10
+
+> **22/10:** người dùng xem xong: "cái mới xấu hơn cái cũ" → `git checkout --` 8 file (`_moodPalette.scss`, `Stats.scss`, `HomeMood.scss`, `OverviewTiles.jsx`, `DailyChart.jsx`, `PreferenceGrid.jsx`, `PageAmbient.scss`, `BrowsePage.scss`) về bản `bcf173e`. Ghi chú bên dưới giữ làm lịch sử (đừng làm lại hướng này nếu không được yêu cầu).
+
+- Góp ý: biểu đồ "màu nhạt, nhìn AI quá", muốn giống 4 ảnh mẫu (cột mảnh nhiều sắc + vòng %, hoa hồng nhiều cánh, đường cong cam–hồng, bộ biểu đồ hồng–xanh); được đổi dạng nếu đẹp hơn.
+- **Màu** (`styles/_moodPalette.scss`): happy `#e27026`, surprise `#bd62f5`, neutral `#0aa394`, sad `#4a82ff`, angry `#f4467a` (cũ `#d4741f #a35cf0 #1fa99c #4d74f0 #e8456e`). Mỗi class cảm xúc thêm `--c0` (đầu đậm) / `--c2` (đầu sáng) lệch sắc nhẹ — đây là thứ làm cột / cánh hoa "tươi" giống ảnh mẫu. Thẻ `--card` tím than `#312c6c → #27245a → #201d4e`, `--card-deep` cho lỗ giữa vòng, `--neon` cam → hồng → tím → xanh. `.out-*` (kết quả nghe) cũng có `--c0/--c2`.
+- **Kiểm tra màu** (skill dataviz, `validate_palette.js --mode dark --surface #27245a`): đạt độ sáng / độ đậm / mù màu cặp đứng cạnh nhau / tương phản. So **mọi cặp**: xanh dương ~ tím (mù đỏ ΔE ~3) và cam ~ hồng (ΔE 14) hơi gần — bảng cũ cũng trượt y như vậy; chấp nhận vì luôn có icon + tên cảm xúc, thứ tự chồng giữ 2 cặp này không đứng cạnh nhau.
+- **Đổi dạng:** `DailyChart` thanh ngang → **cột dọc mảnh chồng** (`.dcol-*` trong `Stats.scss`; 7 ngày cột 16px, mọi ngày có vòng số; 30 ngày cột 8px, chỉ ngày đông nhất có vòng số + quầng sáng; nhãn trục x thưa 5 ngày); chú giải % đổi tên class `.mood-shares`. `PreferenceGrid`: viên điểm theo màu cột cảm xúc, 4 mức đậm (`.lv1–.lv4`), điểm âm viền đứt.
+- Đổi màu (giữ dạng): sóng theo giờ, vòng "got it right" + sparkline, hoa hồng độ tự tin, donut, sparkline ô Scans (`OverviewTiles`), 2 thẻ cuối trang chủ (`HomeMood.scss`, `.feature` trong `BrowsePage.scss`), nền trang `/stats` (`PageAmbient.scss`). `/admin` dùng chung `--card` nên thẻ cũng tím than; màu trạng thái (ok/warn/alert) giữ nguyên.
+- Kiểm tra: lint + build sạch, frontend `npm test` 14/14; Playwright (server của người dùng :5173/:8080, chặn mọi request ghi): `/stats` `demo30` 30 ngày + `demo` 7 ngày (rê chuột cột → bảng số đúng), trang chủ, `/admin`, 390px không tràn ngang. Ảnh trước/sau ở scratchpad (mất khi hết phiên).
+- Còn: lớp sóng có viền sáng mờ ở đáy khi giá trị 0 (nhỏ, chưa sửa). Chưa commit.
+
+## Phiên 21/10/2026 (tối) — sửa 7 lỗi trong `docs/reviews/2026-10-21/REVIEW.md`
+
+| # | Lỗi | Cách sửa | File |
+|---|---|---|---|
+| 1 | Đổi tài khoản cùng tab vẫn dùng cảm xúc + cờ "đã quét" của người trước | phiên `sessionStorage` gắn với token đăng nhập (`emotune_session_owner` = 16 ký tự cuối JWT); token khác → đọc ra trống, ghi thì xoá phiên cũ. Bao cả đăng xuất, 401, tab khác đăng nhập người khác | `frontend/src/utils/moodSession.js` |
+| 2 | Nửa mp3 + nửa MV chỉ tính 50% | `utils/listenSpans.js` (hàm thuần): mọi đoạn đã nghe quy về trục 0..1 của bài (mp3 / nhạc đệm chia `audio.duration`, MV chia độ dài MV — giống `mapTime`), gộp đoạn chồng nhau rồi cộng. `playedBeforeRef` giờ là danh sách đoạn; `mvWatchRef.spans` ghi đoạn MV (nối tiếp thì kéo dài đoạn cuối) | `MusicPlayer.jsx`, `utils/listenSpans.js`, `test/listenSpans.test.js` |
+| 3 | "View playlist" ngoài `/now-playing` không thấy gì (hàng đợi nằm trong `.player-stage` bị `display: none`) | ngoài `/now-playing` vẽ `QueuePanel floating` ngoài khung lớn: `.queue-float` cố định bên phải, giữa header và thanh phát, z-index 19 | `MusicPlayer.jsx/.scss`, `PlayerOverlays.jsx` |
+| 4 | `/scan-feedback` lỗi giữa chừng → mất dòng lịch sử cũ, bấm lại 410 | `deleteSuggestion` trả dòng đã xoá (`RETURNING`), lỗi thì `restoreSuggestion` ghi lại đúng id + thời điểm; chỉ xoá lượt quét khỏi RAM khi thành công; `scan.busy` → lần sửa thứ 2 cùng lúc 409; lưu ảnh mặt lỗi không làm hỏng bài đã chọn. Không dùng transaction vì `generateSuggestion` gọi nhiều model qua pool | `moodFixService.js`, `suggestModel.js` |
+| 5 | `/songs` lỗi 1 lần → ô tìm kiếm báo "No song matches" mãi | trạng thái `loadFailed` riêng: báo "Couldn't load the music library. Try again", gõ tiếp hoặc bấm Try again thì tải lại; `loadingRef` chống gọi trùng | `HeaderSearch.jsx/.scss` |
+| 6 | `/listen-report` nhận `finishPercent` thiếu / null / "abc" / {} vẫn chấm điểm | hàm thuần `checkListenReport`: cảm xúc thuộc 5 nhãn, `songId` số nguyên dương, `finishPercent` là số hữu hạn trong [0, 1] → không thì 400 | `listenReportService.js`, `listenReportController.js` |
+| 7 | Lượt quét quá 30 phút vẫn sửa được nếu không có lượt quét mới | `isExpired` kiểm tra khi sửa (→ 410) + `attachHistory`; `setInterval(prune, 60s).unref()` dọn RAM | `moodFixService.js` |
+
+**Kiểm tra:** backend `npm test` **184/184** (+7 `test/moodFix.test.js`, model thay bằng hàm giả), frontend `npm test` **14/14** (+5), `npx eslint src` sạch, `npm run build` OK (cảnh báo bundle > 500 kB có sẵn). Bản thử riêng: backend `PORT=8090 node src/server.js` + `VITE_API_URL=http://localhost:8090 npx vite --port 5174` (đã tắt sau khi thử). curl `/listen-report` 6 body sai → 400. Playwright (`playwright-core@1.49.1`, Chrome; chặn mọi POST ghi điểm): ① `demo30` chọn bài → đăng xuất → `mau_pop` đăng nhập: `/` = màn quét, không có cảm xúc của A · ② mp3 thật nghe 0–10s + giữa bài 10s + 1s cuối → gửi `finishPercent` 0.080 = 21/263 · ③ `/artist/47` → Play → View playlist: hàng đợi nổi 340px ở 1440px và 390px (không tràn ngang), ✕ đóng được, ở `/now-playing` vẫn dùng hàng đợi trong khung lớn · ⑤ `/songs` lỗi lần đầu → báo lỗi, gõ tiếp / Try again → ra "Perfect". Không thử MV thật (cần YouTube); phần MV có unit test.
+
+**Sự cố trong phiên:** backend của người dùng chạy `node src/server.js` (không nodemon) nên không nạp code mới; 5 lệnh curl thử đầu tiên đã ghi điểm thật vào `demo` (bài id 1). **Đã hoàn tác** trong 1 transaction: `preferences` happy/bài 1 cộng lại 0.1 (về −1.0), xoá dòng `bored`, `mood_history` id 1777–1781, `recently_played` id 771–775.
+
+**Còn lại:** người dùng tắt + chạy lại backend (`npm run dev`) để có code mới; `docs/reviews/2026-10-21/reproduce.cjs` khẳng định hành vi LỖI cũ nên giờ sẽ báo sai (đúng như dự kiến). Chưa commit.
+
+## Phiên 21/10/2026 — liên kết nghệ sĩ ở thanh phát (F23)
+
+- Người dùng muốn bấm tên ca sĩ dưới thanh phát để mở trang nghệ sĩ (ví dụ Ed Sheeran).
+- `MusicPlayer.jsx` tách ảnh/tên bài và tên ca sĩ thành các điều khiển riêng; dùng React Router Link tới `/artist/:id`, không lồng link trong button. Bài thiếu nghệ sĩ vẫn hiện chữ thường.
+- `MusicPlayer.scss` giữ bố cục thanh phát, thêm hover/focus cho liên kết. `requestSongModel.js` bổ sung `s.artist_id` để bài yêu cầu từ menu cũng có liên kết.
+- Đã kiểm tra: lint + build thành công (cảnh báo bundle >500 kB có sẵn), trình duyệt Perfect → bấm Ed Sheeran → `/artist/47`, nhạc tiếp tục; bấm tên Perfect quay về Now playing. Truy vấn DB chỉ đọc xác nhận Request a song có `artist_id: 47`.
+- Ảnh kiểm chứng: `docs/reviews/2026-10-21/player-artist-link.jpg`. Backend đã khởi động lại, frontend và AI tiếp tục chạy để người dùng kiểm tra. Chưa commit/push.
+
+# 🧭 PHIÊN 18/10/2026 (đêm) — tài liệu Word + slide báo cáo cho môn HTTM (không đụng code)
+
+## 1. Mục tiêu
+- Làm file Word "Xác định yêu cầu + thiết kế hệ thống" **giống khung tài liệu mẫu X-quang phổi** người dùng đưa (`Downloads\THIẾT KẾ HỆ THỐNG ... X-QUANG (PHỔI) ... .docx.md`), đáp ứng **bảng tiêu chí chấm HTTM** (2 ảnh Excel người dùng chụp): Thiết kế 4đ (CSDL + lý thuyết 1,5 · giao diện 0,5 · phần thông minh 1 · tương tác ứng dụng – phần thông minh 1), Chức năng 3đ (nhập liệu · giải thuật thông minh · hoạt động đủ, mỗi mục 1), Thông minh 3đ (trải nghiệm · cải thiện trí thông minh data hiện tại + tương lai · thể hiện cho người dùng, mỗi mục 1) + trình bày 0,5 (bị trừ khi không đạt).
+- Sửa slide `docs/EmoTune_bao_cao_cuoi_ki.pptx` (đang là bản môn HIC: Raspberry Pi, OLED, HCI) cho hợp đồ án HTTM.
+
+## 2. Việc đã làm xong (chưa commit)
+- **`docs/EmoTune_Xac_dinh_yeu_cau_va_thiet_ke.docx`** (43 trang, A4, Times New Roman 13, tiếng Việt). Bìa: GVHD **Nguyễn Ngọc Duy**; SV **Nguyễn Đức Vinh, Phạm Thế Vỹ, Hoàng Tuấn Phát**; lớp **E23CQCNPM01-N**. Mục I–V theo khung mẫu (các bước XĐYC, khảo sát hiện trạng 2 vai trò Người nghe / Admin, bảng công việc + quy định **ND_QĐ1–15, AD_QĐ1–7, SYS_QĐ2** viết 3 phần Input / Xử lý / Output, biểu mẫu ND_BM / AD_BM, yêu cầu hệ thống, chất lượng); thêm VI CSDL 12 bảng + ERD, VII lý thuyết + 3 module thông minh (CNN/EmoNet, macro-F1, k-fold theo người, cosine kNN, phản hồi ngầm, iso principle), VIII tương tác (12 điểm chạm + kịch bản demo 5 phút), IX đối chiếu 11 tiêu chí chấm, X kết luận. Mục lục là field → mở Word phải **Update Field**.
+- **`docs/EmoTune_bao_cao_cuoi_ki.pptx`** (28 slide, tiếng Anh, giữ thiết kế cũ): chân trang "EMOTUNE · E23CQCNPM01-N · INTELLIGENT SYSTEMS (HTTM)", chương 01 Architecture · 02 Face-emotion AI · 03 Smart inference · 04 Recommendation · 05 Learning loop · 06 UI/criteria/status/demo. Bỏ 3 slide phần cứng (cũ 4, 5, 9); thêm 4 slide (hỏi lại khi < 60%, AI học từ đâu, giám sát /admin, đối chiếu tiêu chí HTTM); bìa thay hình hộp nhạc bằng 3 con số; viết lại kiến trúc, endpoint, CSDL 12 bảng (`ai_emotion`), kNN (công thức cosine), hành trình 5 bài, tiến độ, demo, kết luận, phụ lục. **Bản cũ giữ ở `docs/EmoTune_bao_cao_cuoi_ki_ban_HIC_cu.pptx`** (khác bản trong thư mục HIC).
+- **`docs/nguon_tai_lieu/`** — mã sinh lại 2 file trên (chép từ scratchpad vì scratchpad mất khi hết phiên): `word/build.js` (docx-js), `word/diagrams.py` (matplotlib vẽ `word/img/kien_truc.png, erd.png, confusion.png, vong_lap.png`; `gradcam.png` chép từ `emotion-scanner/results/gradcam/ducvinh_grid.png`), `slide/edit.py` (sửa chữ trong XML slide theo id shape), `slide/dump.py` (in cây shape + id), `slide/order.txt` (thứ tự slide).
+- `TIEN_DO.md`: 2 dòng nhật ký 18/10 (đêm) + dòng "Đang ở đâu".
+
+## 3. Quyết định + lý do
+- Word **tự viết bằng docx-js** (người dùng đòi file .docx, không dùng Claude Docs). Mọi quy định / con số lấy từ code thật (regex username `^[a-z0-9_]{3,30}$`, bcrypt 10, JWT 7d, `UNSURE_BELOW` 0,6, Δ +1/+0,3/−1, kNN k=3 ≤ +0,5, `TARGETS` admin, test **177/177** backend + 9/9 frontend chạy lại 18/10; 43 test Python lấy từ ghi chú cũ, chưa chạy lại).
+- **Không chèn ảnh chụp giao diện**: ảnh trong `.playwright-mcp/` chụp 10/10, còn nút "Explore Premium" đã bỏ → sai thực tế. Thay bằng 4 hình tự vẽ + Grad-CAM.
+- Slide **sửa XML trực tiếp** (deck do WPS lưu, toàn shape gốc, không có script sinh) để giữ nguyên thiết kế; slide mới = nhân bản slide có bố cục giống (`add_slide.py`) rồi thay chữ, giữ đúng số dòng của bảng mẫu.
+- Slide **giữ tiếng Anh** như bản gốc; **bỏ "GROUP 6"** (không biết số nhóm bên HTTM) → ghi lớp.
+- Ghi trung thực: chương 05 "PARTLY DONE" (train lại bằng ảnh phản hồi vẫn làm tay, chưa có ảnh thật).
+
+## 4. Lệnh đã chạy + cách chạy lại
+```bash
+# Word: cần node + npm i docx@9 (cài vào thư mục chạy), python matplotlib
+cd docs/nguon_tai_lieu/word && npm i docx@9 && python diagrams.py img && node build.js ../../EmoTune_Xac_dinh_yeu_cau_va_thiet_ke.docx
+#   (file .docx đang mở trong Word thì bị khoá EBUSY -> đóng Word trước)
+# Xuất PDF để soát (máy không có LibreOffice/pdftoppm): PowerShell COM Word.Application -> ExportAsFixedFormat(pdf,17);
+#   ảnh trang: pip install --target pylib pymupdf
+# Slide: dựng lại từ bản HIC cũ (skill pptx, scripts/add_slide.py + clean.py + office/validate.py)
+#   1) giải nén docs/EmoTune_bao_cao_cuoi_ki_ban_HIC_cu.pptx -> work/
+#   2) add_slide.py work/ slide20.xml ; slide7.xml ; slide8.xml ; slide27.xml   (-> slide28..31)
+#   3) <p:sldIdLst> theo slide/order.txt (sldId = 255+n, rId = 200+n), clean.py work/
+#   4) python -I edit.py (cần lxml; đọc work/ + order.txt cùng thư mục), nén lại, validate.py --original <bản cũ>
+#   Xem slide: PowerShell COM PowerPoint.Application -> Slides.Item(i).Export(png)
+# Dự án (không đổi): AI `PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py` (:5000) · backend `npm run dev` (:8080) · frontend `npm run dev` (:5173)
+```
+
+## 5. Lỗi đang gặp / việc còn dở
+- Không có lỗi. Chưa commit 3 file `.docx/.pptx` + `docs/nguon_tai_lieu/` (người dùng chưa yêu cầu; trước đây `.pptx` không đưa vào git).
+- Tên SV có dấu do Claude thêm (người dùng nhắn không dấu, đã xác nhận "Vỹ"); số nhóm HTTM chưa biết.
+- Word chưa có ảnh chụp giao diện thật; slide không có ảnh giao diện.
+
+## 6. Bước tiếp theo
+1. Người dùng mở 2 file kiểm tra (Word: Update Field mục lục); báo số nhóm / muốn slide tiếng Việt không.
+2. Nếu cần: chụp lại các màn hiện tại (quét, MoodCheck, đang phát + WHY THIS SONG, /stats, /admin) chèn vào mục III Word và slide.
+3. Commit khi người dùng yêu cầu (quyết định có đưa `.docx/.pptx` + `docs/nguon_tai_lieu/` vào git không).
+
 > **Đồ án môn Xây dựng hệ thống thông minh (HTTM)**: chỉ phần mềm (AI nhận diện cảm xúc + backend gợi ý nhạc + web). Deadline môn: **chưa biết**.
 > Từ **11/10/2026** dự án tách làm 2 thư mục: thư mục này = HTTM; đồ án môn HIC là thư mục riêng `Documents\HIC\emotune-box` (nhật ký + tiến độ riêng). Nhật ký cũ trước khi tách (03/10 → 11/10) có đầy đủ trong commit `398cfcf` (`git show 398cfcf:NOTES.md`).
 > **Cách làm việc: "vibe coding" — Claude tự viết toàn bộ code** (người dùng xác nhận 07/10). Không commit/push khi chưa được yêu cầu. Trả lời tiếng Việt, ngắn gọn, giải thích "vì sao" (người dùng là sinh viên cần bảo vệ đồ án).
@@ -7,24 +116,80 @@
 
 ---
 
-# 🧭 PHIÊN 18/10/2026 (sửa lỗi) — chọn bài khi đang quét + karaoke tự bật
+# 🧭 PHIÊN 18/10/2026 (sửa lỗi + F22 + commit) — chọn bài khi đang quét, karaoke tự bật, nút Home, công tắc quét lại
 
-> **Cuối phiên: đã commit `bcf173e`** (gom toàn bộ việc 11–18/10, 217 file; chưa push). Không đưa `docs/EmoTune_bao_cao_cuoi_ki.pptx` (file của người dùng). Backend `npm test` 177/177 trước khi commit.
+## 1. Mục tiêu
+Đầu phiên: đọc `NOTES.md` + `TIEN_DO.md`, tóm tắt tình trạng. Người dùng báo lần lượt 3 lỗi khi dùng thử rồi xin 1 tính năng, cuối cùng "commit đi":
+- (a) Hết bài → nhạc dừng, tự sang màn quét → người dùng **tự bấm chọn 1 bài** nhưng màn quét mặt vẫn chạy và **đè lên bài đã chọn**.
+- (b) Bài mới phát là **karaoke tự bật** → muốn chỉ bật khi người dùng chọn.
+- (c) Mới mở web, chọn bài (không quét) → **bấm Home vẫn ra màn quét**.
+- (d) Hết bài mà chưa quét thì vẫn mở camera → "tạo thành 1 nút gạt trong Settings" để người dùng chọn quét lại hay tự gợi ý bài.
 
-## 1. Lỗi người dùng báo
-(a) Nghe hết bài → dừng (rảnh ≥ 60s nên tự sang `/scan`) → người dùng tự bấm chọn 1 bài → màn quét mặt vẫn chạy và **đè lên bài người dùng chọn**. (b) Có bài vừa phát là **karaoke tự bật** → muốn chỉ bật khi người dùng chọn.
-
-## 2. Nguyên nhân + cách sửa (chưa commit)
-| Lỗi | Nguyên nhân | Sửa |
+## 2. Việc đã làm xong (đã commit `bcf173e`, ghi chú ở `8ed43a9`; chưa push)
+| Việc | Nguyên nhân | File |
 |---|---|---|
-| (a) | Ở `/scan` header + thư viện vẫn bấm được; `playSong` phát bài nhưng `ScanPage` không biết → quét tiếp, có kết quả mặt thì `finish` → `playScanResult` thay bài | `PlaybackProvider`: `pickVersion` tăng mỗi lần `playSong` / `playQueue` / `playPlaylist` (người dùng tự chọn); `ScanPage` thấy đổi → `handledRef = true` (bỏ kết quả mặt về sau) + sang `/now-playing` |
-| (b) | `karaoke` / `scoreOn` giữ ở `PlayerHost` **cố ý mang sang bài sau** (H15) → bật 1 lần là mọi bài sau tự bỏ giọng | `PlayerHost.play()` đặt lại `karaoke` + `scoreOn` = false mỗi bài mới (kể cả "Next song" trên thẻ điểm) |
+| (a) Tự chọn bài khi đang ở màn quét → thôi quét, sang `/now-playing`, kết quả mặt về sau bị bỏ | `/scan` vẫn bấm được ô tìm kiếm / thư viện; `ScanPage` không biết người dùng đã chọn → có kết quả mặt thì `playScanResult` thay bài | `emotune-frontend/src/contexts/PlaybackProvider.jsx` (`pickVersion` tăng trong `pick()` = `playSong` / `playQueue` / `playPlaylist`), `contexts/playbackContext.js`, `pages/ScanPage.jsx` (`pickAtStart`, effect đặt `handledRef = true` + `navigate("/now-playing")`) |
+| (b) Karaoke + Score me mặc định tắt, **mỗi bài mới tự tắt** | `karaoke` / `scoreOn` ở `PlayerHost` cố ý giữ qua các bài (H15) | `components/PlayerHost.jsx` (`play()` gọi `setKaraoke(false)`, `setScoreOn(false)`), chú thích `components/MusicPlayer.jsx` |
+| (c) Tự chọn bài = "đã bắt đầu phiên" → `/` là trang chủ duyệt nhạc | `HomeRoute` chỉ hiện `BrowsePage` khi `hasScanned()` (cờ `emotune_scanned`, `sessionStorage`), cờ chỉ bật khi quét / nói cảm xúc | `PlaybackProvider.pick()` gọi `markScanned()`; chú thích `utils/moodSession.js` |
+| (d) **F22 công tắc "Scan again after a song"** ở `/settings` (thẻ trên thẻ ảnh mặt) | — | mới `utils/playPrefs.js` (`loadRescan` / `saveRescan`, `localStorage` khoá `emotune_rescan_<tên>`, mặc định bật); `PlayerHost.playNextSong` (đọc lúc hết bài); `pages/SettingsPage.jsx` (dùng lại style `.privacy` / `.switch`) |
+| Commit toàn bộ việc 11–18/10 (217 file) | người dùng yêu cầu | `bcf173e`, `8ed43a9` |
+| Tài liệu | — | `TIEN_DO.md` (F22, đang ở đâu, nhật ký), `CLAUDE.md` (luồng hết bài, `pickVersion`, karaoke tắt mỗi bài), file này |
 
-**Kiểm tra:** `npx eslint src` sạch, `npm run build` OK, frontend `npm test` 9/9. Playwright (server của người dùng, tài khoản `demo`, `/scan-and-suggest` giả chậm 4s trả bài buồn): đợi máy quét gửi ảnh → chọn "Perfect" ở ô tìm kiếm → `/now-playing`, 6s sau vẫn `perfect.mp3`; bật Karaoke (→ `karaoke/perfect.beat.mp3`) → Next → `music/thuc_giac.mp3`, nút Karaoke `aria-pressed=false`.
-- Gặp lại lỗi Vite giữ bản biên dịch cũ (sửa file 2 lần liên tiếp, Vite chỉ nhận lần đầu) → `touch` file là hết. Nếu trình duyệt của người dùng vẫn thấy lỗi cũ: F5.
-- Lượt quét đang gửi dở lúc người dùng chọn bài vẫn được backend ghi vào `mood_history` (chỉ không phát bài) — chấp nhận.
-- **Lỗi (c) báo thêm:** mới mở web, chọn bài (không quét) → bấm Home vẫn ra màn quét. Nguyên nhân: `HomeRoute` hiện `BrowsePage` chỉ khi `hasScanned()` (cờ `emotune_scanned` trong `sessionStorage`), cờ chỉ bật khi quét / nói cảm xúc. Sửa: `PlaybackProvider.pick` (playSong / playQueue / playPlaylist) gọi `markScanned()` → cờ nghĩa là "đã bắt đầu phiên". Playwright phiên mới: màn chào → chọn "Perfect" → Home → trang chủ, không có camera, nhạc vẫn chạy. Lưu ý: chưa từng quét thì hết bài vẫn sang `/scan` (`!lastMood` trong `playNextSong`, đúng thiết kế cũ) → người dùng: "tạo thành 1 nút gạt trong Settings" → mục (d).
-- **(d) F22 công tắc "Scan again after a song"** (`/settings`, thẻ trên thẻ ảnh mặt): mặc định bật = như cũ (hết bài + rảnh ≥ 60s / chưa từng quét → `/scan`); tắt → không tự mở camera: có cảm xúc gần nhất → `/suggest auto`, chưa quét → bài đầu `/songs/for-you` không trùng bài vừa phát + 3 bài trước; lỗi mạng → dừng (không mở camera). Đang đứng ở `/scan` thì vẫn quét (người dùng chủ động vào đó). File: mới `utils/playPrefs.js` (`loadRescan` / `saveRescan`, `localStorage` khoá `emotune_rescan_<tên>`), `PlayerHost.jsx` (đọc lúc hết bài → đổi ở Settings có tác dụng ngay), `SettingsPage.jsx` (dùng lại style `.privacy` / `.switch`). **Quyết định:** lưu trên trình duyệt (không thêm cột DB) vì là tuỳ chọn tiện ích, giống "đã xem" của chuông; mặc định bật để giữ vòng "quét → gợi ý" (phần thông minh của đồ án). Lỗi gặp khi thử: mở thẳng `/settings` lúc `user` chưa tải → `undefined === undefined` → đọc `null.on` crash → sửa điều kiện. Playwright: bật → `/scan` + camera; tắt → `perfect.mp3` hết → `thuc_giac.mp3`, `/now-playing`, không camera; công tắc lưu qua tải lại, 390px không tràn ngang (`/listen-report` chặn giả để không ghi điểm thật của `demo`).
+Hành vi `playNextSong` sau F22: đang ở `/scan` → luôn quét lại (người dùng chủ động vào). Công tắc **bật**: rảnh ≥ 60s hoặc chưa quét → `/scan`; đang lướt → `/suggest {emotion: lastMood, auto}`. Công tắc **tắt**: có `lastMood` → `/suggest auto`; chưa quét → bài đầu `/songs/for-you` không trùng bài vừa phát + 3 bài trước; lỗi mạng → dừng (không mở camera).
+
+**Kiểm tra:** frontend `npx eslint src` sạch, `npm run build` OK, `npm test` 9/9; backend `npm test` 177/177. Playwright (server của người dùng, tài khoản `demo`, `/listen-report` chặn giả để không ghi điểm thật):
+- (a) `/scan-and-suggest` giả chậm 4s trả bài buồn, đợi máy quét gửi ảnh → chọn "Perfect" → `/now-playing`, 6s sau vẫn `perfect.mp3`.
+- (b) bật Karaoke (`karaoke/perfect.beat.mp3`) → Next → `music/thuc_giac.mp3`, nút `aria-pressed=false`.
+- (c) phiên mới: màn chào → chọn "Perfect" → Home → trang chủ, không camera, nhạc vẫn chạy.
+- (d) bật → hết bài sang `/scan` + camera; tắt → hết "Perfect" tự phát "Thức Giấc", không camera; công tắc lưu qua tải lại; 390px không tràn ngang.
+
+## 3. Quyết định + lý do
+| Quyết định | Lý do |
+|---|---|
+| Lệnh bấm tay của người dùng thắng kết quả quét | Ý muốn rõ ràng nhất; AI chỉ đoán |
+| Báo "người dùng tự chọn" bằng bộ đếm `pickVersion` riêng, không suy từ `nowPlaying.songId` | Next / Prev trên thanh phát hay hết bài cũng đổi bài → dễ huỷ quét nhầm |
+| Karaoke tắt cả khi bấm "Next song" trên thẻ điểm | Đơn giản, đúng ý "chỉ bật khi người dùng chọn"; muốn hát tiếp thì bấm lại |
+| Cờ `emotune_scanned` giờ nghĩa là "đã bắt đầu phiên" (không đổi tên) | Chỉ `HomeRoute` dùng cờ này; đổi tên phải sửa nhiều chỗ mà không thêm lợi ích |
+| F22 lưu `localStorage` theo tài khoản, không thêm cột DB | Tuỳ chọn tiện ích trên 1 trình duyệt (giống "đã xem" của chuông); không cần migrate |
+| F22 mặc định **bật** | Giữ vòng "quét → gợi ý" = phần thông minh của đồ án |
+| Commit gộp 1 lần, không đưa `docs/EmoTune_bao_cao_cuoi_ki.pptx` | File báo cáo của người dùng; Claude không đụng |
+
+## 4. Lệnh đã chạy + cách chạy lại
+```bash
+# (emotune-frontend/)
+npx eslint src && npm run build && npm test      # sạch / OK / 9/9
+# (emotune-backend/)
+npm test                                         # 177/177
+# Playwright: npm i playwright-core@1.49.1 vào scratchpad, chromium.launch({ channel: 'chrome' }),
+#   localStorage.emotune_token = token của demo; page.route('**/scan-and-suggest') trả chậm 4s;
+#   page.route('**/listen-report') trả {} (không ghi điểm thật); audio.currentTime = duration - 0.3 để hết bài nhanh
+#   (script fix.mjs / home.mjs / rescan.mjs ở scratchpad, mất khi hết phiên)
+# Vite giữ bản cũ sau khi sửa file 2 lần liên tiếp -> touch <file> (hoặc F5 trên trình duyệt)
+git add -A && git reset docs/EmoTune_bao_cao_cuoi_ki.pptx && git commit   # -> bcf173e
+```
+```bash
+# chạy lại cả dự án (3 cửa sổ) + PostgreSQL
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+# Phiên này không đổi schema DB. Máy khác pull về: npm install (backend + frontend), DB cũ chạy
+#   npm run db:migrate -- db/migrate_admin.sql và db/migrate_feedback.sql; karaoke AI: cài .venv-karaoke + npm run make-karaoke
+```
+- Server lúc phiên chạy: AI :5000, backend :8080, web :5173 đều **của người dùng** (Claude không bật / tắt).
+
+## 5. Lỗi đang gặp / việc còn dở
+- **Chưa push** 2 commit `bcf173e`, `8ed43a9` lên GitHub.
+- Lượt quét đang gửi dở đúng lúc người dùng tự chọn bài vẫn được backend ghi vào `mood_history` (chỉ không phát bài) — chấp nhận.
+- F22 lưu trên trình duyệt → đổi máy / trình duyệt thì về mặc định (bật).
+- Vite dev thỉnh thoảng giữ bản biên dịch cũ → `touch` file / F5 (không phải lỗi code).
+- Việc cũ còn: chưa thử micro thật (karaoke Score me, C11), F5 Figma Sign in/up, C3 (có thể đánh ❌), H7 chờ góp ý, chưa train lại bằng ảnh phản hồi C15, admin chưa tạo tài khoản trên web, ảnh Phạm Hoài Nam, ID3 sai bài "chờ chút…", hạn nộp chưa biết.
+
+## 6. Bước tiếp theo
+1. Người dùng thử lại 4 chỗ vừa sửa trên máy thật (F5 trước) + thử F22 ở `/settings`.
+2. Push khi người dùng yêu cầu.
+3. Thử micro thật: Score me (đeo tai nghe), nói cảm xúc ở `/scan`.
+4. Viết báo cáo theo khung C4 (macro-F1, Mood corrections, tỉ lệ nghe hết, kNN, Demucs / YIN).
+
 
 ---
 

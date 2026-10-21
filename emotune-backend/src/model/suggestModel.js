@@ -94,10 +94,23 @@ let logSuggestion = async (userId, emotion, confidence, songId, aiEmotion = null
 }
 
 // nguoi dung sua cam xuc sau khi AI da chon bai -> bo dong goi y cu (cam xuc sai) de xu huong / thong ke khong dem 2 lan
+// tra ve dong vua xoa (null = khong co) -> tao bai moi loi thi restoreSuggestion tra lai dung dong cu
 let deleteSuggestion = async (userId, historyId) => {
-    await db.query(
-        `DELETE FROM mood_history WHERE id = $1 AND user_id = $2 AND action = 'suggested'`,
+    const result = await db.query(
+        `DELETE FROM mood_history WHERE id = $1 AND user_id = $2 AND action = 'suggested'
+         RETURNING id, user_id, emotion, confidence, ai_emotion, song_id, action, created_at`,
         [historyId, userId]
+    );
+    return result.rows[0] || null;
+}
+
+// ghi lai dong da xoa (giu nguyen id + thoi diem) khi sua cam xuc that bai -> lich su khong bi mat
+let restoreSuggestion = async (row) => {
+    await db.query(
+        `INSERT INTO mood_history (id, user_id, emotion, confidence, ai_emotion, song_id, action, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (id) DO NOTHING`,
+        [row.id, row.user_id, row.emotion, row.confidence, row.ai_emotion, row.song_id, row.action, row.created_at]
     );
 }
 
@@ -105,5 +118,6 @@ module.exports = {
     getMoodTrend: getMoodTrend,
     getSongsByEmotion: getSongsByEmotion,
     logSuggestion: logSuggestion,
-    deleteSuggestion: deleteSuggestion
+    deleteSuggestion: deleteSuggestion,
+    restoreSuggestion: restoreSuggestion
 }

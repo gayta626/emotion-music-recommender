@@ -29,13 +29,19 @@ const isUnsure = (confidence) => typeof confidence === "number" && confidence < 
 const canLabelFace = (via, confidence) => via !== "voice"
     || !(typeof confidence === "number" && confidence >= VOICE_TRUST_FACE_ABOVE);
 
+const isExpired = (scan, now = Date.now()) => now - scan.at > SCAN_TTL_MS;
+
 const prune = (now = Date.now()) => {
     for (const [id, s] of scans) {
-        if (now - s.at > SCAN_TTL_MS) scans.delete(id);
+        if (isExpired(s, now)) scans.delete(id);
     }
     // Map giu thu tu them vao -> xoa cai cu nhat truoc
     while (scans.size > MAX_SCANS) scans.delete(scans.keys().next().value);
 };
+
+// don dinh ky: khong co luot quet moi thi anh mat cu cung khong nam trong RAM qua 30 phut
+// (unref: khong giu tien trinh song chi vi bo hen gio nay, vd khi chay test)
+setInterval(prune, 60 * 1000).unref();
 
 // nho 1 lan quet -> scanId (gui ve web)
 const rememberScan = (userId, { emotion, confidence, face }) => {
@@ -48,27 +54,49 @@ const rememberScan = (userId, { emotion, confidence, face }) => {
 // AI da chon bai cho lan quet nay -> nho dong mood_history (sua cam xuc thi thay dong nay)
 const attachHistory = (scanId, historyId) => {
     const scan = scans.get(scanId);
-    if (scan) scan.historyId = historyId;
+    if (scan && !isExpired(scan)) scan.historyId = historyId;
 };
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
 // POST /scan-feedback { scanId, emotion, via? }  (via "voice" = C11 nguoi dung noi cam xuc luc quet)
+// Chi "dung het" luot quet khi tao bai moi THANH CONG; loi (khong co bai / loi DB) -> tra lai dong lich su cu,
+// giu luot quet de bam lai duoc. 2 lan sua cung luc cung 1 luot quet -> lan sau 409.
 const fixMood = async (userId, scanId, emotion, via = "tap") => {
     if (!VALID_EMOTIONS.includes(emotion)) throw fail(400, "Invalid emotion");
     const scan = scans.get(scanId);
+    if (scan && isExpired(scan)) scans.delete(scanId);
     // het han (backend khoi dong lai / qua 30 phut) hoac khong phai cua minh -> web tu goi /suggest
-    if (!scan || scan.userId !== userId) throw fail(410, "scan_expired");
+    if (!scan || scan.userId !== userId || isExpired(scan)) throw fail(410, "scan_expired");
+    if (scan.busy) throw fail(409, "scan_busy");
+    scan.busy = true;
+
+    let result;
+    let removed = null;
+    try {
+        if (scan.historyId) removed = await suggestModel.deleteSuggestion(userId, scan.historyId);
+        result = await suggestService.generateSuggestion(userId, emotion, scan.confidence,
+            { source: via === "voice" ? "voice" : "fix", aiEmotion: scan.emotion });
+        if (!result) throw fail(404, "No song for this mood");
+    } catch (err) {
+        if (removed) {
+            await suggestModel.restoreSuggestion(removed)
+                .catch((e) => console.error("Khong tra lai duoc dong lich su cu:", e.message));
+        }
+        throw err;
+    } finally {
+        scan.busy = false;
+    }
     scans.delete(scanId);
 
-    if (scan.historyId) await suggestModel.deleteSuggestion(userId, scan.historyId);
-    const result = await suggestService.generateSuggestion(userId, emotion, scan.confidence,
-        { source: via === "voice" ? "voice" : "fix", aiEmotion: scan.emotion });
-    if (!result) throw fail(404, "No song for this mood");
-
+    // luu anh la phan phu: loi o day khong lam hong bai vua chon
     let faceSaved = false;
-    if (scan.face && canLabelFace(via, scan.confidence) && await profileModel.hasFaceConsent(userId)) {
-        faceSaved = !!faceSamples.saveFace(userId, emotion, scan.face);
+    try {
+        if (scan.face && canLabelFace(via, scan.confidence) && await profileModel.hasFaceConsent(userId)) {
+            faceSaved = !!faceSamples.saveFace(userId, emotion, scan.face);
+        }
+    } catch (err) {
+        console.error("Khong luu duoc anh mat phan hoi:", err.message);
     }
     return {
         ...suggestService.publicResult(result),
