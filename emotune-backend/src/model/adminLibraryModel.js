@@ -5,7 +5,7 @@ const db = require("../config/db")
 // moi bai kem so luot nghe / so nguoi thich cua CA HE THONG (de admin biet xoa bai nao thi anh huong bao nhieu)
 let getSongs = async () => (await db.query(
     `SELECT s.id, s.title, s.artist_id, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar,
-            s.genre_id, g.name AS genre, s.emotion, s.energy, s.album, s.duration, s.youtube_id, s.cover,
+            s.genre_id, g.name AS genre, s.emotion, s.energy, s.album, s.duration, s.youtube_id, s.mv_offset, s.cover,
             s.file_path, s.added_at,
             (SELECT COUNT(*) FROM recently_played rp WHERE rp.song_id = s.id)::int AS plays,
             (SELECT COUNT(*) FROM liked_songs l WHERE l.song_id = s.id)::int AS likes
@@ -61,8 +61,11 @@ let insertSong = async (f, filePath, duration, cover) => (await db.query(
 let updateSong = async (songId, fields) => {
     const cols = Object.keys(fields);
     if (!cols.length) return;
-    const sets = cols.map((c, i) => `${c} = $${i + 2}`).join(", ");
-    await db.query(`UPDATE songs SET ${sets} WHERE id = $1`, [songId, ...cols.map((c) => fields[c])]);
+    const sets = cols.map((c, i) => `${c} = $${i + 2}`);
+    // doi MV khac -> do lech MV / mp3 cu khong con dung: xoa de `npm run align-mv` do lai (giu nguyen neu van MV cu)
+    const yt = cols.indexOf("youtube_id");
+    if (yt >= 0) sets.push(`mv_offset = CASE WHEN youtube_id IS DISTINCT FROM $${yt + 2} THEN NULL ELSE mv_offset END`);
+    await db.query(`UPDATE songs SET ${sets.join(", ")} WHERE id = $1`, [songId, ...cols.map((c) => fields[c])]);
 }
 
 // playlist / thich / diem so thich / bai vua nghe: ON DELETE CASCADE; lich su cam xuc giu lai (song_id -> NULL)

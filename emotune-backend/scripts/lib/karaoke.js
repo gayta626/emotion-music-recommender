@@ -12,4 +12,8 @@ const karaokePython = () => (process.platform === "win32"
 // may nay da cai venv chua (chua cai -> bo qua buoc tach giong, bai van dung karaoke L − R tren trinh duyet)
 const karaokeReady = () => fs.existsSync(karaokePython());
 
-module.exports = { karaokePython, karaokeReady };
+// do lech MV / mp3 (align-mv) can them yt-dlp trong cung venv (pip install yt-dlp); chua cai -> web quy theo ti le do dai
+const alignReady = () => karaokeReady() && fs.existsSync(path.join(path.dirname(karaokePython()),
+    process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp"));
+
+module.exports = { karaokePython, karaokeReady, alignReady };

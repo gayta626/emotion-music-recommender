@@ -56,7 +56,8 @@ CREATE TABLE songs (
     album       TEXT,   -- ten album (iTunes), do `npm run fetch-song-info` dien; NULL -> web hien "—"
     duration    INTEGER, -- thoi luong (giay) doc tu file mp3, do `npm run fetch-song-info` dien
     added_at    TIMESTAMP NOT NULL DEFAULT NOW(),  -- luc them vao kho nhac (cot "Date added")
-    youtube_id  TEXT    -- id MV tren YouTube, do `npm run fetch-mv` dien; NULL = chua tim, '' = khong co MV
+    youtube_id  TEXT,   -- id MV tren YouTube, do `npm run fetch-mv` dien; NULL = chua tim, '' = khong co MV
+    mv_offset   REAL    -- MV giay (t + mv_offset) = mp3 giay t, do `npm run align-mv` do; NULL = chua do / khong chac
 );
 
 -- ===== Du lieu ca nhan: 5 bang duoi deu co user_id -> moi cau SQL dung toi phai loc / ghi user_id =====
@@ -141,7 +142,6 @@ CREATE INDEX idx_recently_played_user_played ON recently_played (user_id, played
 -- ========================== DU LIEU ==========================
 
 INSERT INTO artists (name, avatar) VALUES
-    ('Phạm Hoài Nam',    'pham-hoai-nam.png'),
     ('Lân Nhã',          'lan-nha.png'),
     ('Lệ Quyên',         'le-quyen.png'),
     ('Sơn Tùng M-TP',    'son-tung.png'),

@@ -1,5 +1,149 @@
 # NOTES.md — EmoTune (đồ án Xây dựng hệ thống thông minh) — nhật ký phiên làm việc
 
+# 🧭 PHIÊN 22/10/2026 (khuya, phiên sau) — align-mv 9 bài thiếu + F26 chuyển sang MV không khựng + F27 trang phát nhạc mở bằng sóng âm
+
+## 1. Mục tiêu
+- Chạy lại `npm run align-mv` cho 9 bài chưa có `mv_offset`.
+- Người dùng: "chuyển từ trang phát nhạc ra MV thì MV bị khựng, trải nghiệm không tốt".
+
+## 2. Việc đã làm (chưa commit)
+| Việc | File |
+|---|---|
+| `align-mv`: +2 bài (Đánh Đổi +0s điểm 29,8; Người Im Lặng Gặp Người Hay Nói +13,69s điểm 20,6; lần trước bị 403) → **79/86** | DB máy này |
+| Chẩn đoán 7 bài còn lại bằng đo từng đoạn 30s (script tạm ở scratchpad): Lạ Lùng = bản Mây Saigon 6:20 (khác hẳn); Mượn Rượu Tỏ Tình MV 3:26 cắt ngắn từ mp3 4:15; That Should Be Me +0,4s rồi +7,2s từ giây 135 (MV chèn cảnh giữa bài); Giấc Mơ Có Thật, Chắc Ai Đó Sẽ Về lệch tăng dần (khác tốc độ ~3%, quy theo tỉ lệ đúng hơn 1 độ lệch); Say Yes To Heaven mọi đoạn +0,05s (điểm thấp nhưng tỉ lệ cho cùng kết quả); **Vì Em Chưa Bao Giờ Khóc** `rvWusu-hK7k` = "Visual Film" 40s, không phải MV đầy đủ | — |
+| **F26** nguyên nhân (Playwright, Payphone): rời `/now-playing` → effect dừng mp3 ngay (78 ms), `MvPlayer` mới tạo + tải → phát lúc 1.456 ms ⇒ lặng 1,4s | — |
+| Sửa: **chuyển giao nối đuôi**: không dừng mp3 khi bật MV; `mvReady` cho MV chạy câm, tua tới `songToMv(mp3 hiện tại + HANDOFF_LEAD 0,4s)`; `handoff` mỗi 50ms: MV PLAYING → lệch > 0,3s thì tua lại (≤ 2 lần) → `crossfade` 300ms (âm lượng MV 0→v, mp3 v→0) → dừng mp3, `goLive`. `mvLive` (state) / `mvLiveRef`: trước khi nhận tiếng thanh phát + nút điều khiển + chấm điểm vẫn là mp3 (`mvActive = mvOpen && mvLive`). Tắt MV khi chưa nhận tiếng → không đụng mp3. Reset `mvLive` khi tắt MV bằng mẫu "chỉnh state lúc render" (`prevMvOpen`) vì lint cấm setState trong effect | `emotune-frontend/src/components/MusicPlayer.jsx` |
+| Lỗi cũ lộ ra khi thử: bấm Pause lúc MV đang tải (hoặc mp3 đang dừng) → MV vẫn tự phát có tiếng. Nguyên nhân: YouTube `seekTo` khi trình phát chưa chạy (state -1) tự bật phát, `pauseVideo` ngay sau bị bỏ qua. Sửa: `mvReady` xét mp3 *hiện tại* (`mp3Playing` lúc bật + `audio.paused` lúc sẵn sàng); `holdPaused` giữ câm, gặp PLAYING/BUFFERING thì dừng, tới khi PAUSED (≤ 5s); bấm Play thì thôi giữ | `MusicPlayer.jsx`, `src/utils/youtube.js` (`YT_PAUSED`) |
+| **F28** thẻ Lyrics cột phải chạy theo bài: `time` (giây bài: mp3, hoặc `mvToSong(mvTime)` khi MV đã nhận tiếng) → `NowPlayingPanel` tô `is-active` / `is-past` (tính trên `lyrics.lines` đầy đủ rồi đổi sang danh sách đã bỏ dòng rỗng; đoạn không lời → không dòng nào sáng), cuộn `scrollTo` (ol `position: relative` để `offsetTop` tính từ đầu thẻ), wheel/touch → dừng tự cuộn 4s. Playwright bài "blue" đúng dòng ở 0:21 / 0:36 | `NowPlayingPanel.jsx/.scss`, `MusicPlayer.jsx` |
+| **F29** chia sẻ web (Cloudflare quick tunnel, người dùng chọn chạy từ máy mình): `emotune-frontend/.env.production` (`VITE_API_URL=/api`, `npm run dev` không đọc), `vite.config.js` `preview` (cổng 4173, `allowedHosts: [".trycloudflare.com"]`, proxy `/api` → :8080 bỏ tiền tố), script `share`; cài `cloudflared` 2026.10.3 (winget, `C:\Program Files (x86)\cloudflared\cloudflared.exe`); `npm run set-password` (≥ 10 ký tự). Thử: preview cục bộ trang / `/api/artists` / `/admin/users` = 200, đường hầm lên link được. **Bị chặn quyền** (auto mode): đổi mật khẩu `demo` và gửi request qua đường hầm → đã tắt đường hầm + preview, để người dùng tự làm. `JWT_SECRET` 64 ký tự (đủ) | `emotune-frontend/{vite.config.js,.env.production,package.json}`, `emotune-backend/{scripts/set-password.js,package.json}` |
+| **F30** laptop xấu: giao diện px cho màn to, 1366px thì thư viện 300 + cột phải 340 ép vùng giữa. Chọn **thu nhỏ đều bằng CSS `zoom`** (1 chỗ, giữ đúng tỉ lệ thiết kế) thay vì sửa cỡ từng thành phần: `index.css` `--ui-zoom` theo bậc (0.9 / 0.82 / 0.76 / 0.7 cho 1101–1919px). Hệ quả đã xử lý: `vh` bị thu theo → `--vh: calc(1vh / var(--ui-zoom))` thay 16 chỗ; `getBoundingClientRect` trả toạ độ đã thu nhưng px đặt vào style bị thu thêm → lớp MV nổi chia cho zoom (đọc lại khi đổi bề rộng). ≥ 1920 và ≤ 1100px zoom 1. Playwright 1280/1366/1536/1920/1000/390 | `src/index.css`, 10 file `.scss` (vh), `MusicPlayer.jsx` |
+| Xoá ca sĩ **Phạm Hoài Nam** (người dùng: chưa có bài nào): `DELETE FROM artists WHERE id = 1` (0 bài; 1 dòng `survey_artists` xoá theo CASCADE; DB dùng chung với HIC), bỏ dòng trong `setup.sql` (bài hát nối ca sĩ theo **tên** nên id khác đổi không sao), xoá 2 file ảnh. Test `assistantRules` vẫn có tên này trong dữ liệu giả, không đụng DB → giữ | `emotune-backend/db/setup.sql`, `emotune-backend/avatars/` |
+| **F27** người dùng: "bấm mở 1 bài thì vào trang phát nhạc MV mở sẵn, muốn sóng âm, MV chỉ là lựa chọn". Nguyên nhân: `PlayerHost.autoMv` (F24) bật `mvWanted` khi tự chọn bài. Sửa: tự chọn bài → `setMvWanted(false)`; bỏ `autoMv` (cột phải đã tự chiếu MV nhờ `panelMv`). Playwright: chọn bài trang chủ → cột MV; `/now-playing` → sóng âm + nút MV; bấm MV → MV khung lớn; chọn bài khác → sóng âm. Lint + build sạch | `emotune-frontend/src/components/PlayerHost.jsx` |
+
+**Kiểm tra:** Playwright (server của người dùng, camera giả, chặn `/scan-and-suggest` trả Payphone): lặng 1.378 ms → **0 ms**; lúc chuyển mp3 13,42s ↔ MV 52,79s (offset 39,33 → lệch 0,04s). Tình huống: Home rồi quay lại sau 0,3s → mp3 liền mạch; MV đã nhận tiếng → về `/now-playing` mp3 nối tiếp đúng giây; Pause lúc tải → MV đứng yên, Play → MV phát có tiếng; nút MV khung lớn → lặng 0 ms; Next khi đang xem MV ở cột → MV bài mới tự phát. `npx eslint src` sạch, `npm run build` OK, `npm test` 20/20.
+
+
+## 3. Quyết định
+| Quyết định | Lý do |
+|---|---|
+| Chuyển giao nối đuôi + crossfade, không tải trước MV ngầm khi ở `/now-playing` | Bỏ hẳn khoảng lặng mà không tốn mạng tải video người dùng có thể không xem |
+| Không đổi `mv_offset` thành nhiều điểm neo cho 7 bài | 2 bài khác tốc độ đã đúng hơn khi quy theo tỉ lệ; 2 bài là bản MV khác; chỉ That Should Be Me lợi — không đáng đổi schema |
+
+## 4. Lệnh
+```bash
+cd emotune-backend && npm run align-mv                       # chỉ bài chưa đo
+cd emotune-frontend && npx eslint src && npm run build && npm test
+```
+
+## 5. Còn dở
+- ✅ F29 người dùng đã chạy được link. Cách chạy lại: `npm run set-password -- demo <mk mới>` → `npm run share` (frontend) → `cloudflared tunnel --url http://localhost:4173` → mở link thử đăng nhập, quét mặt, phát nhạc. Người lạ đăng ký được tài khoản và dùng trợ lý (tốn lượt Gemini free).
+- Chưa commit (F24 sửa + F25 + F26 + ghi chú).
+- ✅ Bài **Vì Em Chưa Bao Giờ Khóc**: người dùng chọn tìm MV đầy đủ → `UPDATE songs SET youtube_id = 'IMNlw1NfZis', mv_offset = NULL` (tìm bằng `yt-dlp ytsearch`, Official Music Video kênh Hà Nhi Official 4:27, `playable_in_embed` true, `age_limit` 0) → `npm run align-mv -- --only vi_em_chua_bao_gio_khoc.mp3` = −1s (điểm 11; đo từng đoạn đều −1,0s) → **80/86** bài có độ lệch. DB máy khác (chưa có cột / id này) phải chạy lại câu UPDATE trên.
+- Bài mới ở chế độ MV bắt đầu MV ở `songToMv(0)` = bỏ cảnh mở đầu MV (hành vi có từ F25, chưa ai phàn nàn).
+
+---
+
+# 🧭 TỔNG KẾT PHIÊN 22/10/2026 (đêm → khuya) — báo cáo giữa kỳ, C16 Explore, sửa MV cột phải, F25 MV / mp3 khớp đoạn
+
+> Chi tiết từng phần: 3 mục "🧭 PHIÊN 22/10/2026 …" ngay bên dưới (F25, C16, báo cáo giữa kỳ).
+
+## 1. Mục tiêu
+- Đầu phiên: đọc `NOTES.md` + `TIEN_DO.md`, tóm tắt tình trạng.
+- Làm **báo cáo giữa kỳ** (Word + slide thuyết trình) theo ảnh bảng điểm: Lý thuyết 1đ · Phân tích thiết kế 6đ · Thiết kế cho sự thông minh 2đ · Trình bày 1đ; sau đó rút slide cho ngắn, bỏ ghi chú thừa trong Word.
+- **C16**: biểu cảm ngạc nhiên ("Explore") là *lệnh khám phá* → bài chưa từng nghe trong cả kho nhưng theo ca sĩ / thể loại hay nghe; cập nhật code + Word + slide.
+- Sửa lỗi **MV cột phải không tự chạy** (nút ▶ lời chào; quét mặt xong bấm Home).
+- Sửa lỗi **MV phát "lại từ đầu"** khi đổi mp3 → MV (**F25**).
+
+## 2. Việc đã xong
+| Việc | File chính | Trạng thái git |
+|---|---|---|
+| Báo cáo giữa kỳ: Word 61 trang (5 chương theo 4 tiêu chí, use case 16 UC + đặc tả UC03, biểu đồ tuần tự, API, sơ đồ màn hình, giám sát, tiến độ, phụ lục kịch bản nói) + slide **14 trang ~11 phút**, lời nói tiếng Việt trong Notes | `docs/EmoTune_bao_cao_giua_ki.docx`, `docs/EmoTune_bao_cao_giua_ki.pptx`; nguồn `docs/nguon_tai_lieu/word/{build_giuaki.js, diagrams_giuaki.py, img/usecase.png, img/tuan_tu.png, img/man_hinh.png}`, `docs/nguon_tai_lieu/slide/{build_giuaki.py, edit_giuaki.py, notes_giuaki.ps1, order_giuaki.txt, thuyet_trinh_giuaki.json}` | **không** đưa vào git (chờ người dùng) |
+| Word + slide cuối kỳ thêm "Ngoại lệ Explore" (slide 18 vá trực tiếp, thêm vào `edit.py`) | `docs/EmoTune_Xac_dinh_yeu_cau_va_thiet_ke.docx`, `docs/EmoTune_bao_cao_cuoi_ki.pptx`, `docs/nguon_tai_lieu/word/build.js`, `docs/nguon_tai_lieu/slide/edit.py` | không vào git |
+| **C16** Explore = lệnh khám phá (`rankExplore`, `getExploreSongs`, lý do "New to you…"), 6 test | `emotune-backend/src/services/{exploreService,suggestService,explainService}.js`, `src/model/suggestModel.js`, `test/explore.test.js` | ✅ commit `9d6f1c5` + `90f183e`, đã push |
+| MV cột phải tự chiếu khi cột hiện (mọi nguồn bài, màn > 1100px; ✕ = tắt cho bài đó) | `emotune-frontend/src/components/MusicPlayer.jsx` (`panelMv`, `mvDismissed`) | chưa commit |
+| **F25** đo độ lệch MV / mp3: `npm run align-mv` → `songs.mv_offset` (77/86 bài); web đổi giây theo độ lệch; chấm điểm nghe bỏ cảnh mở đầu MV | backend: `scripts/{align-mv.js, align_mv.py, test_align_mv.py, lib/karaoke.js, fetch-mv.js, import-music.js, make-karaoke.js}`, `db/{migrate_mv_offset.sql, setup.sql}`, `src/model/*Model.js` (thêm `s.mv_offset`), `src/services/libraryEnrich.js`, `package.json`; frontend: `src/utils/{mvTime.js, listenSpans.js}`, `test/mvTime.test.js` | chưa commit |
+| Ghi chú | `CLAUDE.md`, `TIEN_DO.md`, `NOTES.md` | phần sau commit `90f183e` chưa commit |
+
+## 3. Quyết định quan trọng
+- Báo cáo sắp đúng 4 tiêu chí; slide giữ thiết kế + tiếng Anh như cuối kỳ, lời nói tiếng Việt trong Notes; rút còn 14 slide vì giữa kỳ ít thời gian (bản 28 slide: xem order cũ trong mục báo cáo giữa kỳ bên dưới).
+- Tài liệu `docs/*.docx/*.pptx` + `docs/nguon_tai_lieu/` không đưa vào git (có tên sinh viên; người dùng chưa quyết).
+- Explore lấy **cả kho** (người dùng chọn), "đã nghe" = nghe xong / có điểm / đã ♥; ca sĩ nặng hơn thể loại (≤ 1 vs ≤ 0.5).
+- MV ở cột phải là giá trị **suy ra** (không bật `mvWanted`) → về `/now-playing` vẫn sóng âm; lint cấm setState trong effect.
+- Khớp MV / mp3 bằng **tự đo** (người dùng chọn, trong 3 cách): yt-dlp tải tiếng tạm, so **chroma** (đường nhịp cho điểm thấp); điểm < 8 → NULL → web quy theo tỉ lệ như cũ.
+
+## 4. Lệnh + cách chạy lại
+```bash
+# Dự án (3 cửa sổ + PostgreSQL)
+# AI:       cd emotion-scanner  && set PYTHONUTF8=1 && venv\Scripts\python 3_backend_server.py   # :5000
+# Backend:  cd emotune-backend  && npm run dev                                                 # :8080
+# Frontend: cd emotune-frontend && npm run dev                                                 # :5173
+# Kiểm tra
+cd emotune-backend  && npm test                                     # 190/190
+cd emotune-frontend && npx eslint src && npm run build && npm test  # sạch / OK / 20/20
+cd emotune-backend/scripts && ..\.venv-karaoke\Scripts\python -m unittest test_align_mv.py   # 4/4
+# F25 (DB máy khác)
+cd emotune-backend && .venv-karaoke\Scripts\pip install yt-dlp && npm run db:migrate -- db/migrate_mv_offset.sql && npm run align-mv
+# Sinh lại Word / slide giữa kỳ: xem mục "báo cáo GIỮA KỲ" bên dưới (build_giuaki.js, build_giuaki.py, notes_giuaki.ps1)
+```
+- Kiểm tra giao diện dùng Playwright (`playwright-core@1.49.1` cài vào scratchpad, Chrome; camera giả `--use-fake-device-for-media-stream`, chặn `/scan-and-suggest` trả kết quả `/suggest {auto: true}`, chặn `/listen-report`). Script ở scratchpad (mất khi hết phiên).
+
+## 5. Lỗi / việc còn dở
+- **Chưa commit**: sửa MV cột phải + F25 + ghi chú. Commit cuối: `90f183e` (đã push).
+- 9 bài chưa có `mv_offset`: 7 không chắc (Lạ Lùng, Giấc Mơ Có Thật, Chắc Ai Đó Sẽ Về, Say Yes To Heaven, That Should Be Me, Vì Em Chưa Bao Giờ Khóc, Mượn Rượu Tỏ Tình), 2 bị YouTube chặn 403 (Đánh Đổi, Người Im Lặng Gặp Người Hay Nói) → quy theo tỉ lệ.
+- Word cuối kỳ vẫn ghi số test cũ 177/9; Word giữa kỳ ghi 190/14 (frontend nay là 20).
+- File khoá Word thừa `docs/~$oTune_bao_cao_giua_ki.docx` (xoá được).
+- Việc cũ: thử micro thật (Score me, nói cảm xúc ở `/scan`), báo cáo theo khung C4, F5 Figma, C3 (có thể ❌), số nhóm HTTM + hạn nộp chưa biết.
+
+## 6. Bước tiếp theo
+1. Người dùng F5 thử: quét → Home (MV ở cột), nghe 1 đoạn → Home (MV đúng đoạn), Explore (bài mới đúng gu).
+2. Commit + push khi người dùng yêu cầu; quyết định đưa tài liệu `docs/` vào git hay không.
+3. Chạy lại `npm run align-mv` cho 9 bài còn thiếu (403 thường tạm thời).
+4. Cập nhật số test trong báo cáo (backend 190, frontend 20) nếu sinh lại Word / slide.
+
+---
+
+# 🧭 PHIÊN 22/10/2026 (khuya, sau C16) — MV cột phải tự chiếu + MV / mp3 nối tiếp đúng đoạn (F25)
+
+## 1. Mục tiêu (người dùng báo 3 lỗi liên tiếp)
+1. Nhạc phát ở trang chủ mà MV cột phải không bật. 2. Lần đầu vào web quét mặt → `/now-playing` → bấm Home: MV không phát. 3. Nghe 1 đoạn rồi về Home: MV phát nhưng "phát lại từ đầu".
+
+## 2. Việc đã làm (chưa commit)
+| Việc | File |
+|---|---|
+| Lỗi 1+2: MV chỉ bật khi tự chọn bài (`autoMv`), kết quả quét / nút ▶ lời chào là lệnh `scan`. Sửa: `panelMv` suy ra = cột phải đang hiện + màn > 1100px + bài chưa bị tắt MV (`mvDismissed`, đặt khi ✕ / Close MV) → MV tự chiếu ở cột; về `/now-playing` lại sóng âm. (Bản sửa đầu `playMoodPick` chỉ cho nút ▶ đã bỏ; `useEffect` + setState bị lint chặn nên dùng giá trị suy ra) | `emotune-frontend/src/components/MusicPlayer.jsx` |
+| Lỗi 3: quy đổi giây mp3 ↔ MV theo tỉ lệ độ dài sai vì MV có cảnh mở đầu / kết. Người dùng chọn tự đo độ lệch (AskUserQuestion: tự đo / admin nhập tay / đoán phần dư là mở đầu) | — |
+| `align_mv.py`: chroma 12 nốt (FFT 4096, bước 0,05s, 80–2000 Hz) + tương quan chéo FFT, điểm = (đỉnh − trung vị)/MAD; < 8 = không chắc. Thử "đường nhịp" (spectral flux) trước: bài Buông Đôi Tay Nhau Ra điểm 4,9, từng đoạn lệch lung tung → đổi chroma: +14,3s mọi đoạn, điểm 26,5 | `emotune-backend/scripts/align_mv.py`, `scripts/test_align_mv.py` (4 test tín hiệu giả) |
+| `npm run align-mv` (Node đọc / ghi DB, gọi Python từng bài, `--force`, `--only`); `alignReady()` (venv có yt-dlp); chạy trong `libraryEnrich` + `import-music --apply` | `scripts/align-mv.js`, `scripts/lib/karaoke.js`, `src/services/libraryEnrich.js`, `scripts/import-music.js`, `package.json` |
+| Cột `songs.mv_offset REAL` (NULL = chưa đo / không chắc); SELECT bài trả thêm `s.mv_offset`; đổi `youtube_id` (admin PATCH / fetch-mv) → xoá `mv_offset` | `db/migrate_mv_offset.sql`, `db/setup.sql`, `src/model/{song,like,playlist,requestSong,suggest,adminLibrary}Model.js`, `scripts/fetch-mv.js` |
+| Web: `songToMv` / `mvToSong` (có độ lệch: ± offset, kẹp trong độ dài; không: tỉ lệ); `addMvSpan` chấm điểm nghe theo trục bài (cảnh mở đầu MV không tính) | `src/utils/mvTime.js`, `src/utils/listenSpans.js`, `test/mvTime.test.js` (6 test) |
+| Đo cả kho: 77/86 bài có độ lệch (vd Payphone +39,3s, Sugar +34,2s, Nước Mắt Em Lau… +28s, Thanh Xuân +17,1s, Maps +13s); không chắc 7 bài (Lạ Lùng, Giấc Mơ Có Thật, Chắc Ai Đó Sẽ Về, Say Yes To Heaven, That Should Be Me, Vì Em Chưa Bao Giờ Khóc, Mượn Rượu Tỏ Tình); YouTube chặn tải 403: Đánh Đổi, Người Im Lặng Gặp Người Hay Nói | DB máy này |
+
+**Kiểm tra:** Python 4/4; frontend `npm test` 20/20, eslint sạch, build OK; backend `npm test` 190/190. Playwright (server của người dùng, camera giả, chặn `/scan-and-suggest` + `/listen-report`): quét → Home → MV ở cột, mp3 dừng; về `/now-playing` → sóng âm, mp3 chạy; ✕ → không tự bật lại bài đó; nút ▶ lời chào / thẻ bài → MV; 1000px không tự bật. Đồng bộ: mp3 14,8s → MV 0:29 (cũ 0:19); MV 0:37 → mp3 23,0s; Cinnamon Girl (+0,05s) 14,8 → 0:14.
+
+## 3. Quyết định
+| Quyết định | Lý do |
+|---|---|
+| Cột phải tự chiếu MV ở mọi nguồn bài (không chỉ khi tự chọn) | Người dùng báo cả 2 trường hợp (lời chào, quét xong về Home) là lỗi |
+| MV ở cột = giá trị suy ra (`panelMv`), không đổi `mvWanted` | Về `/now-playing` vẫn sóng âm như thiết kế cũ cho kết quả quét; lint cấm setState trong effect |
+| ✕ chỉ tắt MV cho bài đang phát | Bài sau vẫn tự chiếu như F24 |
+| Tự đo bằng yt-dlp (người dùng chọn) | Chính xác; tải tiếng tạm rồi xoá ngay, ~3s/bài |
+| Chroma thay đường nhịp | Bản MV tron tiếng khác / thêm tiếng động; cao độ giống nhau giữa 2 bản |
+
+## 4. Lệnh
+```bash
+cd emotune-backend
+.venv-karaoke\Scripts\pip install yt-dlp                 # 1 lần
+npm run db:migrate -- db/migrate_mv_offset.sql            # DB cũ
+npm run align-mv                                          # chỉ bài chưa đo; --force đo lại; --only x.mp3
+cd scripts && ..\.venv-karaoke\Scripts\python -m unittest test_align_mv.py
+```
+
+## 5. Còn dở
+- 9 bài chưa có độ lệch (danh sách trên) → web quy theo tỉ lệ như cũ; có thể thử lại `npm run align-mv` (403 thường tạm thời).
+- Chưa commit.
+
+---
+
 # 🧭 PHIÊN 22/10/2026 (khuya) — C16: Explore là "lệnh khám phá" (code + tài liệu)
 
 ## 1. Mục tiêu

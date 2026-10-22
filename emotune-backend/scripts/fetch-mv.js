@@ -40,7 +40,8 @@ const run = async () => {
             continue;
         }
         const hit = pickVideo(items, song.title, song.artist);
-        await db.query(`UPDATE songs SET youtube_id = $1 WHERE id = $2`, [hit ? hit.id : "", song.id]);
+        // MV moi -> do lech MV / mp3 (align-mv) phai do lai
+        await db.query(`UPDATE songs SET youtube_id = $1, mv_offset = NULL WHERE id = $2`, [hit ? hit.id : "", song.id]);
         if (hit) {
             found++;
             const video = items.find((it) => it.id === hit.id);

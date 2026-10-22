@@ -41,7 +41,8 @@ const PlayerHost = () => {
     // sang bai moi thi tat lai (play() ben duoi) -> bai sau khong tu bo giong ca si
     const [karaoke, setKaraoke] = useState(false);
     const [scoreOn, setScoreOn] = useState(false);
-    // che do xem MV (H16): bat roi thi bai sau co MV cung chieu MV, nhu Spotify; tu chon bai -> tu bat (autoMv)
+    // che do xem MV o trang phat nhac (H16): chi bat khi bam nut MV; bat roi thi bai ke (tu chuyen) co MV cung chieu MV,
+    // nhu Spotify; tu chon bai moi -> tat (trang phat nhac mo bang song am)
     const [mvWanted, setMvWanted] = useState(false);
     // cot phai "Now playing" o trang khac /now-playing (MV / anh bai, loi bai, ca si): thu gon thanh dai mong hay mo rong
     const [panelCollapsed, setPanelCollapsed] = useState(false);
@@ -102,15 +103,11 @@ const PlayerHost = () => {
         playFromQueue(plain, first);
     }
 
-    // nguoi dung TU CHON bai (trang chu, trang ca si, playlist, o tim kiem, tro ly) -> bai co MV thi MV tu chay o cot phai
-    // (F24). Man <= 1100px khong tu bat: cot phai la ngan keo noi, tu mo se che noi dung trang
-    const autoMv = () => {
-        if (window.matchMedia("(min-width: 1101px)").matches) setMvWanted(true);
-    }
-
     // nhan lenh tu cac trang (quet xong, playlist, ca si, o tim kiem)
     const handleCommand = (cmd) => {
-        if (cmd.kind === "song" || cmd.kind === "queue" || cmd.kind === "playlist") autoMv();
+        // nguoi dung TU CHON bai (trang chu, trang ca si, playlist, o tim kiem, tro ly) -> trang phat nhac luon mo bang
+        // song am, MV chi la lua chon (nut MV). Cot phai o trang khac van tu chieu MV (panelMv trong MusicPlayer)
+        if (cmd.kind === "song" || cmd.kind === "queue" || cmd.kind === "playlist") setMvWanted(false);
         // I4: buon/gian keo dai -> backend tra ve hanh trinh ~5 bai (buon -> trung tinh -> vui): phat nhu 1 hang doi
         // nhung VAN cham diem nghe (bai do AI chon theo cam xuc, khac playlist)
         const journey = cmd.kind === "scan" ? cmd.result.journey : null;

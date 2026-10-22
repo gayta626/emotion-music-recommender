@@ -2,7 +2,7 @@
 // Cao vừa khoảng giữa header và thanh phát (thanh phát cố định ở dưới, không che nội dung cột).
 .np-panel {
   width: 340px;
-  max-height: calc(100vh - var(--header-h) - var(--player-bar-h) - 8px);
+  max-height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h) - 8px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -182,6 +182,9 @@
 
   &::-webkit-scrollbar { display: none; }
 
+  // offsetTop của từng dòng tính từ đầu thẻ (để cuộn tới dòng đang hát)
+  position: relative;
+
   li {
     padding-bottom: 8px;
     font-family: 'Be Vietnam Pro', 'DM Sans', sans-serif;
@@ -189,6 +192,15 @@
     font-weight: 700;
     line-height: 1.3;
     color: rgba(255, 255, 255, 0.92);
+    transition: color 0.3s ease;
+  }
+
+  // lời chạy theo bài (kiểu Spotify): dòng sắp hát tối, đã hát sáng vừa, đang hát trắng hẳn
+  &.is-synced li {
+    color: rgba(0, 0, 0, 0.55);
+
+    &.is-past { color: rgba(255, 255, 255, 0.7); }
+    &.is-active { color: #fff; }
   }
 }
 
@@ -228,7 +240,7 @@
 // cột đã thu gọn (kiểu Spotify): dải mỏng ở mép phải, nút ‹ ở giữa để mở lại
 .np-strip {
   width: 36px;
-  height: calc(100vh - var(--header-h) - var(--player-bar-h) - 8px);
+  height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h) - 8px);
   display: grid;
   place-items: center;
   background-color: rgb(20 18 28 / 0.62);

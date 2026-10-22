@@ -3,7 +3,7 @@ const db = require("../config/db")
 // Bai da thich (♥) cua 1 nguoi, moi thich truoc. Cung dang du lieu bai nhu playlist -> frontend phat nhu 1 hang doi
 const getLikedSongs = async (userId) => {
     const result = await db.query(
-        `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id, s.emotion,
+        `SELECT s.id, s.title, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id, s.mv_offset, s.emotion,
                 s.artist_id, s.genre_id, g.name AS genre, s.album, s.duration, l.liked_at AS added_at
          FROM liked_songs l
          JOIN songs s ON s.id = l.song_id

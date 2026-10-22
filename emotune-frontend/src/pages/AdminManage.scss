@@ -601,7 +601,7 @@
 // ---- hộp thoại (<dialog> nằm ở lớp trên cùng nhưng vẫn thừa hưởng biến màu của trang) ----
 .mood-page.stats-page.admin-page .admin-dialog {
   width: min(460px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px);
+  max-height: calc(calc(100 * var(--vh)) - 48px);
   margin: auto;
   padding: 20px 22px;
   border: 1px solid rgba(255, 255, 255, 0.1);

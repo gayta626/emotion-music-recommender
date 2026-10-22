@@ -1,6 +1,6 @@
 // Trang Đăng nhập / Đăng ký (dùng chung). Màu lấy từ :root trong index.css
 .auth-page {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -1,6 +1,6 @@
 // Trang chủ: màn chào (chưa bắt đầu) + vùng chứa khung quét / trình phát
 .home-page {
-  min-height: calc(100vh - var(--header-h) - 48px);
+  min-height: calc(calc(100 * var(--vh)) - var(--header-h) - 48px);
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -13,10 +13,12 @@
     "fetch-lyrics": "node scripts/fetch-lyrics.js",
     "fetch-song-info": "node scripts/fetch-song-info.js",
     "fetch-mv": "node scripts/fetch-mv.js",
+    "align-mv": "node scripts/align-mv.js",
     "make-karaoke": "node scripts/make-karaoke.js",
     "import-music": "node scripts/import-music.js",
     "seed-demo": "node scripts/seed-demo.js",
     "set-admin": "node scripts/set-admin.js",
+    "set-password": "node scripts/set-password.js",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [

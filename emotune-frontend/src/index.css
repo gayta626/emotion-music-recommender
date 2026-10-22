@@ -13,6 +13,22 @@
   --assistant-glow-rgb: 58 45 120; /* #3a2d78: giữa nền trợ lý, sau quả cầu sóng */
   --radius: 20px;
   --header-h: 117px;
+  /* Thu nho DEU ca giao dien theo be rong man hinh (laptop trong nhu man to, chi nho lai): giao dien viet bang px cho
+     man >= 1920px; man 1101-1919px thu bang zoom; <= 1100px (ngan keo, dien thoai) da co giao dien rieng -> giu 1.
+     zoom lam ca vh nho theo -> chieu cao theo man hinh dung --vh / --svh (= 1vh / 1svh da bu zoom), khong dung vh tran.
+     JS doc toa do man hinh (getBoundingClientRect) roi dat vi tri trong trang thi chia cho zoom (MusicPlayer: lop MV noi) */
+  --ui-zoom: 1;
+  --vh: calc(1vh / var(--ui-zoom));
+  --svh: calc(1svh / var(--ui-zoom));
+}
+
+@media (min-width: 1101px) and (max-width: 1919px) { :root { --ui-zoom: 0.9; } }
+@media (min-width: 1101px) and (max-width: 1679px) { :root { --ui-zoom: 0.82; } }
+@media (min-width: 1101px) and (max-width: 1499px) { :root { --ui-zoom: 0.76; } }
+@media (min-width: 1101px) and (max-width: 1299px) { :root { --ui-zoom: 0.7; } }
+
+html {
+  zoom: var(--ui-zoom);
 }
 
 * {
@@ -30,5 +46,5 @@ body {
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
 }

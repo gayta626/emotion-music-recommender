@@ -1,11 +1,12 @@
 const path = require("path");
 const { spawn } = require("child_process");
-const { karaokeReady } = require("../../scripts/lib/karaoke");
+const { karaokeReady, alignReady } = require("../../scripts/lib/karaoke");
 
 // Sau khi admin them bai tren web: chay NEN cac script san co (giong buoc cuoi cua `npm run import-music -- --apply`)
 // - fetch-images: anh ca si moi + bia con thieu
 // - fetch-song-info: album con thieu (thoi luong da co)
 // - fetch-mv: MV YouTube cho bai chua tim (chi khi .env co YOUTUBE_API_KEY)
+// - align-mv: do lech MV / mp3 de doi qua lai nhac noi tiep dung doan (chi khi .venv-karaoke co yt-dlp)
 // - make-karaoke: AI tach giong (Demucs) -> nhac dem + cao do ca si cho karaoke / cham diem (chi khi may da cai .venv-karaoke)
 // Cac script chi dien cho con thieu -> chay lai nhieu lan khong sao. Moi luc chi 1 luot; dang chay ma co bai moi
 // thi danh dau chay them 1 luot nua khi xong (bai moi them giua chung van duoc xu ly).
@@ -26,6 +27,7 @@ const state = {
 const scriptsToRun = () => {
     const list = ["fetch-images.js", "fetch-song-info.js"];
     if (process.env.YOUTUBE_API_KEY) list.push("fetch-mv.js");
+    if (alignReady()) list.push("align-mv.js");
     // de cuoi: nang nhat (GPU ~10s / bai, CPU vai phut) va khong can cho buoc nao khac
     if (karaokeReady()) list.push("make-karaoke.js");
     return list;

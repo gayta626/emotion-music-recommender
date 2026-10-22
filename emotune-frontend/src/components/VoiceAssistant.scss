@@ -58,7 +58,7 @@
         flex: none;
         display: grid;
         place-items: center;
-        width: min(600px, 92vw, max(300px, 58vh));
+        width: min(600px, 92vw, max(300px, calc(58 * var(--vh))));
         aspect-ratio: 1;
 
         .voice-orb {

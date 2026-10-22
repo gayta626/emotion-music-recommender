@@ -7,6 +7,7 @@
 //   py -m venv .venv-karaoke
 //   .venv-karaoke\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cu130   (GPU NVIDIA; bo --index-url neu chi co CPU)
 //   .venv-karaoke\Scripts\pip install demucs numpy
+//   .venv-karaoke\Scripts\pip install yt-dlp      (them, cho `npm run align-mv`: do lech MV / mp3)
 const { spawn } = require("child_process");
 const path = require("path");
 const { karaokePython, karaokeReady } = require("./lib/karaoke");

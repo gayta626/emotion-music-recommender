@@ -4,7 +4,7 @@
     display: grid;
     grid-template-columns: auto 1fr auto;     // thư viện | nội dung | cột phải "Now playing" (rỗng = 0px)
     grid-template-rows: auto 1fr;
-    min-height: 100vh;
+    min-height: calc(100 * var(--vh));
 
     // cuộn trang: header + sidebar đứng yên (kiểu Spotify), chỉ nội dung giữa trôi.
     // z-index 15: trên nội dung trang, dưới màn lời bài hát (19), thanh phát (20), trợ lý giọng nói (50)
@@ -19,7 +19,7 @@
         position: sticky;
         top: var(--header-h);   // dính ngay dưới header
         align-self: start;
-        height: calc(100vh - var(--header-h));
+        height: calc(calc(100 * var(--vh)) - var(--header-h));
         margin-left: 1px;
     }
 

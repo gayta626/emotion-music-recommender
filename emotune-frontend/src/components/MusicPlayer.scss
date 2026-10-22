@@ -10,7 +10,7 @@
 // đang phát nhạc -> sidebar ngắn lại và nội dung mọi trang chừa chỗ, để không bị thanh phát che
 body:has(.player-bar) {
   .side-bar-container {
-    height: calc(100vh - var(--header-h) - var(--player-bar-h));
+    height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h));
   }
 
   .app-main {
@@ -64,7 +64,7 @@ body:has(.player-bar) {
 .player-stage {
   position: relative;
   // vừa khít màn hình: trừ header, thanh phát và padding 24px trên/dưới của <main>
-  height: calc(100vh - var(--header-h) - var(--player-bar-h) - 48px);
+  height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h) - 48px);
   min-height: 420px;
   // tiêu đề + lời nhắn ở trên, ảnh bìa nằm giữa phần còn lại (lời nhắn dài không đè lên ảnh)
   display: flex;
@@ -329,7 +329,7 @@ body:has(.player-bar) {
 // ---------- đang xem MV ở /now-playing: khung lớn phủ hết vùng giữa (chỉ chừa header, thư viện, thanh phát) ----------
 .player.mv-on .player-stage {
   width: calc(100% + 2 * var(--main-pad));
-  height: calc(100vh - var(--header-h) - var(--player-bar-h));
+  height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h));
   margin: calc(-1 * var(--main-pad));
   padding: 10px 0 0;
   gap: 10px;
@@ -774,7 +774,7 @@ body:has(.player-bar) {
 
   // trên điện thoại còn dải thư viện phía trên (~200px) -> khung lớn thấp hơn để vừa 1 màn hình
   .player-stage {
-    height: calc(100svh - var(--header-h) - var(--player-bar-h) - 230px);
+    height: calc(calc(100 * var(--svh)) - var(--header-h) - var(--player-bar-h) - 230px);
     min-height: 320px;
     padding: 18px;
   }

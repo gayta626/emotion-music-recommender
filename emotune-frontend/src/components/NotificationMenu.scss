@@ -41,7 +41,7 @@
   right: 0;
   z-index: 50;
   width: 340px;
-  max-height: min(520px, calc(100svh - 140px));
+  max-height: min(520px, calc(calc(100 * var(--svh)) - 140px));
   overflow-y: auto;
   display: flex;
   flex-direction: column;

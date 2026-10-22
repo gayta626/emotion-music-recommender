@@ -23,7 +23,7 @@ import MvPlayer from './MvPlayer'
 import NowPlayingPanel, { NowPlayingStrip } from './NowPlayingPanel'
 import { usePanelSlot } from '../contexts/panelSlotContext'
 import { createPortal } from 'react-dom'
-import { YT_BUFFERING, YT_ENDED, YT_PLAYING } from '../utils/youtube'
+import { YT_BUFFERING, YT_ENDED, YT_PAUSED, YT_PLAYING } from '../utils/youtube'
 import { setVocalCut } from '../utils/audioGraph'
 import { useLyrics } from '../hooks/useLyrics'
 import { useKaraokeTrack } from '../hooks/useKaraokeTrack'
@@ -32,13 +32,19 @@ import KaraokeScoreCard from './KaraokeScoreCard'
 import { Cover, QueueMenu, QueuePanel, UpNextCard } from './PlayerOverlays'
 import { MoodFix } from './MoodCheck'
 import { moodLabel } from '../utils/moodFix'
-import { addSpan, coveredFraction, spansFromPlayed } from '../utils/listenSpans'
+import { addMvSpan, coveredFraction, spansFromPlayed } from '../utils/listenSpans'
+import { songToMv, mvToSong } from '../utils/mvTime'
 import './MusicPlayer.scss'
 
 // moi vibe co 1 bo mau nen rieng trong MusicPlayer.scss ([data-vibe])
 const VIBES = ["happy", "sad", "angry", "surprise", "neutral"];
 // the loai -> kieu nen + kieu song am (data-genre): rap / pop = cot, ballad / chill = song cong mem
 const GENRE_STYLE = { rap: "rap", pop: "pop", ballad: "ballad", "thư giãn": "chill" };
+// chuyen giao mp3 -> MV (khong lang): MV tua truoc HANDOFF_LEAD giay (bu thoi gian tai), lech qua MAX_HANDOFF_DRIFT
+// thi tua lai, khop roi chuyen dan tieng trong FADE_MS
+const HANDOFF_LEAD = 0.4;
+const MAX_HANDOFF_DRIFT = 0.3;
+const FADE_MS = 300;
 
 const MvIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -175,11 +181,16 @@ const MusicPlayer = (props) => {
     const youtubeId = data.song.youtube_id;
     const onStage = location.pathname === "/now-playing";
     const [mvFailed, setMvFailed] = useState(false); // bai nay MV loi (cam nhung / mat mang) -> khong thu lai
-    // dang o che do MV: trinh phat YouTube ton tai va dang phat tieng (mp3 dung) — ke ca luc bi an (cot phai thu gon)
-    const mvOpen = !!mvWanted && !!youtubeId && !showLyrics && !mvFailed;
+    // nguoi dung da tat MV (Close MV / ✕ / "tat MV") o BAI NAY -> cot phai khong tu chieu lai cho bai nay
+    const [mvDismissed, setMvDismissed] = useState(false);
     // cot phai "Now playing" LUON co o trang khac /now-playing, /lyrics (chon bai o trang chu / trang ca si van thay);
     // chua xem MV -> anh + nut ▶ xem MV. Thu gon (kieu Spotify): chi con dai mong co nut mo lai
     const panelShown = !onStage && !showLyrics && !!panelSlot;
+    // cot phai dang hien ma bai co MV -> TU CHIEU MV o cot (quet mat xong bam Home, bai ke khi dang luot...), ke ca khi
+    // chua bat che do MV; ve /now-playing thi lai la song am (nhac noi tiep). Man <= 1100px: cot la ngan keo noi -> khong tu mo
+    const panelMv = panelShown && !mvDismissed && window.matchMedia("(min-width: 1101px)").matches;
+    // dang o che do MV: trinh phat YouTube ton tai va dang phat tieng (mp3 dung) — ke ca luc bi an (cot phai thu gon)
+    const mvOpen = (!!mvWanted || panelMv) && !!youtubeId && !showLyrics && !mvFailed;
     const panelOpen = panelShown && !panelCollapsed;
     const panelStrip = panelShown && panelCollapsed;
     const mvInPanel = mvOpen && panelOpen;
@@ -206,18 +217,92 @@ const MusicPlayer = (props) => {
     const captionsOffRef = useRef(false);           // da tat phu de cua trinh phat hien tai chua
     // cac doan MV da THAT SU xem (giay cua MV, de cham diem nghe nhu mp3): ghi khi thoi gian tang deu luc dang phat
     const mvWatchRef = useRef({ spans: [], last: null, duration: 0 });
-    // trinh phat dang dieu khien: MV khi dang xem, nguoc lai the <audio>
-    const mv = () => (mvOpen ? mvRef.current : null);
+    // MV da "nhan tieng" chua: vua bat MV ma mp3 dang phat -> mp3 VAN PHAT trong luc trinh phat YouTube tai (~1-2s, mang
+    // cham lau hon), MV chay cam o dung doan; MV phat that roi moi chuyen dan tieng mp3 -> MV (truoc day dung mp3 ngay -> lang ~1.4s).
+    // State cho render (thanh phat, nut dieu khien), ref cho effect / callback
+    const [mvLive, setMvLive] = useState(false);
+    const mvLiveRef = useRef(false);
+    const handoffRef = useRef(null);                // hen gio vong cho chuyen giao
+    // tat MV -> lan bat sau phai chuyen giao lai tu dau (chinh state ngay luc render, khong can effect)
+    const [prevMvOpen, setPrevMvOpen] = useState(mvOpen);
+    if (prevMvOpen !== mvOpen) {
+        setPrevMvOpen(mvOpen);
+        if (!mvOpen) setMvLive(false);
+    }
+    const mvActive = mvOpen && mvLive;
+    // am luong moi nhat cho vong chuyen giao (chay ngoai render)
+    const volRef = useRef({ volume, muted });
+    useEffect(() => { volRef.current = { volume, muted }; });
+    // trinh phat dang dieu khien: MV khi MV da nhan tieng, nguoc lai the <audio>
+    const mv = () => (mvActive ? mvRef.current : null);
 
-    // am luong MV theo thanh am luong (0..100), co tinh "duck" khi tro ly dang noi
+    // am luong MV theo thanh am luong (0..100), co tinh "duck" khi tro ly dang noi; chua nhan tieng thi giu cam
     const syncMvVolume = (value, isMuted) => {
         const player = mvRef.current;
         if (!player) return;
+        if (!mvLiveRef.current) { player.mute(); return; }
         player.setVolume(Math.round(value * (duckRef?.current ? 0.2 : 1) * 100));
         if (isMuted) player.mute(); else player.unMute();
     }
 
+    // MV nhan tieng: tu day thanh phat / nut dieu khien MV, mp3 dung
+    const goLive = () => {
+        mvLiveRef.current = true;
+        mvWatchRef.current.last = null;
+        setMvLive(true);
+    }
+
+    // chuyen dan tieng mp3 -> MV trong FADE_MS (khop doan nen nghe nhu 1 bai lien mach), xong thi dung mp3
+    const crossfade = (player) => {
+        const audio = audioRef.current;
+        const began = performance.now();
+        const { muted: isMuted } = volRef.current;
+        if (!isMuted) { player.setVolume(0); player.unMute(); }
+        const step = () => {
+            const { volume: v } = volRef.current;
+            const level = v * (duckRef?.current ? 0.2 : 1);
+            // tat MV giua chung -> tra am luong mp3, mp3 phat tiep
+            if (mvRef.current !== player) { audio.volume = level; return; }
+            const k = isMuted ? 1 : Math.min(1, (performance.now() - began) / FADE_MS);
+            player.setVolume(Math.round(level * k * 100));
+            audio.volume = level * (1 - k);
+            if (k < 1) { handoffRef.current = setTimeout(step, 16); return; }
+            audio.pause();
+            audio.volume = level;
+            goLive();
+            syncMvVolume(v, isMuted);
+        };
+        step();
+    }
+
+    // cho MV phat that o dung doan mp3 dang toi roi moi chuyen giao (mp3 van phat trong luc cho -> khong lang)
+    const handoff = (player) => {
+        let retries = 0;
+        const step = () => {
+            const audio = audioRef.current;
+            if (mvRef.current !== player || !audio) return;
+            // nguoi dung dung nhac / mp3 het trong luc cho -> MV dung o doan do, nhan luon (khong can chuyen tieng)
+            if (audio.paused) {
+                player.pauseVideo();
+                goLive();
+                syncMvVolume(volRef.current.volume, volRef.current.muted);
+                return;
+            }
+            if (player.getPlayerState() === YT_PLAYING) {
+                const want = songToMv(audio.currentTime, mvSync(audio.duration, player.getDuration()));
+                // lech > 0.3s (tai lau hon du doan) -> tua lai 1-2 lan, van cam; roi chuyen giao
+                if (Math.abs(player.getCurrentTime() - want) > MAX_HANDOFF_DRIFT && retries < 2) {
+                    retries++;
+                    player.seekTo(want + HANDOFF_LEAD, true);
+                } else { crossfade(player); return; }
+            }
+            handoffRef.current = setTimeout(step, 50);
+        };
+        step();
+    }
+
     const openMv = () => {
+        setMvDismissed(false);
         setMvNote(null);
         setMvFailed(false);
         setMvTime(0);
@@ -229,6 +314,7 @@ const MusicPlayer = (props) => {
     }
 
     const closeMv = () => {
+        setMvDismissed(true);
         // lay dung giay MV dang toi ngay luc bam (so hoi 4 lan/giay co the cham toi 0.25s) -> mp3 noi tiep khong bi lui
         const player = mvRef.current;
         try {
@@ -241,31 +327,33 @@ const MusicPlayer = (props) => {
         onMvWanted(false);
     }
 
-    // doi giua mp3 va MV, nhac NOI TIEP: MV dai khac mp3 (doan dao, doan ket) -> quy doi theo ti le thoi luong
-    const mapTime = (t, fromDur, toDur) => (fromDur > 0 && toDur > 0 ? t * toDur / fromDur : t);
+    // doi giua mp3 va MV, nhac NOI TIEP DUNG DOAN: MV co canh mo dau / ket -> dung do lech da do (songs.mv_offset,
+    // `npm run align-mv`); bai chua do thi quy theo ti le thoi luong (utils/mvTime.js)
+    const mvOffset = data.song.mv_offset;
+    const mvSync = (songDur, mvDur) => ({ offset: mvOffset, songDur, mvDur });
 
-    // bat MV -> dung mp3, MV chay tiep tu doan nhac dang toi;
-    // tat MV (bam nut / loi / mo /lyrics) -> mp3 phat tiep tu doan MV dang toi (MV dang dung thi mp3 cung dung)
+    // bat MV -> mp3 phat tiep cho toi khi MV san sang (handoff), MV chay tu doan nhac dang toi;
+    // tat MV (bam nut / loi / mo /lyrics) -> mp3 phat tiep tu doan MV dang toi (MV dang dung thi mp3 cung dung).
+    // Tat khi MV chua nhan tieng -> mp3 van dang phat, khong dong vao
     const mvWasOpen = useRef(false);
     useEffect(() => {
         const audio = audioRef.current;
         if (mvOpen && !mvWasOpen.current) {
-            if (audio) {
-                mvResumeRef.current = {
-                    fromAudio: { t: audio.currentTime, dur: audio.duration },
-                    playing: mvStartRef.current || !audio.paused,
-                };
-                audio.pause();
-            }
+            if (audio) mvResumeRef.current = { fromAudio: true, playing: mvStartRef.current || !audio.paused, mp3Playing: !audio.paused };
             mvStartRef.current = false;
         } else if (!mvOpen && mvWasOpen.current) {
+            clearTimeout(handoffRef.current);
             mvRef.current = null;
-            const { time, playing } = mvResumeRef.current;
-            if (audio && time !== undefined) audio.currentTime = Math.min(mapTime(time, mvWatchRef.current.duration, audio.duration), Math.max(0, (audio.duration || 0) - 1));
-            if (audio && playing && !loadError) audio.play().catch(() => { });
+            if (mvLiveRef.current) {
+                const { time, playing } = mvResumeRef.current;
+                if (audio && time !== undefined) audio.currentTime = Math.min(mvToSong(time, { offset: mvOffset, songDur: audio.duration, mvDur: mvWatchRef.current.duration }), Math.max(0, (audio.duration || 0) - 1));
+                if (audio && playing && !loadError) audio.play().catch(() => { });
+            }
+            mvLiveRef.current = false;
         }
         mvWasOpen.current = mvOpen;
-    }, [mvOpen, loadError]);
+    }, [mvOpen, loadError, mvOffset]);
+    useEffect(() => () => clearTimeout(handoffRef.current), []);
 
     // dang xem MV: hoi trinh phat YouTube 4 lan/giay -> thanh thoi gian, nut Play, so giay da xem
     useEffect(() => {
@@ -277,6 +365,8 @@ const MusicPlayer = (props) => {
             const d = player.getDuration();
             const playing = player.getPlayerState() === YT_PLAYING;
             const watch = mvWatchRef.current;
+            // MV chua nhan tieng (dang chay cam cho chuyen giao): chua tinh la dang xem
+            if (!mvLiveRef.current) return;
             // chi ghi khi phat lien mach (tua toi / lui thi khong tinh); noi tiep doan truoc thi keo dai doan do
             if (playing && watch.last !== null && t > watch.last && t - watch.last < 1.5) {
                 const prev = watch.spans[watch.spans.length - 1];
@@ -306,6 +396,9 @@ const MusicPlayer = (props) => {
         if (!mvOpen) return;
         const narrow = window.matchMedia("(max-width: 1100px)");
         let frameId;
+        // ca trang dang thu nho bang zoom (index.css --ui-zoom, laptop): getBoundingClientRect tra toa do DA thu nho,
+        // con px dat vao style lai bi thu nho them lan nua -> chia cho zoom. Chi doc lai khi doi be rong cua so
+        let zoom = 1, zoomForWidth = -1;
         const follow = () => {
             frameId = requestAnimationFrame(follow);
             const el = mvFloatRef.current;
@@ -314,10 +407,14 @@ const MusicPlayer = (props) => {
             const target = place === "stage" ? stageMvRef.current : place === "panel" ? panelMvRef.current : null;
             el.dataset.place = target ? place : "off";
             if (!target) return;
+            if (zoomForWidth !== window.innerWidth) {
+                zoomForWidth = window.innerWidth;
+                zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+            }
             const r = target.getBoundingClientRect();
-            el.style.transform = `translate(${r.left}px, ${r.top}px)`;
-            el.style.width = `${r.width}px`;
-            el.style.height = `${r.height}px`;
+            el.style.transform = `translate(${r.left / zoom}px, ${r.top / zoom}px)`;
+            el.style.width = `${r.width / zoom}px`;
+            el.style.height = `${r.height / zoom}px`;
             // man hep: cot phai la ngan keo noi tren header -> MV cung phai noi len tren
             el.style.zIndex = place === "panel" && narrow.matches ? "18" : "14";
         };
@@ -332,11 +429,39 @@ const MusicPlayer = (props) => {
         captionsOffRef.current = false;
         // tat phu de ma video bat san (cc_load_policy khong chan duoc phu de chu kenh dat mac dinh)
         try { player.unloadModule("captions"); } catch { /* trinh phat khong co phu de */ }
+        const { time, fromAudio, mp3Playing } = mvResumeRef.current;
+        const audio = audioRef.current;
+        // luc bat MV mp3 dang phat ma gio da dung (nguoi dung bam Pause trong luc MV tai / mp3 het) -> MV cung dung
+        const playing = fromAudio && mp3Playing && audio ? !audio.paused : mvResumeRef.current.playing;
+        // mp3 dang phat -> MV chay cam, tua toi cho mp3 SE toi khi MV tai xong (HANDOFF_LEAD), roi handoff chuyen tieng
+        const viaHandoff = fromAudio && playing && audio && !audio.paused;
+        const start = fromAudio && audio
+            ? songToMv(audio.currentTime + (viaHandoff ? HANDOFF_LEAD : 0), mvSync(audio.duration, player.getDuration()))
+            : time;
+        if (!viaHandoff) goLive();
+        else mvLiveRef.current = false;
         syncMvVolume(volume, muted);
-        const { time, fromAudio, playing } = mvResumeRef.current;
-        const start = fromAudio ? mapTime(fromAudio.t, fromAudio.dur, player.getDuration()) : time;
         if (start > 1) player.seekTo(start, true);
-        if (playing) player.playVideo(); else player.pauseVideo();
+        if (playing) player.playVideo(); else holdPaused(player);
+        if (viaHandoff) handoff(player);
+    }
+
+    // MV phai DUNG: seekTo luc trinh phat chua chay (state -1) lam YouTube tu phat, pauseVideo ngay sau do bi bo qua
+    // -> giu cam, gap trang thai dang phat / dang tai thi dung lai, toi khi that su dung (toi da ~5s) moi tra tieng
+    const holdPaused = (player) => {
+        let tries = 0;
+        player.mute();
+        const step = () => {
+            if (mvRef.current !== player) return;
+            const state = player.getPlayerState();
+            if (state === YT_PAUSED || ++tries > 100) {
+                syncMvVolume(volRef.current.volume, volRef.current.muted);
+                return;
+            }
+            if (state === YT_PLAYING || state === YT_BUFFERING) player.pauseVideo();
+            handoffRef.current = setTimeout(step, 50);
+        };
+        step();
     }
 
     // MV loi -> bai nay quay ve mp3 (van giu "muon xem MV" cho bai sau)
@@ -353,7 +478,7 @@ const MusicPlayer = (props) => {
         const audio = audioRef.current;
         const watch = mvWatchRef.current;
         let spans = [...playedBeforeRef.current, ...spansFromPlayed(audio.played, audio.duration)];
-        for (const [a, b] of watch.spans) spans = addSpan(spans, a, b, watch.duration);
+        for (const [a, b] of watch.spans) spans = addMvSpan(spans, a, b, mvSync(audio.duration, watch.duration));
         const fraction = coveredFraction(spans);
         console.log("Da nghe duoc :", Math.round(fraction * 100), "% bai (mp3 + MV)")
         return fraction;
@@ -459,7 +584,8 @@ const MusicPlayer = (props) => {
     }
     const playMedia = () => {
         const player = mv();
-        if (player) player.playVideo();
+        // bam Play khi MV dang bi giu dung (holdPaused) -> thoi giu, tra tieng
+        if (player) { clearTimeout(handoffRef.current); syncMvVolume(volume, muted); player.playVideo(); }
         else if (!loadError) audioRef.current.play().catch(() => { });
     }
 
@@ -586,14 +712,14 @@ const MusicPlayer = (props) => {
     const mvPlayer = mvOpen && (
         <MvPlayer videoId={youtubeId} title={`${data.song.title} — ${artist} (MV)`}
             onReady={mvReady}
-            onStateChange={(state) => { if (state === YT_ENDED) handleEnded(); }}
+            onStateChange={(state) => { if (state === YT_ENDED && mvLiveRef.current) handleEnded(); }}
             onError={mvError} />
     );
 
-    // thanh phat hien so cua MV khi dang xem MV, nguoc lai cua mp3
-    const shownTime = mvOpen ? mvTime : currentTime;
-    const shownDuration = mvOpen ? mvDuration : duration;
-    const shownPlaying = mvOpen ? mvPlaying : isPlaying;
+    // thanh phat hien so cua MV khi MV da nhan tieng, nguoc lai cua mp3 (ca luc MV dang tai)
+    const shownTime = mvActive ? mvTime : currentTime;
+    const shownDuration = mvActive ? mvDuration : duration;
+    const shownPlaying = mvActive ? mvPlaying : isPlaying;
     useEffect(() => { onPlayingChange?.(shownPlaying); }, [shownPlaying, onPlayingChange]);
     const progress = shownDuration ? (shownTime / shownDuration) * 100 : 0;
     // Repeat all: bai cuoi hang doi -> bai tiep la bai dau
@@ -749,6 +875,8 @@ const MusicPlayer = (props) => {
                     coverSrc={coverSrc}
                     context={playlist ? playlist.name : mvOpen ? "Music video" : "Now playing"}
                     lyrics={lyrics}
+                    // giay cua BAI de to loi: dang xem MV -> quy giay MV ve giay mp3 (mv_offset, chua do thi theo ti le)
+                    time={mvActive ? mvToSong(mvTime, mvSync(duration, mvDuration)) : currentTime}
                     videoRef={panelMvRef}
                     // dang xem MV: thumbnail MV (lo ra khi video dung); chua xem: anh bia vuong (thumbnail YouTube co san vien den)
                     poster={mvOpen ? mvPoster : coverSrc || (youtubeId ? mvPoster : null)}

@@ -5,27 +5,52 @@ import { hueFromText, lyricsPalette } from '../utils/coverColor';
 import { useCoverColor } from '../hooks/useCoverColor';
 import { Cover } from './PlayerOverlays';
 import CloseToggle from '../assets/icons/close_toggle.svg?react';
+import { activeLineIndex } from '../utils/lyrics';
 import './NowPlayingPanel.scss';
+
+// nguoi dung tu cuon the loi -> thoi tu cuon trong chung nay (ms)
+const USER_SCROLL_PAUSE_MS = 4000;
 
 // Cot phai "Now playing" kieu Spotify: LUON hien khi dang phat nhac o trang khac /now-playing, /lyrics
 // (o /now-playing da co khung lon). MusicPlayer ve vao o trong cua MainLayout bang portal. Co:
 //   - nut thu gon (kieu Spotify): cot bien mat, chi con dai mong co nut mo lai (NowPlayingStrip)
 //   - o hinh: dang xem MV -> video (khong bam duoc: lop trong suot chan chuot, dieu khien bang thanh phat duoi);
 //     chua xem -> anh MV (bai co MV, kem nut ▶ xem MV) hoac anh bia; + ten bai
-//   - the Lyrics (loi tinh: MV co doan dao khac mp3 nen khong to theo thoi gian) + the About the artist
+//   - the Lyrics (loi co moc thoi gian -> dong dang hat sang + tu cuon theo bai, ca khi dang xem MV nho songs.mv_offset)
+//     + the About the artist
 // Khung video VUONG: YouTube yeu cau khung trinh phat nhung toi thieu 200x200px.
 const NowPlayingPanel = (props) => {
     // videoRef: o video (MV that nam o lop noi cua MusicPlayer, tu bam theo o nay); poster: anh thumbnail MV / anh bia;
     // mvOn: dang xem MV; onPlayMv: bai co MV -> nut ▶ bat MV; onClose: tat MV (chi khi dang xem)
-    const { song, artist, coverSrc, context, lyrics, videoRef, poster, mvOn, onPlayMv, onCollapse, onClose, onOpenLyrics } = props;
+    // time: giay dang toi cua BAI (de to loi)
+    const { song, artist, coverSrc, context, lyrics, time, videoRef, poster, mvOn, onPlayMv, onCollapse, onClose, onOpenLyrics } = props;
     const artistPhoto = song.artist_avatar ? `${API_URL}/avatars/${song.artist_avatar}` : null;
     const cover = useCoverColor(coverSrc);
     const palette = lyricsPalette(cover && cover.s >= 0.08 ? cover : { h: hueFromText(song.title), s: 0.55 });
     const lines = lyrics?.lines.filter((line) => line.text) || [];
+    // loi co moc thoi gian -> to dong dang hat theo giay cua BAI (time: mp3, hoac MV da quy doi qua mv_offset);
+    // doan nhac khong loi (dong rong trong LRC) -> khong dong nao sang, chi giu vi tri cuon
+    const synced = !!lyrics?.synced;
+    const fullActive = synced ? activeLineIndex(lyrics.lines, time) : -1;
+    const sungCount = synced ? lines.filter((line) => line.time <= lyrics.lines[fullActive]?.time).length : 0;
+    const active = synced && lyrics.lines[fullActive]?.text ? sungCount - 1 : -1;
 
     // doi bai -> cuon the loi ve dau
     const listRef = useRef(null);
     useEffect(() => { listRef.current?.scrollTo({ top: 0 }); }, [song.id]);
+
+    // dong dang hat (hoac dong sap hat sau doan nhac khong loi) o khoang 1/3 tren cua the;
+    // nguoi dung tu cuon the -> thoi tu cuon vai giay
+    const userScrollAt = useRef(0);
+    useEffect(() => {
+        const list = listRef.current;
+        if (!list || !synced || Date.now() - userScrollAt.current < USER_SCROLL_PAUSE_MS) return;
+        const el = list.children[Math.max(0, sungCount - 1)];
+        const top = el && sungCount > 0 ? el.offsetTop - list.clientHeight * 0.3 : 0;
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        list.scrollTo({ top, behavior: reduce ? "auto" : "smooth" });
+    }, [sungCount, synced]);
+    const markUserScroll = () => { userScrollAt.current = Date.now(); };
 
     return (
         <aside className={`np-panel ${mvOn ? "" : "np-idle"}`} aria-label="Now playing">
@@ -73,8 +98,11 @@ const NowPlayingPanel = (props) => {
                         <span>Lyrics</span>
                         <span className="np-card-link">Show full</span>
                     </button>
-                    <ol ref={listRef} className="np-lyrics-lines">
-                        {lines.map((line, i) => <li key={i}>{line.text}</li>)}
+                    <ol ref={listRef} className={`np-lyrics-lines ${synced ? "is-synced" : ""}`}
+                        onWheel={markUserScroll} onTouchMove={markUserScroll}>
+                        {lines.map((line, i) => (
+                            <li key={i} className={i === active ? "is-active" : i < sungCount ? "is-past" : ""}>{line.text}</li>
+                        ))}
                     </ol>
                 </section>
             )}

@@ -17,7 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { karaokeReady } = require('./lib/karaoke');
+const { karaokeReady, alignReady } = require('./lib/karaoke');
 const db = require('../src/config/db');
 const { readTags } = require('./lib/id3');
 const { mp3Duration } = require('./lib/mp3Duration');
@@ -219,6 +219,8 @@ const apply = async () => {
     const scripts = ["fetch-images.js", "fetch-song-info.js"];
     if (process.env.YOUTUBE_API_KEY) scripts.push("fetch-mv.js");
     else console.log("\n(Chua co YOUTUBE_API_KEY trong .env -> bo qua tim MV; co key roi thi chay: npm run fetch-mv)");
+    // do lech MV / mp3 (doi qua lai nhac noi tiep dung doan) — can yt-dlp trong .venv-karaoke
+    if (alignReady()) scripts.push("align-mv.js");
     // AI tach giong cho karaoke (chi khi da cai venv .venv-karaoke, xem scripts/make-karaoke.js)
     if (karaokeReady()) scripts.push("make-karaoke.js");
     else console.log("(Chua cai .venv-karaoke -> bo qua tach giong karaoke; cai xong thi chay: npm run make-karaoke)");

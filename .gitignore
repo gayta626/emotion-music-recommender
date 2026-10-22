@@ -14,3 +14,9 @@ emotune-backend/feedback_faces/
 # karaoke AI (Demucs): venv rieng (~3 GB) + beat / cao do giong do `npm run make-karaoke` tao ra (tu nhac co ban quyen)
 emotune-backend/.venv-karaoke/
 emotune-backend/karaoke/
+
+# tai lieu nop mon (co ten + ma sinh vien, repo cong khai) -> chi giu tren may, khong dua len GitHub
+docs/*.docx
+docs/*.pptx
+docs/~$*
+docs/nguon_tai_lieu/

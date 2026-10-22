@@ -29,7 +29,7 @@ const TASTE_BONUS = `(${TASTE_ARTIST} + ${TASTE_GENRE})`;
 const LIKE_BONUS = `(CASE WHEN EXISTS (SELECT 1 FROM liked_songs l WHERE l.user_id = $1 AND l.song_id = s.id) THEN 1 ELSE 0 END)`;
 
 // cac cot chung cua 2 cau SELECT duoi (bai + diem nghe + tung loai diem thuong)
-const SONG_COLS = `s.id, s.title, s.artist_id, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id,
+const SONG_COLS = `s.id, s.title, s.artist_id, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id, s.mv_offset,
                     s.emotion, s.energy, g.name AS genre,
                     COALESCE(p.score, 0) AS score,
                     ${TASTE_BONUS} AS taste_bonus,
@@ -106,7 +106,7 @@ let getExploreSongs = async (userId) => {
          ), by_genre AS (
              SELECT genre_id, SUM(value) AS affinity FROM signal GROUP BY genre_id
          )
-         SELECT s.id, s.title, s.artist_id, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id,
+         SELECT s.id, s.title, s.artist_id, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id, s.mv_offset,
                 s.emotion, s.energy, g.name AS genre,
                 COALESCE(m.score, 0) AS score,
                 ${TASTE_BONUS} AS taste_bonus,

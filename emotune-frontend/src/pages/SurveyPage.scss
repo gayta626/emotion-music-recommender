@@ -1,6 +1,6 @@
 // Khảo sát gu lần đầu — theo Figma "survey gu âm nhạc (lần đầu)" (255:5)
 .survey-page {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   display: flex;
   flex-direction: column;
   align-items: center;
