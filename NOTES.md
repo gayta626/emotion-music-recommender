@@ -35,9 +35,14 @@ cd emotune-backend && npm run align-mv                       # chỉ bài chưa 
 cd emotune-frontend && npx eslint src && npm run build && npm test
 ```
 
+## 4b. Commit + máy laptop (22/10 khuya)
+- **Đã commit `b77299c` + push.** Tài liệu nộp môn (`docs/*.docx`, `docs/*.pptx`, `docs/nguon_tai_lieu/`) vào `.gitignore` vì repo GitHub **công khai** mà tài liệu có tên + mã sinh viên (người dùng chọn).
+- Sao lưu DB PC: `C:\Users\Hi\Documents\HTTM\emotune_db_22-10.dump` (`pg_dump -Fc`, PostgreSQL 17, 13 bảng; ngoài repo, có hash mật khẩu → không đưa lên mạng).
+- **Laptop làm cho giống PC:** (1) chép bằng USB / Drive: `emotune-backend/music/` (389 MB), `lyrics/`, `karaoke/` (556 MB, cần cho Karaoke / Score me), `emotune-backend/.env`, file `.dump`, (tuỳ) tài liệu `docs/` · (2) `git pull` · (3) `npm install` ở `emotune-backend` + `emotune-frontend` · (4) khôi phục DB (**ghi đè DB laptop**): `"C:\Program Files\PostgreSQL\17\bin\pg_restore.exe" --clean --if-exists --no-owner -h localhost -p <DB_PORT> -U postgres -d postgres emotune_db_22-10.dump` (laptop cần PostgreSQL ≥ 17) · (5) AI chưa có venv thì tạo (lệnh trong CLAUDE.md) · (6) chạy 3 service · (7) (tuỳ) chia sẻ từ laptop: `winget install Cloudflare.cloudflared`.
+
 ## 5. Còn dở
 - ✅ F29 người dùng đã chạy được link. Cách chạy lại: `npm run set-password -- demo <mk mới>` → `npm run share` (frontend) → `cloudflared tunnel --url http://localhost:4173` → mở link thử đăng nhập, quét mặt, phát nhạc. Người lạ đăng ký được tài khoản và dùng trợ lý (tốn lượt Gemini free).
-- Chưa commit (F24 sửa + F25 + F26 + ghi chú).
+- ✅ Đã commit `b77299c` + push (toàn bộ code F24 sửa → F30).
 - ✅ Bài **Vì Em Chưa Bao Giờ Khóc**: người dùng chọn tìm MV đầy đủ → `UPDATE songs SET youtube_id = 'IMNlw1NfZis', mv_offset = NULL` (tìm bằng `yt-dlp ytsearch`, Official Music Video kênh Hà Nhi Official 4:27, `playable_in_embed` true, `age_limit` 0) → `npm run align-mv -- --only vi_em_chua_bao_gio_khoc.mp3` = −1s (điểm 11; đo từng đoạn đều −1,0s) → **80/86** bài có độ lệch. DB máy khác (chưa có cột / id này) phải chạy lại câu UPDATE trên.
 - Bài mới ở chế độ MV bắt đầu MV ở `songToMv(0)` = bỏ cảnh mở đầu MV (hành vi có từ F25, chưa ai phàn nàn).
 
