@@ -54,6 +54,16 @@ const explainPick = (song, ctx) => {
     } else if (ctx.isEncourage) {
         reasons.push({ kind: "encourage", text: "You've seemed low for a while, so NYX picked something brighter" });
     }
+    if (ctx.explore) {
+        // che do Explore (exploreService.rankExplore): bai moi / lau chua nghe, roi gu theo ca si / the loai hay nghe
+        reasons.push(song.is_new
+            ? { kind: "new", text: "New to you: you've never played it" }
+            : { kind: "new", text: "You haven't played it in a long time" });
+        const often = [];
+        if (Number(song.explore_artist) > 0 && song.artist) often.push({ kind: "taste", text: `By ${song.artist}, an artist you play often` });
+        if (Number(song.explore_genre) > 0 && song.genre) often.push({ kind: "taste", text: `${song.genre[0].toUpperCase()}${song.genre.slice(1)} is a genre you play a lot` });
+        return [...reasons, ...often, ...personalReasons(song)].slice(0, MAX_REASONS);
+    }
     const personal = personalReasons(song);
     // khong co ly do ca nhan nao: bai moi voi nguoi nay (hoac 20% luot NYX thu bai khac) -> noi that
     if (!personal.length) personal.push({ kind: "new", text: "Something new for you: skipping or finishing it teaches NYX" });

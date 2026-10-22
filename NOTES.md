@@ -1,13 +1,156 @@
 # NOTES.md — EmoTune (đồ án Xây dựng hệ thống thông minh) — nhật ký phiên làm việc
 
-## Phiên 22/10/2026 (tối) — F24: cột phải "Now playing" luôn hiện
+# 🧭 PHIÊN 22/10/2026 (khuya) — C16: Explore là "lệnh khám phá" (code + tài liệu)
 
-- Người dùng: "chọn bài từ trang chủ hay từ profile artist thì nhạc phát nhưng cột MV không hiện ra".
-- **Tìm nguyên nhân** (Playwright, server của người dùng, chặn `/listen-report`): dữ liệu đủ (`/songs` có `youtube_id`, 86/102 bài có MV). Đã bật MV trước đó → chọn bài ở trang chủ / trang ca sĩ **vẫn hiện cột**. Chưa bật / đã ✕ → không có cột, vì `NowPlayingPanel` chỉ vẽ khi `mvOpen` (`mvWanted` mặc định `false`). Là thiết kế cũ, không phải lỗi dữ liệu.
-- Người dùng chọn **"Luôn hiện cột Now playing"** (kiểu Spotify; bỏ 2 lựa chọn "tự bật MV luôn" và "giữ như cũ").
-- Code: `MusicPlayer.jsx` tách `panelShown` (trang khác `/now-playing`, `/lyrics`) / `panelOpen` / `panelStrip` khỏi `mvOpen`; `mvInPanel = mvOpen && panelOpen`. `NowPlayingPanel`: prop `mvOn`, `onPlayMv`; chưa xem MV → `.np-poster` = ảnh bìa vuông (thumbnail YouTube có viền đen sẵn nên chỉ dùng khi bài không có bìa) + nút **▶ Watch MV** (vẽ đè được vì không có trình phát YouTube), nút ✕ chỉ khi đang xem MV (✕ = tắt MV, cột vẫn còn), tiêu đề "Now playing" / "Music video". Màn ≤ 1100px: `.right-panel-slot:has(> .np-idle)` ẩn → ngăn kéo nổi chỉ hiện khi xem MV.
-- **Sửa lại theo góp ý** ("chọn bài là MV tự phát luôn, không phải bấm play"): `PlayerHost.autoMv()` bật `mvWanted` khi lệnh `song` / `queue` / `playlist` (người dùng tự chọn), chỉ màn > 1100px (màn hẹp cột là ngăn kéo nổi, tự mở sẽ che trang). Kết quả quét không tự bật; nhưng `mvWanted` giữ qua các bài như H16 nên sau khi đã tự chọn 1 bài, bài quét sau cũng chiếu MV ở `/now-playing` (✕ / Close MV để tắt). Nút ▶ Watch MV còn dùng khi đã ✕ hoặc bài lỗi MV.
-- Kiểm tra (bản đầu, có nút Watch MV): lint + build sạch, frontend `npm test` 14/14. Playwright 1440: chọn bài có MV → cột + Watch MV, mp3 chạy; bài không MV → cột không có nút; Watch MV → MV ở cột (`mv-float` `panel`, mp3 dừng); ✕ → về mp3, cột còn; thu gọn → dải mỏng → mở lại; `/now-playing` không có cột; trang ca sĩ → cột hiện. 1000 + 390px: cột ẩn, không tràn ngang. **Bản sửa lại:** 1440 chọn bài có MV ở trang chủ / trang ca sĩ → `mv-float` `panel`, YouTube đang phát, mp3 dừng; bài không MV → ảnh bìa, mp3 chạy; ✕ → mp3 + nút Watch MV; 1000px không tự bật. Chưa commit.
+## 1. Mục tiêu
+- Người dùng: "nếu người dùng có biểu cảm ngạc nhiên thì nó giống như 1 lệnh hơn là cảm xúc thật … máy sẽ ưu tiên mở những bài chưa từng nghe nhưng vẫn phải gợi ý theo ca sĩ, loại nhạc người này hay nghe" + cập nhật slide, doc. Chọn **toàn bộ kho** (không chỉ vibe surprise).
+
+## 2. Việc đã làm xong (chưa commit)
+| Việc | File |
+|---|---|
+| Hàm thuần `rankExplore` / `guScore`: bài chưa nghe trước; gu = ca sĩ hay nghe min(1, affinity/3) + thể loại 0.5·min(1, affinity/5) + khảo sát + ♥ + kNN (`neighborSupport`); hết bài mới → `OLDEST_POOL` = 10 bài lâu nhất chưa nghe lại | `emotune-backend/src/services/exploreService.js` |
+| SQL cả kho (bỏ 3 bài vừa nghe): `heard` = có trong `recently_played` / `preferences` / `liked_songs`; affinity = tổng điểm nghe dương mọi cảm xúc + số bài ♥ theo ca sĩ / thể loại | `src/model/suggestModel.js` (`getExploreSongs`) |
+| `generateSuggestion`: cảm xúc mục tiêu `surprise` → `rankExplore` thay `getSongsByEmotion`; lý do I2 "New to you: you've never played it" / "You haven't played it in a long time" + "By X, an artist you play often" / "Pop is a genre you play a lot" | `src/services/suggestService.js`, `src/services/explainService.js` |
+| 6 test mới | `emotune-backend/test/explore.test.js` |
+| Tài liệu: Word giữa kỳ + cuối kỳ (ND_QĐ4 "Ngoại lệ Explore", mục gợi ý theo vibe, explainPick; giữa kỳ thêm 1.2, 1.5, UC03, số test 190); slide "How a song is chosen" ô trái "EXPLORE = A REQUEST" (deck cuối kỳ vá trực tiếp slide18 + thêm vào `edit.py`; deck giữa kỳ dựng lại), lời thuyết trình slide 11/13; `CLAUDE.md`, `TIEN_DO.md` (C16) | `docs/…`, `docs/nguon_tai_lieu/{word,slide}/` |
+
+**Kiểm tra:** backend `npm test` 190/190; SQL thật trên tài khoản `demo` (101 bài, 91 chưa nghe, 28 ms); backend tạm `PORT=8090 node src/server.js` + `POST /suggest {emotion: "surprise", auto: true}` (không ghi lịch sử) ×3 → bài chưa nghe của ca sĩ hay nghe, lý do đúng; đã tắt PID mình bật. Slide validate PASSED, xem ảnh slide 11.
+
+## 3. Quyết định + lý do
+| Quyết định | Lý do |
+|---|---|
+| Cả kho, không lọc vibe (người dùng chọn) | Explore là lệnh, không phải tâm trạng |
+| "Đã nghe" = nghe xong / có điểm / đã ♥ | Đã ♥ nghĩa là đã biết bài |
+| Ca sĩ nặng hơn thể loại (1 vs 0.5), có trần | Kho chỉ 4 thể loại nên thể loại rất rộng; trần để 1 ca sĩ nghe nhiều không lấn át |
+| Vẫn ghi `mood_history` với emotion `surprise`, điểm nghe lưu theo cảm xúc `surprise` | Thống kê / xu hướng giữ nguyên; bài nghe rồi tự thành "đã nghe" |
+| Deck cuối kỳ vá trực tiếp (không dựng lại từ bản HIC) | Dựng lại cần cả chuỗi `add_slide`; đã thêm dòng sửa vào `edit.py` để lần dựng sau cũng có. Bản trước khi vá: scratchpad `cuoi_ki_truoc_explore.pptx` |
+
+## 4. Lệnh
+```bash
+cd emotune-backend && npm test                     # 190/190
+# Word / slide: như phiên 22/10 (đêm) bên dưới
+```
+
+## 5. Còn dở
+- **Backend của người dùng phải chạy lại** (`npm run dev`) mới có C16.
+- Word cuối kỳ vẫn ghi số test cũ 177/9 (không đổi trong phiên này).
+
+## 6. Bước tiếp theo
+1. Người dùng chạy lại backend, chọn "Explore" (hoặc làm mặt ngạc nhiên) → kiểm tra bài mới lạ nhưng đúng gu.
+2. Commit khi được yêu cầu.
+
+---
+
+# 🧭 PHIÊN 22/10/2026 (đêm) — báo cáo GIỮA KỲ: Word + slide theo bảng điểm giữa kỳ (không đụng code)
+
+## 1. Mục tiêu
+- Người dùng gửi ảnh bảng điểm giữa kỳ (Excel, sheet "GK"): **Tìm hiểu lý thuyết 1đ · Phân tích thiết kế 6đ · Thiết kế cho sự thông minh 2đ · Trình bày 1đ**. Yêu cầu: "1 doc giữa kì giống như cuối kì nhưng theo yêu cầu của hình + cả slide để thuyết trình".
+
+## 2. Việc đã làm xong (chưa commit)
+| Việc | File |
+|---|---|
+| Word giữa kỳ 61 trang (A4, Times New Roman 13, mục lục đã Update Field): Mở đầu (bảng ánh xạ 4 tiêu chí → chương) · **Ch.1 Lý thuyết** (mới: hệ thống thông minh, FER + Haar + CLAHE, CNN, macro-F1 / GroupKFold / rò rỉ dữ liệu, hệ gợi ý, Russell + iso principle, XAI + luật/LLM, YIN/Demucs, bảng công nghệ) · **Ch.2 Phân tích yêu cầu** (mục I–V cuối kỳ + mới 2.3 tác nhân, biểu đồ use case 16 UC, đặc tả UC03) · **Ch.3 Thiết kế hệ thống** (mới: kiến trúc + bảng lý do, biểu đồ tuần tự, 14 nhóm API, tổ chức mã; CSDL cũ; mới 3.4 giao diện + sơ đồ màn hình) · **Ch.4 Thiết kế thông minh** (mục VII–VIII cũ + mới 4.4 giám sát) · **Ch.5 Tiến độ, kế hoạch, tự đánh giá, demo, kết luận** · Phụ lục kịch bản thuyết trình theo slide | `docs/EmoTune_bao_cao_giua_ki.docx` |
+| Mã sinh Word: `build_giuaki.js` (ghép lại từ `build.js` cuối kỳ + phần mới); 3 hình mới `usecase.png`, `tuan_tu.png`, `man_hinh.png` | `docs/nguon_tai_lieu/word/build_giuaki.js`, `diagrams_giuaki.py`, `img/` |
+| Slide giữa kỳ, **giữ thiết kế + tiếng Anh như bản cuối kỳ**: bìa "MID-TERM REPORT", bản đồ báo cáo theo điểm, 01 Theory (3 slide mới), 02 Requirements (use case, luồng chính, 8 quy định), 03 System design (kiến trúc, API, CSDL, màn hình), 04 Face-emotion AI design, 05 Music & learning design, 06 tiêu chí giữa kỳ / tiến độ / demo, kết luận. Bỏ 7 slide chi tiết của bản cuối kỳ (vì sao tách, cải tiến EmoNet, recall, Grad-CAM, so sánh model, /admin, phụ lục). **Lời thuyết trình tiếng Việt trong Notes** từng slide. **Sau góp ý "giữa kỳ ít thời gian" → rút còn 14 slide (~11 phút)** (`order_giuaki.txt`): bìa · bố cục · 1 lý thuyết · use case · luồng chính · kiến trúc · CSDL · giao diện · EmoNet · hỏi khi chưa chắc · cách chọn bài · NYX học từ đâu · tiến độ (+ chuyển sang demo) · kết luận. Bản 28 slide: order cũ `1 2 3 7 30 32 33 34 27 6 8 21 35 10 11 12 13 28 18 19 20 22 29 23 31 24 25 26` (cần JSON lời nói 28 đoạn) | `docs/EmoTune_bao_cao_giua_ki.pptx` |
+| Mã sinh slide: `build_giuaki.py` (giải nén bản cuối kỳ → nhân bản 4 slide → sắp thứ tự `order_giuaki.txt` → `edit_giuaki.py` sửa chữ → validate), `notes_giuaki.ps1` (ghi Notes bằng PowerPoint), lời nói ở `thuyet_trinh_giuaki.json` (Word phụ lục đọc chung file này) | `docs/nguon_tai_lieu/slide/` |
+
+**Kiểm tra:** Word mở bằng Word COM, cập nhật mục lục, xuất PDF xem từng trang (61 trang, hình không vỡ); slide `validate.py --original` PASSED, xuất 28 ảnh bằng PowerPoint xem từng slide (đã sửa chữ tràn ở slide 3, 5, 13; lỗi "80 / 20" bị `fix_footer` đổi thành số trang → ghi "80% / 20%").
+
+## 3. Quyết định + lý do
+| Quyết định | Lý do |
+|---|---|
+| Sắp báo cáo theo đúng 4 tiêu chí (bảng ánh xạ ở Mở đầu). Người dùng yêu cầu bỏ ghi chú thừa: dòng "(Tiêu chí chấm…)" dưới chương, ghi chú "Nếu mục lục trống…", "(≈ 5 phút)", "(2 bước)", "(nêu rõ khi bảo vệ)"… | Gọn; mục lục đã được cập nhật sẵn trong file |
+| Tái dùng nội dung cuối kỳ bằng script ghép (cắt dòng `build.js`, đổi số mục) thay vì chép tay | Một nguồn số liệu; sửa bản cuối kỳ thì bản giữa kỳ sinh lại được |
+| Cập nhật số liệu: test 184/184 + 14/14; ND_QĐ7 điểm nghe = gộp đoạn mp3/beat/MV (sửa 21/10) | Bản cuối kỳ 18/10 còn số cũ (177, 9, max mp3/MV) — **bản cuối kỳ chưa sửa lại** |
+| Slide giữ tiếng Anh như bản cuối kỳ, lời nói tiếng Việt để trong Notes | "Giống như cuối kì"; người thuyết trình đọc tiếng Việt |
+| Vẫn không chèn ảnh chụp giao diện thật | Server không chạy lúc làm; dùng sơ đồ màn hình tự vẽ |
+
+## 4. Lệnh đã chạy + cách chạy lại
+```bash
+# Word (cần node + docx@9 + python matplotlib; cài docx ở thư mục tạm rồi NODE_PATH)
+cd docs/nguon_tai_lieu/word && python diagrams_giuaki.py img && NODE_PATH=<thư mục>/node_modules node build_giuaki.js ../../EmoTune_bao_cao_giua_ki.docx
+#   mở Word → chuột phải mục lục → Update Field (hoặc COM: TablesOfContents(1).Update(), Save)
+# Slide (cần lxml + skill pptx scripts + PowerPoint)
+python docs/nguon_tai_lieu/slide/build_giuaki.py <thư mục tạm> <skill pptx>/scripts     # -> <thư mục tạm>/deck.pptx
+powershell -File docs/nguon_tai_lieu/slide/notes_giuaki.ps1 <tạm>\deck.pptx <đầu ra>.pptx [thư mục ảnh]
+```
+
+## 5. Lỗi đang gặp / việc còn dở
+- Người dùng chưa xem 2 file. Số nhóm HTTM chưa biết (bìa ghi lớp). Chưa có ảnh chụp giao diện thật.
+- Bản cuối kỳ (`EmoTune_Xac_dinh_yeu_cau_va_thiet_ke.docx`, `..._cuoi_ki.pptx`) còn số test cũ 177/9.
+- Chưa vào git: các file `docs/*.docx`, `docs/*.pptx`, `docs/nguon_tai_lieu/`.
+
+## 6. Bước tiếp theo
+1. Người dùng mở Word + slide 14 trang, góp ý (ngôn ngữ slide, có cần thêm/bớt slide).
+2. Quyết định đưa tài liệu vào git; commit khi được yêu cầu.
+3. Việc cũ: thử F24, micro thật, báo cáo theo khung C4.
+
+---
+
+# 🧭 PHIÊN 22/10/2026 (tối) — F24 cột phải "Now playing" + MV tự chạy, commit + push
+
+## 1. Mục tiêu
+- Đầu phiên: đọc `NOTES.md` + `TIEN_DO.md`, tóm tắt tình trạng.
+- Người dùng báo: "chọn bài từ trang chủ hay từ profile artist thì nhạc phát nhưng cột MV không hiện ra" → tìm nguyên nhân + sửa. Sau đó góp ý: "khi play nhạc là nó tự phát luôn, chứ không phải bấm play mới chạy MV".
+- Cuối phiên: "commit và push đi".
+
+## 2. Việc đã làm xong (đã commit `7504ff9` + `ee991cb`, đã push `origin/master`)
+| Việc | File |
+|---|---|
+| **Nguyên nhân** (Playwright, không sửa code): dữ liệu đủ (`/songs` có `youtube_id`, 86/102 bài có MV). Đã bật MV trước đó → chọn bài vẫn hiện cột; chưa bật / đã ✕ → không có cột vì `NowPlayingPanel` chỉ vẽ khi `mvOpen` (`mvWanted` mặc định `false`). Thiết kế cũ, không phải lỗi dữ liệu | — |
+| **F24 cột phải luôn hiện** ở mọi trang trừ `/now-playing`, `/lyrics`: `panelShown` / `panelOpen` / `panelStrip` tách khỏi `mvOpen`, `mvInPanel = mvOpen && panelOpen` | `emotune-frontend/src/components/MusicPlayer.jsx` |
+| Cột khi chưa xem MV (`.np-idle`): ảnh bìa vuông + nút **▶ Watch MV** (bài có MV, MV không lỗi), tiêu đề "Now playing"; đang xem: "Music video" + nút ✕ (tắt MV, cột vẫn còn); dải thu gọn đổi nhãn "Show now playing"; màn ≤ 1100px `.right-panel-slot:has(> .np-idle)` ẩn | `components/NowPlayingPanel.jsx`, `components/NowPlayingPanel.scss` |
+| **MV tự chạy khi người dùng tự chọn bài**: `autoMv()` bật `mvWanted` cho lệnh `song` / `queue` / `playlist` (trang chủ, trang ca sĩ, playlist, ô tìm kiếm, trợ lý), chỉ màn > 1100px | `components/PlayerHost.jsx` |
+| Commit gộp việc 21–22/10 (7 lỗi review, F23, H10b, H17b, F24, `docs/reviews/`, test mới) + đẩy luôn 2 commit cũ `bcf173e`, `8ed43a9` | `7504ff9`, `ee991cb` (ghi chú `TIEN_DO.md`) |
+| Tài liệu | `TIEN_DO.md` (F24, tổng quan F 25/26, đang ở đâu, nhật ký), `CLAUDE.md` (mô tả cột phải + `autoMv`), file này |
+
+**Kiểm tra:** frontend `npx eslint src` sạch, `npm run build` OK, `npm test` 14/14; backend `npm test` 184/184 (chạy lại trước commit). Playwright (server của người dùng :5173/:8080, tài khoản `demo`, chặn `/listen-report` + `/feed-back`): 1440px — chọn bài có MV ở trang chủ → `mv-float` `panel`, YouTube đang phát, mp3 dừng; bài không MV → ảnh bìa, mp3 chạy, không có nút Watch MV; ✕ → về mp3, cột còn + nút Watch MV; thu gọn → dải mỏng → mở lại; `/now-playing` không có cột; trang ca sĩ → MV tự chạy. 1000 + 390px: cột ẩn, không tự bật MV, không tràn ngang.
+
+## 3. Quyết định + lý do
+| Quyết định | Lý do |
+|---|---|
+| Cột phải luôn hiện kiểu Spotify (người dùng chọn trong 3 phương án) | Người dùng muốn thấy bài đang phát / MV ở mọi trang |
+| Tự chọn bài → MV tự chạy (bật `mvWanted` ở `PlayerHost`, không đổi mặc định toàn cục) | Người dùng sửa lại yêu cầu; kết quả quét mặt giữ khung sóng âm như cũ cho đến khi người dùng tự chọn bài |
+| Màn ≤ 1100px không tự bật MV, cột chỉ hiện khi đang xem MV | Ở cỡ này cột là ngăn kéo nổi, tự mở sẽ che nội dung trang |
+| Chưa xem MV thì dùng ảnh bìa, không dùng thumbnail YouTube | Thumbnail `hqdefault` có sẵn viền đen trên/dưới, trong khung vuông trông lệch |
+| ✕ chỉ tắt MV, không ẩn cột | Đã có nút thu gọn để ẩn cột |
+| Không đưa vào git `docs/*.docx`, `docs/*.pptx`, `docs/nguon_tai_lieu/` | Trước đây `.pptx` của người dùng không đưa lên; file có tên sinh viên; chờ người dùng quyết |
+
+## 4. Lệnh đã chạy + cách chạy lại
+```bash
+# (emotune-frontend/)
+npx eslint src && npm run build && npm test      # sạch / OK / 14/14
+# (emotune-backend/)
+npm test                                         # 184/184
+# Playwright: npm i playwright-core@1.49.1 vào scratchpad; token demo lấy bằng
+#   curl -X POST localhost:8080/auth/login -d '{"username":"demo","password":"demo1234"}'
+#   sessionStorage: emotune_session_owner = 16 ký tự cuối token, emotune_scanned = "1" (moodSession gắn với token)
+#   script mv.mjs / mv2.mjs ở scratchpad (mất khi hết phiên)
+git commit (7504ff9, ee991cb) && git push origin master
+```
+```bash
+# chạy lại cả dự án (3 cửa sổ) + PostgreSQL
+# AI (emotion-scanner/):        PYTHONUTF8=1 venv/Scripts/python 3_backend_server.py   # :5000, EmoNet
+# Backend (emotune-backend/):   npm run dev                                           # :8080
+# Frontend (emotune-frontend/): npm run dev                                           # :5173
+# Phiên này không đổi schema DB, không đổi backend.
+```
+- Server lúc phiên chạy: AI :5000, backend :8080, web :5173 đều **của người dùng** (Claude không bật / tắt).
+
+## 5. Lỗi đang gặp / việc còn dở
+- Người dùng chưa xem tận mắt F24 bản cuối trên máy (cần F5 trình duyệt).
+- `mvWanted` giữ qua các bài (như H16): sau khi đã tự chọn 1 bài, lần quét mặt sau cũng chiếu MV ở `/now-playing` (Close MV / ✕ để tắt). Chưa hỏi người dùng có muốn khác không.
+- Backend của người dùng từng chạy bản cũ (`node src/server.js`): nếu `GET /mood-history/recent` vẫn 404 thì tắt + chạy lại `npm run dev`.
+- Chưa vào git: `docs/EmoTune_Xac_dinh_yeu_cau_va_thiet_ke.docx`, `docs/EmoTune_bao_cao_cuoi_ki.pptx`, `docs/EmoTune_bao_cao_cuoi_ki_ban_HIC_cu.pptx`, `docs/nguon_tai_lieu/`.
+- Việc cũ còn: chưa thử micro thật (Score me, C11), báo cáo theo khung C4, F5 Figma Sign in/up, C3 (có thể ❌), H7 chờ góp ý, chưa train lại bằng ảnh phản hồi C15, admin chưa tạo tài khoản trên web, ảnh Phạm Hoài Nam, ID3 sai bài "chờ chút…", số nhóm HTTM + hạn nộp chưa biết.
+
+## 6. Bước tiếp theo
+1. Người dùng F5, thử F24 (chọn bài ở trang chủ / trang ca sĩ, ✕, thu gọn) → góp ý.
+2. Quyết định có đưa file Word / slide / `docs/nguon_tai_lieu/` vào git không.
+3. Thử micro thật: Score me (đeo tai nghe), nói cảm xúc ở `/scan`.
+4. Viết báo cáo theo khung C4 (macro-F1, Mood corrections, tỉ lệ nghe hết, kNN, Demucs / YIN); cập nhật Word / slide nếu cần ảnh giao diện mới.
+
+---
 
 ## Phiên 22/10/2026 (chiều) — H17b: vẽ lại 2 thẻ cuối trang chủ + icon nổi hơn
 

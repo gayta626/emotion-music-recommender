@@ -81,6 +81,59 @@ let getSongsByEmotion = async (userId, emotion) => {
 
 }
 
+// Che do Explore (cam xuc 'surprise', exploreService): CA KHO (khong loc vibe), bo 3 bai vua nghe.
+// Moi bai kem: heard (da tung nghe xong / co diem / da ♥), last_played, va muc nguoi nay hay nghe ca si / the loai cua bai
+// (artist_affinity / genre_affinity = tong diem nghe DUONG moi cam xuc + so bai ♥ cua ca si / the loai do).
+// score = tong diem nghe bai nay o moi cam xuc (chi co khi da nghe) -> I2 noi "You enjoyed it before" cho bai cu.
+let getExploreSongs = async (userId) => {
+    const result = await db.query(
+        `WITH mine AS (
+             SELECT song_id, SUM(score) AS score FROM preferences WHERE user_id = $1 GROUP BY song_id
+         ), liked AS (
+             SELECT song_id FROM liked_songs WHERE user_id = $1
+         ), played AS (
+             SELECT song_id, MAX(played_at) AS last_played FROM recently_played WHERE user_id = $1 GROUP BY song_id
+         ), signal AS (
+             -- moi bai nguoi nay "co tin hieu": diem nghe duong + 1 neu ♥
+             SELECT s2.id, s2.artist_id, s2.genre_id,
+                    GREATEST(COALESCE(m.score, 0), 0) + (CASE WHEN l.song_id IS NULL THEN 0 ELSE 1 END) AS value
+             FROM songs s2
+             LEFT JOIN mine m ON m.song_id = s2.id
+             LEFT JOIN liked l ON l.song_id = s2.id
+             WHERE m.song_id IS NOT NULL OR l.song_id IS NOT NULL
+         ), by_artist AS (
+             SELECT artist_id, SUM(value) AS affinity FROM signal GROUP BY artist_id
+         ), by_genre AS (
+             SELECT genre_id, SUM(value) AS affinity FROM signal GROUP BY genre_id
+         )
+         SELECT s.id, s.title, s.artist_id, a.name AS artist, COALESCE(a.photo, a.avatar) AS artist_avatar, s.file_path, s.cover, s.youtube_id,
+                s.emotion, s.energy, g.name AS genre,
+                COALESCE(m.score, 0) AS score,
+                ${TASTE_BONUS} AS taste_bonus,
+                ${TASTE_ARTIST} AS taste_artist,
+                ${TASTE_GENRE} AS taste_genre,
+                ${LIKE_BONUS} AS like_bonus,
+                (pl.song_id IS NOT NULL OR m.song_id IS NOT NULL OR l.song_id IS NOT NULL) AS heard,
+                pl.last_played,
+                COALESCE(ba.affinity, 0) AS artist_affinity,
+                COALESCE(bg.affinity, 0) AS genre_affinity
+         FROM songs s
+         LEFT JOIN artists a ON a.id = s.artist_id
+         LEFT JOIN genres g ON g.id = s.genre_id
+         LEFT JOIN mine m ON m.song_id = s.id
+         LEFT JOIN liked l ON l.song_id = s.id
+         LEFT JOIN played pl ON pl.song_id = s.id
+         LEFT JOIN by_artist ba ON ba.artist_id = s.artist_id
+         LEFT JOIN by_genre bg ON bg.genre_id = s.genre_id
+         WHERE s.id NOT IN (
+             SELECT song_id FROM recently_played WHERE user_id = $1 ORDER BY played_at DESC LIMIT 3
+         )
+         ORDER BY s.id`,
+        [userId]
+    );
+    return result.rows;
+}
+
 // aiEmotion: cam xuc AI doan khi nguoi dung da sua / xac nhan lai (C15), NULL = khong sua. Tra ve id dong vua ghi
 // (lan quet camera nho id nay -> nguoi dung sua cam xuc thi thay dong nay bang dong moi)
 let logSuggestion = async (userId, emotion, confidence, songId, aiEmotion = null) => {
@@ -117,6 +170,7 @@ let restoreSuggestion = async (row) => {
 module.exports = {
     getMoodTrend: getMoodTrend,
     getSongsByEmotion: getSongsByEmotion,
+    getExploreSongs: getExploreSongs,
     logSuggestion: logSuggestion,
     deleteSuggestion: deleteSuggestion,
     restoreSuggestion: restoreSuggestion
