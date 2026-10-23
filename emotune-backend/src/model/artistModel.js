@@ -42,6 +42,20 @@ let getMoodCounts = async (userId, artistId) => {
     return result.rows;
 }
 
+// Lần cuối NGƯỜI NÀY nghe nhạc của từng ca sĩ (thanh thư viện sắp xếp "Recents"); ca sĩ chưa nghe thì không có dòng
+let getRecentArtists = async (userId) => {
+    const result = await db.query(
+        `SELECT s.artist_id AS id, MAX(rp.played_at) AS "lastPlayed"
+         FROM recently_played rp
+         JOIN songs s ON s.id = rp.song_id
+         WHERE rp.user_id = $1 AND s.artist_id IS NOT NULL
+         GROUP BY s.artist_id
+         ORDER BY "lastPlayed" DESC`,
+        [userId]
+    );
+    return result.rows;
+}
+
 let artistExists = async (artistId) => {
     const result = await db.query(`SELECT 1 FROM artists WHERE id = $1`, [artistId]);
     return result.rowCount > 0;
@@ -51,5 +65,6 @@ module.exports = {
     getArtistsData: getArtistsData,
     getPlayCounts: getPlayCounts,
     getMoodCounts: getMoodCounts,
+    getRecentArtists: getRecentArtists,
     artistExists: artistExists,
 }

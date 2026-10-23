@@ -63,9 +63,10 @@ body:has(.player-bar) {
 // ---------- khung lớn ----------
 .player-stage {
   position: relative;
-  // vừa khít màn hình: trừ header, thanh phát và padding 24px trên/dưới của <main>
-  height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h) - 48px);
+  // cao bằng thư viện bên trái: trừ header + thanh phát, kéo lên / xuống bù padding trên/dưới của <main>
+  height: calc(calc(100 * var(--vh)) - var(--header-h) - var(--player-bar-h));
   min-height: 420px;
+  margin: calc(-1 * var(--main-pad)) 0;
   // tiêu đề + lời nhắn ở trên, ảnh bìa nằm giữa phần còn lại (lời nhắn dài không đè lên ảnh)
   display: flex;
   flex-direction: column;
@@ -776,6 +777,7 @@ body:has(.player-bar) {
   .player-stage {
     height: calc(calc(100 * var(--svh)) - var(--header-h) - var(--player-bar-h) - 230px);
     min-height: 320px;
+    margin: 0;
     padding: 18px;
   }
 }

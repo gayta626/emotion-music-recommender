@@ -428,7 +428,8 @@
     @include mp.neon-mood;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;   // mỗi thẻ cao theo nội dung (thẻ quét ngắn hơn, không bị kéo dài để trống giữa thẻ)
+    // 2 thẻ cao bằng nhau; khung trong thẻ quét căn giữa nội dung (HomeMood.scss) nên không trống nửa dưới
+    align-items: stretch;
     gap: 18px;
   }
 
@@ -484,6 +485,17 @@
     &.vibe-neutral { background: var(--vibe-neutral); }
     &.vibe-sad { background: var(--vibe-sad); }
     &.vibe-angry { background: var(--vibe-angry); }
+
+    // ô icon neon của 2 thẻ cuối (HomeMood WeekBadge / ScanBadge): nền tối, viền + quầng sáng theo cảm xúc (--led)
+    &.hm-badge {
+      border: 1px solid color-mix(in srgb, var(--led) 55%, transparent);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--led) 34%, #17182b) 0%, #121323 75%);
+      box-shadow:
+        0 0 26px color-mix(in srgb, var(--led) 32%, transparent),
+        inset 0 0 22px color-mix(in srgb, var(--led) 16%, transparent);
+    }
 
     &.scan-thumb {
       background: radial-gradient(circle at 30% 25%, #6f8fd8, #2b3c6e 70%);

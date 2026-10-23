@@ -4,7 +4,7 @@ import { getGraph } from '../utils/audioGraph'
 // Song am chay theo nhac that: Web Audio API doc tan so cua <audio> moi khung hinh roi ve len canvas.
 // Am tram (bass) o giua, am cao ra hai ben; cot doi xung tren / duoi duong giua; vong sang phia sau "dap" theo bass.
 // Cot trang sang o giua, nga nhe sang mau vibe o 2 dau + quang sang cung mau (bien CSS --viz-1, --viz-glow
-// tren .player[data-vibe]); cham dinh nho tren / duoi moi cot bi day len roi roi tu tu (kieu may nghe nhac).
+// tren .player[data-vibe]).
 // DO CAO THEO DO TO THAT CUA BAI: so voi doan to nhat cua bai (thang dB, nho ~30 giay) -> doan dao nho thi cot thap,
 // len dien khuc to thi cot vot cao; hinh dang (cot nao cao, cot nao thap) theo pho am tung luc.
 
@@ -70,7 +70,6 @@ const AudioVisualizer = ({ audioRef, vibe }) => {
             ? buildBands(graph.ctx.sampleRate, analyser.frequencyBinCount)
             : { bands: [], bassEnd: 2 };
         const levels = new Array(BARS_PER_SIDE).fill(0);
-        const caps = new Array(BARS_PER_SIDE).fill(0);   // vi tri cham dinh (nua chieu cao cot, px)
         const raw = new Array(BARS_PER_SIDE).fill(0);
         let bass = 0;
         let bassPeak = 0.3;
@@ -161,11 +160,11 @@ const AudioVisualizer = ({ audioRef, vibe }) => {
             ctx2d.restore();
 
             // cac cot: doi xung trai/phai, keo dai len/xuong tu duong giua
-            const areaW = Math.min(w * 0.9, 960);
+            const areaW = Math.min(w * 0.66, 1100);
             const slot = areaW / (BARS_PER_SIDE * 2);
             const barW = Math.max(2, slot * 0.62);
-            // doan nho ~30% chieu cao, doan to nhat gan het khung; ca dai song phong len theo bass -> "dap" theo trong
-            const maxH = Math.min(h * 0.8, 380) * (0.3 + 0.7 * Math.pow(loudness, 1.2)) * (0.88 + bass * 0.12);
+            // doan nho ~30% chieu cao, doan to nhat gan het khung (theo khung, khong chan cung px -> laptop / man to deu cung ti le); ca dai song phong len theo bass -> "dap" theo trong
+            const maxH = Math.min(h * 0.62, 420) * (0.3 + 0.7 * Math.pow(loudness, 1.2)) * (0.88 + bass * 0.12);
 
             // to mau doc: trang sang o giua, nga nhe sang mau vibe o 2 dau cot
             const fill = ctx2d.createLinearGradient(0, cy - maxH / 2, 0, cy + maxH / 2);
@@ -178,30 +177,12 @@ const AudioVisualizer = ({ audioRef, vibe }) => {
 
             for (let i = 0; i < BARS_PER_SIDE; i++) {
                 const barH = Math.max(4, levels[i] * maxH);
-                // cham dinh: bi cot day len ngay, roi roi tu tu
-                caps[i] = Math.max(barH / 2, caps[i] - 0.6);
                 const offset = (i + 0.5) * slot;
                 for (const x of [cx - offset, cx + offset]) {
                     ctx2d.beginPath();
                     if (ctx2d.roundRect) ctx2d.roundRect(x - barW / 2, cy - barH / 2, barW, barH, barW / 2);
                     else ctx2d.rect(x - barW / 2, cy - barH / 2, barW, barH);
                     ctx2d.fill();
-                }
-            }
-
-            // cham dinh tren / duoi (mo hon cot, khong quang sang)
-            ctx2d.shadowBlur = 0;
-            ctx2d.fillStyle = `rgb(${theme.tint} / 0.8)`;
-            const capR = Math.max(1.2, barW * 0.32);
-            for (let i = 0; i < BARS_PER_SIDE; i++) {
-                const gap = caps[i] + capR * 2 + 3;
-                const offset = (i + 0.5) * slot;
-                for (const x of [cx - offset, cx + offset]) {
-                    for (const y of [cy - gap, cy + gap]) {
-                        ctx2d.beginPath();
-                        ctx2d.arc(x, y, capR, 0, Math.PI * 2);
-                        ctx2d.fill();
-                    }
                 }
             }
         };

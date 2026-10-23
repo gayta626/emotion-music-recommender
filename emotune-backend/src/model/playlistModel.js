@@ -14,7 +14,10 @@ const ensureDefaultPlaylist = async (userId) => {
 
 const getPlaylists = async (userId) => {
     const result = await db.query(
-        `SELECT p.id, p.name, COUNT(ps.song_id)::int AS "songCount"
+        `SELECT p.id, p.name, COUNT(ps.song_id)::int AS "songCount",
+                p.created_at AS "createdAt",
+                -- lần đổi gần nhất (tạo / thêm bài) -> thanh thư viện sắp xếp "Recents"
+                GREATEST(p.created_at, MAX(ps.added_at)) AS "updatedAt"
          FROM playlists p
          LEFT JOIN playlist_songs ps ON ps.playlist_id = p.id
          WHERE p.user_id = $1

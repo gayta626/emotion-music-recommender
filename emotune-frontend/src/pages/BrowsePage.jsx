@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
-import MoodIcon from '../components/MoodIcon';
-import { MoodWeekChart, ScanRing } from '../components/HomeMood';
+import api, { getToken } from '../api';
+import { MoodWeekChart, ScanBadge, ScanRing, WeekBadge } from '../components/HomeMood';
 import HomeGreeting from '../components/HomeGreeting';
 import { ArtistCard, MixCard, SongCard } from '../components/BrowseCards';
 import { buildMix, mixPath } from '../utils/mixes';
@@ -12,21 +11,37 @@ import { usePlayback } from '../contexts/playbackContext';
 import { EMOTIONS, buildDays, cheerUpStatus } from '../utils/moodStats';
 import { timeAgo } from '../utils/moodSession';
 import PlayIcon from '../assets/icons/player_play.svg?react';
-import RecordIcon from '../assets/icons/record_circle_icon.svg?react';
 import bannerImg from '../assets/images/create_playlist_banner.png';
 import './BrowsePage.scss';
 
 // Trang chu duyet nhac: noi dung theo Figma 58:112, bo cuc + mat do the theo Spotify web.
 // Moi hang tu tai du lieu cua minh; 1 hang loi chi hien dong bao loi cua hang do.
 
+// du lieu da tai cua trang chu, giu trong RAM khi roi trang: quay lai Home -> hien ngay ban cu (khong khung xam,
+// khong nhay), dong thoi tai ban moi o nen roi thay vao. Gan voi token dang nhap -> doi tai khoan la bo het.
+const cache = new Map();
+let cacheToken = null;
+const cached = (url) => {
+    const token = getToken();
+    if (token !== cacheToken) {
+        cache.clear();
+        cacheToken = token;
+    }
+    return cache.get(url);
+}
+
 // tai 1 API cho 1 hang: { data, error }
 const useLoad = (url, deps = []) => {
-    const [state, setState] = useState({ data: null, error: false });
+    const [state, setState] = useState(() => ({ data: cached(url) ?? null, error: false }));
     useEffect(() => {
         let alive = true;
         api.get(url)
-            .then((res) => alive && setState({ data: res.data, error: false }))
-            .catch(() => alive && setState({ data: null, error: true }));
+            .then((res) => {
+                if (cacheToken === getToken()) cache.set(url, res.data);
+                if (alive) setState({ data: res.data, error: false });
+            })
+            // dang co ban cu thi giu, chi bao loi khi chua co gi de hien
+            .catch(() => alive && setState((s) => (s.data ? s : { data: null, error: true })));
         return () => { alive = false; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, deps);
@@ -201,9 +216,7 @@ const BrowsePage = () => {
             <section className="features">
                 <article className="feature mood-feature">
                     <div className="feature-top">
-                        <span className={`feature-thumb vibe-${moodSummary?.total ? moodSummary.top.key : 'neutral'}`} aria-hidden="true">
-                            <MoodIcon emotion={moodSummary?.total ? moodSummary.top.key : 'neutral'} size={72} />
-                        </span>
+                        <WeekBadge emotion={moodSummary?.total ? moodSummary.top.key : 'neutral'} />
                         <div>
                             <h3>{moodSummary?.total ? `Mostly ${moodSummary.top.label.toLowerCase()} this week` : 'No scans this week yet'}</h3>
                             <p className="feature-sub">Your mood · last 7 days</p>
@@ -227,7 +240,7 @@ const BrowsePage = () => {
 
                 <article className="feature scan-feature">
                     <div className="feature-top">
-                        <span className="feature-thumb scan-thumb" aria-hidden="true"><RecordIcon /></span>
+                        <ScanBadge emotion={lastMoodInfo?.key || scanList?.[0]?.emotion || 'neutral'} />
                         <div>
                             <h3>How do you feel right now?</h3>
                             <p className="feature-sub">Mood scan</p>

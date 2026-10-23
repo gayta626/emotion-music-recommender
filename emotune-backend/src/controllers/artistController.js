@@ -10,6 +10,17 @@ let getArtists = async (req, res) => {
     }
 }
 
+// ca si nguoi nay nghe gan day: [{ id, lastPlayed }], moi nhat truoc
+let getRecentArtists = async (req, res) => {
+    try {
+        const data = await artistService.getRecentArtists(req.userId)
+        return res.status(200).json(data)
+    } catch (err) {
+        console.log("Loi goi API artists recent :" + err)
+        return res.status(500).json({ err: "Loi server khi lay nghe si nghe gan day" })
+    }
+}
+
 let getArtistStats = async (req, res) => {
     const artistId = Number(req.params.id)
     if (!Number.isInteger(artistId) || artistId <= 0) {
@@ -28,4 +39,5 @@ let getArtistStats = async (req, res) => {
 module.exports = {
     getArtists: getArtists,
     getArtistStats: getArtistStats,
+    getRecentArtists: getRecentArtists,
 }

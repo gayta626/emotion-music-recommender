@@ -1,5 +1,61 @@
 # NOTES.md — EmoTune (đồ án Xây dựng hệ thống thông minh) — nhật ký phiên làm việc
 
+# 🧭 PHIÊN 23/10/2026 (laptop `C:\Users\Lenovo`) — sóng âm, khung phát, Home giữ dữ liệu, thanh tiến độ khi xem MV, F31 MV chạy ngầm
+
+## 1. Mục tiêu
+- Làm laptop giống PC (đã xong: DB khôi phục từ `emotune_db_22-10.dump`, 102 bài, 80 có `mv_offset`; thiếu `.venv-karaoke`, chỉ cần khi thêm bài mới).
+- Chỉnh giao diện theo góp ý người dùng (sóng âm, khung phát, Home, thanh tiến độ khi xem MV).
+- **Sáng:** máy hết dung lượng giữa lúc chạy thử → phiên bị ngắt, phần "MV chạy ngầm" đã viết nhưng chưa thử, chưa ghi chú. **Chiều:** đối chiếu ghi chú với `git diff`, người dùng chọn giữ + thử tiếp.
+
+## 2. Việc đã làm (chưa commit)
+| Việc | File |
+|---|---|
+| Bỏ chấm tròn ở đỉnh sóng âm (người dùng yêu cầu) | `components/AudioVisualizer.jsx` |
+| Sóng âm theo tỉ lệ khung: bỏ chặn 960 × 380px → rộng 66% (≤ 1100px), cao 62% (≤ 420px); bản 88% / 86% người dùng thấy to quá | `AudioVisualizer.jsx` |
+| Khung `/now-playing` cao bằng thư viện: `.player-stage` = 100·vh − header − thanh phát, `margin: -var(--main-pad) 0` bù padding `<main>` (màn hẹp `margin: 0`) | `MusicPlayer.scss` |
+| Home không dựng lại từ đầu: `useLoad` giữ dữ liệu các API trong RAM theo token (`cache` + `cacheToken`), quay lại Home hiện ngay bản cũ, tải bản mới ở nền; lỗi mạng mà đã có bản cũ thì giữ | `pages/BrowsePage.jsx` |
+| Thanh tiến độ không nhảy khi đổi mp3 ↔ MV (người dùng: "MV và thanh tiến độ bị lệch"): luôn theo trục giây của bài (`shownTime = mvToSong(mvTime)`, `shownDuration = duration`), tua khi xem MV đổi `songToMv`; "Up next" theo lúc hết thật (`remainingReal`); `goLive` lấy giây MV ngay (bỏ nhịp về 0:00); tắt MV → `setCurrentTime` ngay + `onSeeking` (bỏ nhịp lùi ~2s) | `MusicPlayer.jsx` |
+| **F31 MV chạy ngầm**: ở `/now-playing`, bài có MV (chưa tắt MV, không `/lyrics`, màn > 1100px, có ô cột phải) → `mvShadow`: trình phát YouTube vẫn tạo (`mvMounted`), `data-place="off"`, câm; vòng 0,5s phát / dừng theo mp3, lệch > `SHADOW_MAX_DRIFT` 0,5s thì tua (đoạn mp3 nằm ngoài MV → MV dừng). Rời trang → effect bật MV gọi lại `mvReady` qua `mvReadyRef` trên trình phát có sẵn (`already`): không tua nếu đã gần đúng, `handoff` crossfade ngay. Về `/now-playing` → chỉ `mute()`, không gỡ. Gỡ trình phát chỉ khi `!mvMounted` (effect riêng xoá `mvRef`). Vòng hỏi 250ms + lớp nổi chạy theo `mvMounted`; `setMvState` luôn cập nhật (ra trang khác hiện video ngay, không lộ thumbnail). Thêm: tắt MV khi MV chưa nhận tiếng mà mp3 đã bị dừng → mp3 phát tiếp. `holdPaused` chuyển lên trước `mvReady` (không đổi nội dung) | `MusicPlayer.jsx` |
+| **F32** nút tìm kiếm + "Recents" ở thanh thư viện (người dùng: chưa hoạt động, trước chỉ là hình): kính lúp → ô "Search in Your Library" lọc không dấu, ✕ / Esc đóng; "Recents" → menu Sort by Recents / Recently added / Alphabetical. Ca sĩ Recents = lần cuối nghe (`GET /artists/recent`, `recently_played` chỉ ghi khi gửi `/listen-report` → hỏi lại mỗi lần đổi bài theo `nowPlaying.songId`); playlist Recents = `GREATEST(created_at, MAX(added_at))`. Hàm thuần `orderLibrary` + 5 test. Không lưu kiểu sắp xếp (tải lại trang về Recents) | `components/SideBar.jsx/.scss`, `utils/libraryOrder.js`, `test/libraryOrder.test.js`; backend `model/artistModel.js`, `services/artistService.js`, `controllers/artistController.js`, `routes/web.js`, `model/playlistModel.js` |
+
+**Kiểm tra F31** (Playwright MCP 1600 × 900, tài khoản mẫu `demo30` vì mật khẩu `demo` đã đổi ở F29; đọc giây `<video>` trong iframe YouTube):
+- `/now-playing` (Payphone, offset 39,33): MV ngầm câm, MV − offset lệch mp3 0,13–0,16s.
+- Về Home: lặng **0 ms**, crossfade bắt đầu ~0,34s sau khi bấm (trước F31: MV tải ~1,4s rồi mới chuyển). Sau Next (Sugar, offset 34,23): lặng 0 ms, tiếng MV sau 0,86s, lệch 0,24s.
+- Pause ở `/now-playing` → MV ngầm dừng; về Home MV vẫn dừng; Play → MV phát có tiếng.
+- Tua (40s) → MV ngầm khớp lại trong 0,5s (lệch 0,2s).
+- Nút MV ở khung lớn → tiếng MV sau 92ms, lặng 0. Close MV → gỡ MV (`mvDismissed`), mp3 tiếp, lặng 0.
+- `/lyrics` → gỡ; quay lại → tạo lại, khớp. 1000px → gỡ; 1600px → tạo lại.
+- Bài không MV (Biển Cạn) → không có trình phát.
+- Console: không có lỗi của app (404 `lyrics/bien_can.lrc` = bài chưa có lời, có từ trước); cảnh báo React Router + YouTube `postMessage` lúc khởi tạo (có từ trước).
+- `npx eslint src` sạch, `npm run build` OK, `npm test` 20/20.
+
+**Kiểm tra F32:** backend `npm test` 190/190; frontend 25/25, lint + build sạch; curl `/artists/recent` 200 (không token 401); Playwright 1600px: tìm "son tung" / "ma" / "zzz" (No results), Esc đóng, Recents đầu = ca sĩ vừa nghe (Nhan Nguyen, Maroon 5), Alphabetical, Recently added, tab Playlists tìm "liked".
+
+## 3. Quyết định
+| Quyết định | Lý do |
+|---|---|
+| Giữ MV chạy ngầm (đảo quyết định F26 "không tải trước MV ngầm") | Người dùng chọn giữ: rời trang phát nhạc chuyển MV tức thì; đổi lại tốn mạng tải MV cả khi chỉ nghe ở `/now-playing` |
+| Close MV thì không chạy ngầm nữa | Người dùng đã nói không muốn MV bài này → không tải, cột phải cũng không tự chiếu (giống F24) |
+| Màn ≤ 1100px không chạy ngầm | Màn hẹp cột phải không tự chiếu MV → tải ngầm vô ích |
+
+## 4. Lệnh
+```bash
+cd emotune-frontend && npx eslint src && npm run build && npm test
+# Playwright: fill() không tua được thanh Seek khi đang phát -> đặt value bằng setter gốc + sự kiện input
+```
+
+## 5. Còn dở
+- Ổ C laptop còn ~8,7 GB (96%) → nên dọn trước khi chạy `make-karaoke` / tải thêm.
+- Chưa commit (5 việc trên + F31 + F32 + H17c + ghi chú).
+- **H17c bản 3 màu ❌ (người dùng thấy bản neon cũ đẹp hơn → đã khôi phục: màu `--led` sáng, phát sáng, vạch sàn cam-hồng-tím, ô icon quầng màu)**. Đã thử (theo `references/colour.md` + `tells.md` của taste-skill: "nền gần đen + neon + glow", dải tím là dấu hiệu trang AI): `--led` = #e7aa5b / #c9a3f5 / #47d0bd / #8db7ff / #fa96a3 (cùng L 0.78 C 0.12), bỏ `drop-shadow` / `box-shadow` màu, bỏ gradient vạch sàn + mâm + nắp mâm + ô icon. Còn lại ngoài biểu đồ (chưa đụng): nút gradient "See your stats" / "Scan my mood", quầng tím góc thẻ `.feature`, icon cảm xúc tự phát sáng (`MoodIcon`, dùng cả web).
+- **H17c ô icon đầu thẻ**: thay ô cam mặt cười + ô xanh `record_circle_icon` bằng `WeekBadge` / `ScanBadge` (`HomeMood.jsx`), nền / viền ô ở `BrowsePage.scss` (`.feature-thumb.hm-badge`, cỡ 112px / 80px điện thoại giữ nguyên); `BrowsePage` bỏ import `MoodIcon`, `RecordIcon` không còn dùng.
+- **H17c bản 2** (cùng ngày, người dùng chê bản 1 với dữ liệu thật ít: 6/7 cột toàn ô xám, đồng hồ mức nặng, mâm DJ đen nặng, thẻ phải trống nửa dưới): số lớn làm điểm nhìn, đèn tắt gần trong suốt, vạch sàn neon thay bóng phản chiếu, 24 vạch VU mảnh (12 khi hẹp), cột hẹp chỉ hiện chữ cái đầu ngày, cung cue + halo ở mâm, chú giải có thanh, 2 thẻ cao bằng nhau (`BrowsePage.scss`). Kiểm tra Playwright 1600 / 1366 / 390 với dữ liệu giả lập giống tài khoản người dùng (hôm nay H2 N2 S2) + tuần nhiều dữ liệu.
+- **H17c** 2 thẻ cuối trang chủ: người dùng chọn A1 (EQ LED) + B3 (mâm DJ) từ trang xem trước (`mood-neon-preview.html` trong scratchpad, mất khi hết phiên). Sửa `components/HomeMood.jsx/.scss`. Giữa chừng **ổ C đầy (0 MB, `pagefile.sys` 9,3 GB vì RAM bị chiếm 22/25 GB)** → lệnh ghi file lỗi ENOSPC, file không hỏng; sau đó ổ trống lại 11 GB. Trên laptop nên đóng bớt app nặng (SQL Server, ChatGPT…) khi chạy thử Playwright.
+- `lyrics/` laptop 81 file / 102 bài (bài thiếu lời → 404, web xử lý được).
+- Tài khoản mẫu `demo30` bị ghi thêm vài lượt nghe khi thử (`npm run seed-demo` tạo lại được).
+
+---
+
 # 🧭 PHIÊN 22/10/2026 (khuya, phiên sau) — align-mv 9 bài thiếu + F26 chuyển sang MV không khựng + F27 trang phát nhạc mở bằng sóng âm
 
 ## 1. Mục tiêu

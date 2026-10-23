@@ -4,6 +4,10 @@ let getArtists = () => {
     return artistModel.getArtistsData();
 }
 
+let getRecentArtists = (userId) => {
+    return artistModel.getRecentArtists(userId);
+}
+
 // Ham thuan (de viet unit test): gom danh sach theo bai thanh { plays: { [songId]: {total, month} }, monthTotal, total }
 let summarizePlays = (rows) => {
     const plays = {};
@@ -33,6 +37,7 @@ let getArtistStats = async (userId, artistId) => {
 
 module.exports = {
     getArtists: getArtists,
+    getRecentArtists: getRecentArtists,
     summarizePlays: summarizePlays,
     getArtistStats: getArtistStats,
 }

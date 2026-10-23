@@ -92,23 +92,140 @@
         justify-content: space-between;
         padding: 14px 20px 12px;
 
+        gap: 12px;
+
         .search-icon-btn {
             background: none;
             border: none;
             display: flex;
             cursor: pointer;
+            padding: 0;
+        }
+
+        // ô tìm trong thư viện (bấm kính lúp mới hiện)
+        .lib-search {
+            flex: 1;
+            min-width: 0;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 8px;
+            background-color: var(--chip);
+            border-radius: 6px;
+
+            svg {
+                flex-shrink: 0;
+                width: 16px;
+                height: 16px;
+            }
+
+            input {
+                flex: 1;
+                min-width: 0;
+                background: none;
+                border: none;
+                outline: none;
+                color: white;
+                font-family: inherit;
+                font-size: 13px;
+
+                &::placeholder {
+                    color: rgba(255, 255, 255, 0.55);
+                }
+            }
+
+            .clear-btn {
+                background: none;
+                border: none;
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 12px;
+                cursor: pointer;
+                padding: 2px;
+
+                &:hover {
+                    color: white;
+                }
+            }
+        }
+
+        .sort-menu {
+            position: relative;
+            flex-shrink: 0;
         }
 
         .sort-label {
             display: flex;
             align-items: center;
             gap: 10px;
+            background: none;
+            border: none;
+            padding: 0;
             color: white;
+            font-family: inherit;
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.02em;
+            white-space: nowrap;
             cursor: pointer;
         }
+
+        // menu "Sort by" xổ xuống dưới nút, canh phải
+        .sort-popup {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 5;
+            min-width: 180px;
+            padding: 6px;
+            background-color: #2a2535;
+            border-radius: 8px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+            .sort-title {
+                margin: 0;
+                padding: 8px 10px 6px;
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+            }
+
+            button {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 9px 10px;
+                background: none;
+                border: none;
+                border-radius: 4px;
+                color: white;
+                font-family: inherit;
+                font-size: 13px;
+                text-align: left;
+                cursor: pointer;
+
+                &:hover {
+                    background-color: rgba(255, 255, 255, 0.08);
+                }
+
+                &.active {
+                    color: var(--accent);
+                }
+
+                svg {
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+        }
+    }
+
+    .playlist-list .empty {
+        margin: 12px 20px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 13px;
     }
 
     .playlist-list {

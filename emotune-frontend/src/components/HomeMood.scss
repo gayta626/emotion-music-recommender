@@ -1,5 +1,77 @@
-// 2 biểu đồ của 2 thẻ cuối trang chủ (22/10: D đường sáng cho thẻ tuần, C vòng sáng cho thẻ quét — người dùng chọn từ trang xem trước).
-// Màu lấy từ biến của khối cha (.browse-page .features -> @include neon-mood): --mood-*, --c, --grid, --tip-bg.
+// 2 biểu đồ của 2 thẻ cuối trang chủ, vibe âm nhạc + neon (23/10: A1 bộ cân bằng âm LED cho thẻ tuần, B3 mâm DJ cho thẻ quét —
+// người dùng chọn từ trang xem trước; bản 2 cùng ngày: đèn mảnh, đèn tắt gần trong suốt, số lớn làm điểm nhìn).
+// Nền / chữ lấy từ khối cha (.browse-page .features -> @include neon-mood): --tip-bg.
+
+// màu đèn LED: sáng hơn --mood-* (giống màu nét icon cảm xúc) để "neon"; biến riêng --led -> không đụng --c của chỗ khác
+.hm-week,
+.hm-scan,
+.hm-badge {
+  .happy { --led: #f2a53a; }
+  .surprise { --led: #b57bf5; }
+  .neutral { --led: #2fc2b2; }
+  .sad { --led: #6f93ff; }
+  .angry { --led: #f0587e; }
+}
+
+// ---------- ô icon đầu 2 thẻ: nền tối, viền + quầng sáng theo cảm xúc, icon nét neon ----------
+// (cỡ ô 112px / 80px trên điện thoại lấy từ .feature-thumb của BrowsePage.scss; nền / viền đặt ở đó để thắng quy tắc cũ)
+.hm-badge {
+  &.happy { --led: #f2a53a; }
+  &.surprise { --led: #b57bf5; }
+  &.neutral { --led: #2fc2b2; }
+  &.sad { --led: #6f93ff; }
+  &.angry { --led: #f0587e; }
+
+  svg {
+    width: 72%;
+    height: 72%;
+    overflow: visible;
+  }
+}
+
+.hm-badge-bar {
+  fill: var(--led);
+  filter: drop-shadow(0 0 4px var(--led));
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: hm-badge-bounce 1.3s ease-in-out infinite alternate;
+}
+
+.hm-badge-floor { fill: rgba(255, 255, 255, 0.35); }
+
+.hm-badge-led {
+  fill: rgba(255, 255, 255, 0.2);
+
+  &.on {
+    fill: var(--led);
+    filter: drop-shadow(0 0 3px var(--led));
+  }
+}
+
+.hm-badge-spin {
+  transform-origin: 32px 32px;
+  animation: hm-spin 8s linear infinite;
+}
+
+.hm-badge-disc {
+  fill: #10111e;
+  stroke: var(--led);
+  stroke-width: 1.6;
+  filter: drop-shadow(0 0 4px var(--led));
+}
+
+.hm-badge-groove {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.hm-badge-mark { fill: #fff; }
+
+.hm-badge-hub {
+  fill: var(--led);
+  filter: drop-shadow(0 0 4px var(--led));
+}
 
 .hm-swatch {
   display: inline-block;
@@ -7,20 +79,50 @@
   width: 9px;
   height: 9px;
   border-radius: 2px;
-  background: var(--c);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent);
+  background: var(--led);
+  box-shadow: 0 0 6px var(--led);
 }
 
-// ---------- thẻ tuần: đường sáng + cột mờ + vòng % ----------
+// ---------- thẻ tuần: số lớn + cột LED + đồng hồ mức ----------
 .hm-week {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-.hm-line {
+.hm-week-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hm-big {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.72);
+
+  b {
+    margin-right: 4px;
+    font: 800 40px/1 'DM Sans', sans-serif;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 0 18px rgba(240, 88, 126, 0.45);
+  }
+}
+
+.hm-peak-note {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+
+  b { color: #fff; }
+}
+
+.hm-eq {
   position: relative;
-  height: 230px;
+  height: 184px;
 
   svg {
     display: block;
@@ -28,49 +130,49 @@
   }
 }
 
-.hm-gridline { stroke: rgba(255, 255, 255, 0.08); }
-
 .hm-axis {
-  font: 11px 'DM Sans', sans-serif;
+  font: 600 11px 'DM Sans', sans-serif;
   fill: rgba(255, 255, 255, 0.5);
 
   &.today {
     fill: #fff;
-    font-weight: 700;
+    font-weight: 800;
   }
 }
 
-// cột mờ phía sau (cùng màu cảm xúc, nhạt) — giống cột xám sau đường cong của ảnh mẫu
-.hm-ghost {
-  fill: var(--c);
-  opacity: 0.42;
+.hm-today-pill { fill: rgba(255, 255, 255, 0.1); }
+
+.hm-floor {
+  opacity: 0.75;
+  filter: drop-shadow(0 0 6px rgba(240, 88, 126, 0.8));
 }
 
-.hm-line-path {
-  fill: none;
-  stroke-width: 3;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 6px rgba(232, 69, 110, 0.7));
+// ô sáng = 1 lần quét: bật dần từ dưới lên khi hiện, ô trên cùng chập chờn như đèn tín hiệu
+.hm-led {
+  fill: var(--led);
+  filter: drop-shadow(0 0 6px var(--led));
+  animation: hm-led-on 0.35s ease-out both;
+
+  &.top { animation: hm-led-on 0.35s ease-out both, hm-flicker 2.4s ease-in-out 1.4s infinite; }
 }
 
-.hm-point {
+// ô chưa sáng: gần trong suốt (chỉ gợi khung cột, không thành lưới hộp xám)
+.hm-led-off { fill: rgba(255, 255, 255, 0.035); }
+.hm-led-idle { fill: rgba(255, 255, 255, 0.16); }
+
+// vạch đỉnh trắng nhún lên xuống
+.hm-cap {
   fill: #fff;
-  stroke: #e8456e;
-  stroke-width: 2;
-
-  &.peak { stroke-width: 3; }
+  filter: drop-shadow(0 0 4px #fff);
+  animation: hm-cap-bob 1.8s ease-in-out infinite;
 }
 
-// số đỉnh to (như "83" của ảnh mẫu)
-.hm-peak {
-  font: 600 22px 'DM Sans', sans-serif;
-  fill: #ff6b9a;
+.hm-count {
+  font: 800 13px 'DM Sans', sans-serif;
+  fill: #fff;
 }
 
-.hm-cross {
-  stroke: rgba(255, 255, 255, 0.35);
-  stroke-dasharray: 3 3;
-}
+.hm-col-hl { fill: rgba(255, 255, 255, 0.05); }
 
 // vùng rê chuột: 7 cột trong suốt trùng 7 ngày
 .hm-hits {
@@ -86,14 +188,13 @@
   border-radius: 8px;
   outline: none;
 
-  &:focus-visible { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4); }
+  &:focus-visible { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
 }
 
 // bảng số khi rê chuột / focus 1 ngày: hiện BÊN CẠNH cột (nửa trái -> bên phải cột, nửa phải -> bên trái)
-// để không che điểm + số đỉnh của chính ngày đó
 .hm-tip {
   position: absolute;
-  top: 40px;
+  top: 30px;
   z-index: 5;
   min-width: 140px;
   display: flex;
@@ -105,7 +206,7 @@
   background: var(--tip-bg);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
   pointer-events: none;
 
@@ -129,110 +230,163 @@
   &.to-left { right: calc(50% + 14px); }
 }
 
-// vòng % từng cảm xúc (như các vòng nhỏ dưới đường cong của ảnh mẫu)
-.hm-rings {
+// đồng hồ mức kiểu VU: icon + tên | 24 vạch mảnh | %
+.hm-meters {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
 
   li {
-    display: flex;
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr) 66px;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    font-size: 13px;
   }
 
   b {
-    display: block;
-    font: 400 22px 'DM Sans', sans-serif;
-    color: #fff;
-  }
+    text-align: right;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
 
-  small {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    small {
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.6);
+    }
   }
 }
 
-.hm-ring-box {
-  position: relative;
-  flex-shrink: 0;
-  width: 54px;
-  height: 54px;
+.hm-meter-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.hm-meter-ticks {
   display: grid;
-  place-items: center;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 3px;
 
-  .hm-pct-ring {
-    position: absolute;
-    inset: 0;
-    overflow: visible;
+  i {
+    height: 12px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.07);
+
+    &.on {
+      background: var(--led);
+      box-shadow: 0 0 5px var(--led);
+      animation: hm-led-on 0.3s ease-out both;
+    }
   }
 }
 
-.hm-pct-ring {
-  .track {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.07);
-  }
-
-  .arc {
-    fill: none;
-    stroke: var(--c);
-    stroke-linecap: round;
-    filter: drop-shadow(0 0 4px var(--c));
-  }
-}
-
-// ---------- thẻ quét: vòng sáng, mỗi cung 1 lần quét ----------
+// ---------- thẻ quét: mâm DJ + vòng 24 đèn LED ----------
 // container đặt ở khung cha (container query không áp được cho chính phần tử container)
-.feature-panel:has(> .hm-scan) { container: hmscan / inline-size; }
+.feature-panel:has(> .hm-scan) {
+  container: hmscan / inline-size;
+  justify-content: center;
+}
 
 .hm-scan {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
   align-items: center;
-  gap: 26px;
+  gap: 28px;
 }
 
-.hm-ring {
+.hm-jog {
   position: relative;
-  width: 230px;
-  height: 230px;
+  width: 250px;
+  height: 250px;
 
   > svg {
     position: absolute;
     inset: 0;
     overflow: visible;
   }
-
-  .hm-glow-in { stop-color: var(--c); stop-opacity: 0.35; }
-  .hm-glow-out { stop-color: var(--c); stop-opacity: 0; }
 }
 
-.hm-ring-dots {
-  transform-origin: 115px 115px;
-  animation: hm-spin 40s linear infinite;
-
-  .dot { fill: rgba(255, 255, 255, 0.18); }
-  .dot.big { fill: rgba(255, 255, 255, 0.4); }
-}
-
-.hm-arc {
+.hm-track {
   fill: none;
-  stroke: var(--c);
-  stroke-width: 9;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px var(--c));
-
-  // lần quét mới nhất: dày + sáng hơn
-  &.newest {
-    stroke: color-mix(in oklab, var(--c) 60%, white);
-    stroke-width: 14;
-    filter: drop-shadow(0 0 10px var(--c));
-  }
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1;
 }
+
+// cung "cue" nối các đèn đã sáng
+.hm-cue {
+  fill: none;
+  stroke: var(--led);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  filter: drop-shadow(0 0 4px var(--led));
+}
+
+.hm-dot {
+  fill: var(--led);
+  filter: drop-shadow(0 0 6px var(--led));
+  animation: hm-led-on 0.35s ease-out both;
+
+  &.newest { filter: drop-shadow(0 0 10px var(--led)); }
+}
+
+// vòng sáng quanh lần quét mới nhất, "thở"
+.hm-halo {
+  fill: none;
+  stroke: var(--led);
+  stroke-width: 1.5;
+  opacity: 0.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hm-halo 1.8s ease-out infinite;
+}
+
+.hm-dot-off { fill: rgba(255, 255, 255, 0.18); }
+
+// mâm: viền sáng theo cảm xúc gần nhất (class cảm xúc trên <svg>)
+.hm-platter {
+  stroke: var(--led);
+  stroke-opacity: 0.4;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--led) 45%, transparent));
+}
+
+.hm-platter-spin {
+  transform-origin: 125px 125px;
+  animation: hm-spin 26s linear infinite;
+}
+
+.hm-groove {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.045);
+  stroke-width: 1;
+}
+
+.hm-ridge {
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.hm-marker {
+  fill: var(--led);
+  filter: drop-shadow(0 0 6px var(--led));
+}
+
+.hm-cap-ring {
+  fill: none;
+  stroke: var(--led);
+  stroke-opacity: 0.55;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 6px var(--led));
+}
+
+.hm-cap-in { stop-color: color-mix(in srgb, var(--led) 28%, #15162a); }
 
 .hm-ring-center {
   position: absolute;
@@ -241,18 +395,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   pointer-events: none;
 
   b {
-    margin-top: 4px;
-    font: 700 18px 'Inter', sans-serif;
+    margin-top: 2px;
+    font: 800 17px 'DM Sans', sans-serif;
     color: #fff;
   }
 
   small {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.7);
   }
 }
 
@@ -260,36 +414,57 @@
   min-width: 0;
 
   h4 {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font: 700 18px 'Inter', sans-serif;
   }
 
   p {
     font-size: 13px;
     line-height: 1.5;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.65);
   }
 }
 
+// chú giải: icon + tên | thanh dài theo số lần | số
 .hm-scan-legend {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 14px 0 0;
+  gap: 10px;
+  margin: 16px 0 0;
   padding: 0;
   list-style: none;
 
   li {
-    display: flex;
+    display: grid;
+    grid-template-columns: 20px 64px minmax(0, 1fr) 24px;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-size: 13px;
   }
 
-  b { margin-left: auto; }
+  b {
+    text-align: right;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-// thẻ hẹp: vòng lên trên, chú giải xuống dưới
+.hm-legend-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--led);
+    box-shadow: 0 0 8px var(--led);
+  }
+}
+
+// thẻ hẹp: mâm lên trên, chú giải xuống dưới
 @container hmscan (max-width: 460px) {
   .hm-scan { grid-template-columns: minmax(0, 1fr); justify-items: center; }
   .hm-scan-side { width: 100%; }
@@ -306,7 +481,21 @@
 }
 
 @keyframes hm-spin { to { transform: rotate(360deg); } }
+@keyframes hm-led-on { from { opacity: 0.08; } }
+@keyframes hm-flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.55; } 55% { opacity: 1; } }
+@keyframes hm-cap-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes hm-badge-bounce { from { transform: scaleY(0.55); } to { transform: scaleY(1); } }
+@keyframes hm-halo { from { transform: scale(0.7); opacity: 0.8; } to { transform: scale(1.5); opacity: 0; } }
 
+// giảm chuyển động: đèn sáng sẵn, mâm đứng yên, số liệu đọc được ngay
 @media (prefers-reduced-motion: reduce) {
-  .hm-ring-dots { animation: none; }
+  .hm-led,
+  .hm-led.top,
+  .hm-cap,
+  .hm-dot,
+  .hm-halo,
+  .hm-badge-bar,
+  .hm-badge-spin,
+  .hm-meter-ticks i.on,
+  .hm-platter-spin { animation: none; }
 }
